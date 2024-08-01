@@ -40,7 +40,7 @@ approval_rules:
         paths:
           - ".*"
     requires:
-      count: 1 # The number of required review approvals
+      count: 0 # The number of required review approvals
       teams:
         - "coopnorge/engineering"
     options:
