@@ -1,0 +1,22 @@
+version: "3.7"
+
+services:
+  # Do not remove, used by pallet validation
+  kubernetes-devtools:
+    build:
+      context: devtools
+      target: kubernetes-devtools
+      dockerfile: Dockerfile
+    privileged: false
+    command: validate
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+    volumes:
+      - .:/srv/workspace:z
+      - $HOME/.argocd:/root/.config/argocd
+networks:
+  default:
+volumes:
+  xdg-cache-home: {}
+  nothing: {}

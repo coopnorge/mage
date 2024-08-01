@@ -1,0 +1,53 @@
+# Policy bot configuration
+# https://github.com/palantir/policy-bot#configuration
+policy:
+  approval:
+    - or:
+        - Dependabot update
+        - Code change
+
+approval_rules:
+  # This rule matches when a pr is created by dependabot
+  - name: Dependabot update
+    if:
+      only_has_contributors_in:
+        users:
+          - "dependabot[bot]"
+      only_changed_files:
+        paths:
+          - "^.github/workflows/.*$"
+          - "^devtools/Dockerfile$"
+      has_valid_signatures_by_keys:
+        key_ids: ["B5690EEEBB952194"]
+    requires:
+      count: 1 # A Dependabot pr requires 1 approval of review bot or a user
+      teams:
+        - "coopnorge/engineering"
+      users:
+        - "CoopNorgeReviewBot"
+    options:
+      invalidate_on_push: true
+      request_review:
+        enabled: true
+        mode: random-users
+        count: 2 # The number of random-users to request reviews from
+      methods:
+        github_review: true
+
+  - name: Code change
+    if:
+      changed_files:
+        paths:
+          - ".*"
+    requires:
+      count: 1 # The number of required review approvals
+      teams:
+        - "coopnorge/engineering"
+    options:
+      invalidate_on_push: true
+      request_review:
+        enabled: true
+        mode: random-users
+        count: 2 # The number of random-users to request reviews from
+      methods:
+        github_review: true

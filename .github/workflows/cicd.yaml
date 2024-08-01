@@ -1,0 +1,39 @@
+---
+name: CI/CD
+on:
+  pull_request: {}
+  push:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    outputs:
+      run-kubernetes-ci: ${{ steps.changes.outputs.pallet == 'true' && github.event_name == 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          list-files: json
+          filters: |
+            pallet:
+              - '.pallet/**'
+      - name: Debug ...
+        run: |
+          echo ::${{ steps.changes.outputs }}
+
+  kubernetes-ci:
+    name: "Kubernetes CI"
+    concurrency:
+      group: ${{ github.repository }}-${{ github.workflow }}-kubernetes-ci-${{ github.ref }}
+      cancel-in-progress: true
+    needs: ["setup"]
+    if: ${{ needs.setup.outputs.run-kubernetes-ci == 'true'}}
+    uses: coopnorge/github-workflow-kubernetes-validation/.github/workflows/kubernetes-validation.yaml@v2.0.0
+    secrets:
+      argocd-api-token: ${{ secrets.ARGOCD_API_TOKEN }}
+
