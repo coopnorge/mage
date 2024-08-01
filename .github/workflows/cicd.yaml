@@ -33,7 +33,7 @@ jobs:
       cancel-in-progress: true
     needs: ["setup"]
     if: ${{ needs.setup.outputs.run-kubernetes-ci == 'true'}}
-    uses: coopnorge/github-workflow-kubernetes-validation/.github/workflows/kubernetes-validation.yaml@v2.0.0
+    uses: coopnorge/github-workflow-kubernetes-validation/.github/workflows/kubernetes-validation.yaml@v2.0.2
     secrets:
       argocd-api-token: ${{ secrets.ARGOCD_API_TOKEN }}
 
