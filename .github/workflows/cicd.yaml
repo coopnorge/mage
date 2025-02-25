@@ -25,6 +25,9 @@ jobs:
         run: |
           echo ::${{ steps.changes.outputs }}
 
+    permissions:
+      contents: read
+      pull-requests: read
   kubernetes-ci:
     name: "Kubernetes CI"
     concurrency:
