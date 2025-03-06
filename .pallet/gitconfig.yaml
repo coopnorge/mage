@@ -14,5 +14,5 @@ spec:
       pattern: main
       requiredStatusChecks:
         checks:
-        - "Setup"
+        - "cicd"
         - "policy-bot: main"
