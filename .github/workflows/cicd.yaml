@@ -11,6 +11,7 @@ jobs:
     name: Setup
     runs-on: ubuntu-24.04
     outputs:
+      run-golang-ci: ${{ steps.changes.outputs.golang == 'true' }}
       run-kubernetes-ci: ${{ steps.changes.outputs.pallet == 'true' && github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v4
@@ -21,13 +22,21 @@ jobs:
           filters: |
             pallet:
               - '.pallet/**'
+            golang:
+              - '*.go'
+              - './.github/workflow/cicd.yaml'
+              - 'docker-compose.yaml'
+              - 'devtools/**'
+              - 'go.*'
+              - 'internal/**'
+              - 'targets/**'
       - name: Debug ...
         run: |
           echo ::${{ steps.changes.outputs }}
-
     permissions:
       contents: read
       pull-requests: read
+
   kubernetes-ci:
     name: "Kubernetes CI"
     concurrency:
@@ -42,3 +51,80 @@ jobs:
       contents: read
       pull-requests: write
 
+  golang-ci:
+    name: Go CI
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    needs: ["setup"]
+    if: ${{ needs.setup.outputs.run-golang-ci == 'true'}}
+    env:
+      docker-compose-service: golang-devtools
+      XDG_CACHE_HOME: ${{ github.workspace }}/.cache/xdg
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # pin@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # pin@v3
+      - id: xdg_cache_hash
+        run: echo "xdg_cache_hash=${{hashFiles('./docker-compose.yml', './docker-compose/Dockerfile', './go.mod', './go.sum')}}" >> $GITHUB_OUTPUT
+      - name: Cache xdg
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.XDG_CACHE_HOME }}
+          key: xdg-${{ github.repository }}-${{ github.job }}-${{ steps.xdg_cache_hash.outputs.xdg_cache_hash }}
+          restore-keys: |
+            xdg-${{ github.repository }}-${{ github.job }}-${{ steps.xdg_cache_hash.outputs.xdg_cache_hash }}
+            xdg-${{ github.repository }}-${{ github.job }}-
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # pin@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Configure access to internal and private GitHub repos
+        run: git config --global url."https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
+      - name: Build devtools
+        run: docker compose build
+      - name: Validate
+        run: docker compose run --rm ${{ env.docker-compose-service }} validate VERBOSE=all
+
+  mage:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    needs: ["setup"]
+    if: ${{ needs.setup.outputs.run-golang-ci == 'true'}}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Configure access to internal and private GitHub repos
+        run: git config --global url."https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
+      - name: Safe Git Workspace
+        run: git config --global --add safe.directory /app
+      - name: Detect Go toolchain
+        id: toolchain
+        run: echo "version=$(sed -ne '/^toolchain /s/^toolchain go//p' go.mod)" >> "$GITHUB_OUTPUT"
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ steps.toolchain.outputs.version }}
+          cache-dependency-path: "**/*.sum"
+      - name: Install go Tools
+        run: go install tool
+      - name: Build
+        run: "go tool mage build"
+      - name: Show output
+        if: always()
+        run: tree var/
