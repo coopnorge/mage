@@ -26,13 +26,18 @@ jobs:
         run: git config --global url."https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
       - name: Safe Git Workspace
         run: git config --global --add safe.directory /app
-      - name: Detect Go toolchain
-        id: toolchain
-        run: echo "version=$(sed -ne '/^toolchain /s/^toolchain go//p' go.mod)" >> "$GITHUB_OUTPUT"
+      # - name: Detect Go toolchain
+      #   id: toolchain
+      #   run: echo "version=$(sed -ne '/^toolchain /s/^toolchain go//p' go.mod)" >> "$GITHUB_OUTPUT"
+      # - name: Set up Go
+      #   uses: actions/setup-go@v5
+      #   with:
+      #     go-version: ${{ steps.toolchain.outputs.version }}
+      #     cache-dependency-path: "**/go.sum"
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ steps.toolchain.outputs.version }}
+          go-version: '>=1.24.0'
           cache-dependency-path: "**/go.sum"
       - name: Install go Tools
         run: go install tool
@@ -41,3 +46,4 @@ jobs:
       - name: Show output
         if: always()
         run: tree var/
+
