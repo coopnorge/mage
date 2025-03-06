@@ -128,3 +128,19 @@ jobs:
       - name: Show output
         if: always()
         run: tree var/
+
+  cicd:
+    needs:
+      - golang-ci
+      - kubernetes-ci
+      - mage
+    if: always()
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - run: exit 1
+        name: "Catch errors"
+        if: |
+          needs.golang-ci.result == 'failure' ||
+          needs.kubernetes-ci.result == 'failure' ||
+          needs.mage.result == 'failure'
