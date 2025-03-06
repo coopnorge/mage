@@ -15,8 +15,14 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "docker"
-    directory: "/devtools"
+    directories:
+      - "**/*"
     schedule:
       interval: "daily"
     registries:
       - coop-ghcr
+  - package-ecosystem: "gomod"
+    directories:
+      - "**/*"
+    schedule:
+      interval: "daily"
