@@ -2,36 +2,37 @@ package golib
 
 import (
 	"context"
-	"os"
 
+	"github.com/coopnorge/mage/internal/core"
+	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 )
 
-const (
-	outputDir = "./var"
-)
-
 // Generate files
-func Generate(_ context.Context) error {
+func Generate(ctx context.Context) error {
+	mg.CtxDeps(ctx, Go.Generate)
 	return nil
 }
 
 // Build all code
-func Build(_ context.Context) error {
-	return os.MkdirAll(outputDir, 0700)
+func Build(ctx context.Context) error {
+	mg.SerialCtxDeps(ctx, Validate)
+	return nil
 }
 
 // Validate all code
-func Validate(_ context.Context) error {
+func Validate(ctx context.Context) error {
+	mg.CtxDeps(ctx, Go.Validate)
 	return nil
 }
 
 // Fix files
-func Fix(_ context.Context) error {
+func Fix(ctx context.Context) error {
+	mg.CtxDeps(ctx, Go.Fix)
 	return nil
 }
 
 // Clean validate and build output
 func Clean(_ context.Context) error {
-	return sh.Rm(outputDir)
+	return sh.Rm(core.OutputDir)
 }
