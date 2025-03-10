@@ -65,29 +65,43 @@ func RunWith(env map[string]string, tool, cmd string, args ...string) error {
 // Build allow a mage target to depend on a Docker image. This will
 // pull the image from a Docker registry.
 func Build(tool, dockerfile string) error {
-	file, err := core.WriteTempFile(core.OutputDir, fmt.Sprintf("%s.Dockerfile", tool), dockerfile)
+	file, cleanup, err := core.WriteTempFile(core.OutputDir, fmt.Sprintf("%s.Dockerfile", tool), dockerfile)
 	if err != nil {
 		return err
 	}
-	defer os.Remove(file.Name()) //nolint:errcheck
+	defer cleanup()
 
 	imageName, err := GetImageName(tool)
 	if err != nil {
 		return err
 	}
 
-	path, err := os.MkdirTemp("", "target")
+	path, cleanup, err := mkdirTemp()
 	if err != nil {
 		return nil
 	}
-	defer os.Remove(path) //nolint:errcheck
+	defer cleanup()
 
 	return sh.RunV(
 		"docker", "buildx", "build",
-		"-f", file.Name(),
+		"-f", file,
 		"--target", tool,
 		"-t", imageName,
 		"--load",
 		path,
 	)
+}
+
+func mkdirTemp() (string, func(), error) {
+	path, err := os.MkdirTemp("", "target")
+	if err != nil {
+		return "", func() {}, err
+	}
+	cleanup := func() {
+		err := os.Remove(path)
+		if err != nil {
+			panic(err)
+		}
+	}
+	return path, cleanup, nil
 }

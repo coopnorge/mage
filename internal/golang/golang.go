@@ -98,13 +98,13 @@ func Test(directory string) error {
 
 // Lint runs linting
 func Lint(directory, golangCILintCfg string) error {
-	lintCfg, err := core.WriteTempFile(core.OutputDir, "golangci-lint.yml", golangCILintCfg)
+	lintCfg, cleanup, err := core.WriteTempFile(core.OutputDir, "golangci-lint.yml", golangCILintCfg)
 	if err != nil {
 		return err
 	}
-	defer os.Remove(lintCfg.Name()) //nolint:errcheck
+	defer cleanup()
 
-	lintCfgPath, err := filepath.Rel(fmt.Sprintf("./%s", directory), lintCfg.Name())
+	lintCfgPath, err := filepath.Rel(fmt.Sprintf("./%s", directory), lintCfg)
 	if err != nil {
 		return err
 	}
@@ -114,13 +114,13 @@ func Lint(directory, golangCILintCfg string) error {
 
 // LintFix runs auto fixes
 func LintFix(directory, golangCILintCfg string) error {
-	lintCfg, err := core.WriteTempFile(core.OutputDir, "golangci-lint.yml", golangCILintCfg)
+	lintCfg, cleanup, err := core.WriteTempFile(core.OutputDir, "golangci-lint.yml", golangCILintCfg)
 	if err != nil {
 		return err
 	}
-	defer os.Remove(lintCfg.Name()) //nolint:errcheck
+	defer cleanup()
 
-	lintCfgPath, err := filepath.Rel(fmt.Sprintf("./%s", directory), lintCfg.Name())
+	lintCfgPath, err := filepath.Rel(fmt.Sprintf("./%s", directory), lintCfg)
 	if err != nil {
 		return err
 	}

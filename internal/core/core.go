@@ -20,20 +20,29 @@ func GetRelativeRootPath(absRootPath, workDirRel string) (string, error) {
 	return relativeRootPath, nil
 }
 
-// WriteTempFile writes the content to a temp file in ./var with a random prefix and the
-// provided suffix.
-func WriteTempFile(directory, suffix, content string) (*os.File, error) {
+func noop() {}
+
+// WriteTempFile writes the content to a temp file in the provided with a
+// random prefix and the provided suffix. Returns a cleanup function that the
+// caller is expected to call. If cleanup errors it will panic.
+func WriteTempFile(directory, suffix, content string) (string, func(), error) {
 	err := os.MkdirAll(directory, 0700)
 	if err != nil {
-		return nil, err
+		return "", noop, err
 	}
 	file, err := os.CreateTemp(directory, fmt.Sprintf("*-%s", suffix))
 	if err != nil {
-		return nil, err
+		return "", noop, err
 	}
 	_, err = file.WriteString(content)
 	if err != nil {
-		return nil, err
+		return "", noop, err
 	}
-	return file, nil
+	cleanup := func() {
+		err := os.Remove(file.Name())
+		if err != nil {
+			panic(err)
+		}
+	}
+	return file.Name(), cleanup, nil
 }
