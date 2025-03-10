@@ -20,29 +20,30 @@ func GetRelativeRootPath(absRootPath, workDirRel string) (string, error) {
 	return relativeRootPath, nil
 }
 
-func noop() {}
-
 // WriteTempFile writes the content to a temp file in the provided with a
 // random prefix and the provided suffix. Returns a cleanup function that the
 // caller is expected to call. If cleanup errors it will panic.
 func WriteTempFile(directory, suffix, content string) (string, func(), error) {
 	err := os.MkdirAll(directory, 0700)
 	if err != nil {
-		return "", noop, err
+		return "", func() {}, err
 	}
 	file, err := os.CreateTemp(directory, fmt.Sprintf("*-%s", suffix))
 	if err != nil {
-		return "", noop, err
+		return "", func() {}, err
 	}
-	_, err = file.WriteString(content)
-	if err != nil {
-		return "", noop, err
-	}
+
 	cleanup := func() {
 		err := os.Remove(file.Name())
 		if err != nil {
 			panic(err)
 		}
+	}
+
+	_, err = file.WriteString(content)
+	if err != nil {
+		defer cleanup()
+		return "", func() {}, err
 	}
 	return file.Name(), cleanup, nil
 }
