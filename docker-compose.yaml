@@ -31,6 +31,24 @@ services:
       # ${x:-y} explained here https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html#:~:text=3.5.3%20Shell%20Parameter%20Expansion
     environment:
       GOMODCACHE: /root/.cache/go-mod
+  techdocs:
+    build:
+      context: devtools
+      dockerfile: Dockerfile
+      target: techdocs
+    working_dir: /srv/workspace
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS:-}
+      GCLOUD_PROJECT: ${GCLOUD_PROJECT:-}
+    volumes:
+      - .:/srv/workspace:z
+      - ${XDG_CACHE_HOME:-xdg-cache-home}:/root/.cache
+      - $HOME/.config/gcloud:/root/.config/gcloud
+      - ${GOOGLE_APPLICATION_CREDENTIALS:-nothing}:${GOOGLE_APPLICATION_CREDENTIALS:-/tmp/empty-GOOGLE_APPLICATION_CREDENTIALS}
+    ports:
+      - "127.0.0.1:3000:3000/tcp"
+      - "127.0.0.1:8000:8000/tcp"
+    command: serve
 networks:
   default:
 volumes:
