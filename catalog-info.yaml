@@ -1,0 +1,12 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: mage
+  title: Mage CI Targets
+  annotations:
+    github.com/project-slug: coopnorge/mage
+    backstage.io/techdocs-ref: dir:.
+spec:
+  type: library
+  lifecycle: experimental
+  owner: engineering
