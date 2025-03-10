@@ -15,8 +15,10 @@ approval_rules:
           - "dependabot[bot]"
       only_changed_files:
         paths:
+          - "^**/Dockerfile$"
           - "^.github/workflows/.*$"
-          - "^devtools/Dockerfile$"
+          - "^go.mod$"
+          - "^go.sum$"
       has_valid_signatures_by_keys:
         key_ids: ["B5690EEEBB952194"]
     requires:
