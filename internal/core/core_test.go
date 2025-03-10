@@ -53,15 +53,14 @@ func TestWriteTempFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, gotErr := core.WriteTempFile(tt.directory, tt.suffix, tt.content)
+			got, cleanup, gotErr := core.WriteTempFile(tt.directory, tt.suffix, tt.content)
 			assert.NoError(t, gotErr)
-			assert.Contains(t, got.Name(), tt.suffix)
-			assert.FileExists(t, got.Name())
-			gotBytes, gotErr := os.ReadFile(got.Name())
+			assert.Contains(t, got, tt.suffix)
+			assert.FileExists(t, got)
+			gotBytes, gotErr := os.ReadFile(got)
 			assert.NoError(t, gotErr)
 			assert.Equal(t, tt.content, string(gotBytes))
-			err := os.Remove(got.Name())
-			assert.NoError(t, err)
+			cleanup()
 		})
 	}
 }
