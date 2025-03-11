@@ -1,7 +1,9 @@
 package core_test
 
 import (
+	"fmt"
 	"os"
+	"regexp"
 	"testing"
 
 	"github.com/coopnorge/mage/internal/core"
@@ -60,6 +62,27 @@ func TestWriteTempFile(t *testing.T) {
 			gotBytes, gotErr := os.ReadFile(got)
 			assert.NoError(t, gotErr)
 			assert.Equal(t, tt.content, string(gotBytes))
+			cleanup()
+		})
+	}
+}
+
+func TestMkdirTemp(t *testing.T) {
+	tests := []struct {
+		name    string // description of this test case
+		wantErr bool
+	}{
+		{
+			name:    "base case",
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, cleanup, gotErr := core.MkdirTemp()
+			assert.NoError(t, gotErr)
+			assert.DirExists(t, got)
+			assert.Regexp(t, regexp.MustCompile(fmt.Sprintf("%s/.+", os.TempDir())), got)
 			cleanup()
 		})
 	}
