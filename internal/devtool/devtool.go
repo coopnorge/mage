@@ -76,7 +76,7 @@ func Build(tool, dockerfile string) error {
 		return err
 	}
 
-	path, cleanup, err := mkdirTemp()
+	path, cleanup, err := core.MkdirTemp()
 	if err != nil {
 		return nil
 	}
@@ -90,18 +90,4 @@ func Build(tool, dockerfile string) error {
 		"--load",
 		path,
 	)
-}
-
-func mkdirTemp() (string, func(), error) {
-	path, err := os.MkdirTemp("", "target")
-	if err != nil {
-		return "", func() {}, err
-	}
-	cleanup := func() {
-		err := os.Remove(path)
-		if err != nil {
-			panic(err)
-		}
-	}
-	return path, cleanup, nil
 }
