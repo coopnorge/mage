@@ -42,12 +42,12 @@ import (
 
 #### Includes
 
-- [ X ] Go tests
-- [ X ] Go linting
-- [ X ] Go code generation
-- [   ] Go mock generation
-- [   ] Techdocs CI
-- [   ] Security Scanning
+- [X] Go tests
+- [X] Go linting
+- [X] Go code generation
+- [ ] Go mock generation
+- [ ] Techdocs CI
+- [ ] Security Scanning
 
 ## Run CI
 
