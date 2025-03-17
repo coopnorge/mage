@@ -31,6 +31,11 @@ stack.
 
 ### Go app
 
+Ensure that the `main` packages for the commands in the Go modules are in
+`cmd/<command>/main.go`. See [Organizing a Go module: Multiple
+commands](https://go.dev/doc/modules/layout#multiple-commands) for more
+information on the topic.
+
 ```go title="magefiles/magefile.go"
 package main
 
