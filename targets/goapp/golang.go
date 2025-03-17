@@ -58,7 +58,24 @@ func (Go) Build(ctx context.Context) error {
 		return err
 	}
 
+	cmds, err := findCommands(goModules)
+	if err != nil {
+		return err
+	}
+
 	bins := []any{}
+	for _, command := range cmds {
+		relativeRootPath, err := core.GetRelativeRootPath(rootPath, command.goModule)
+		if err != nil {
+			return err
+		}
+		for _, osArch := range OsArchMatrix {
+			output := path.Join(relativeRootPath, binaryOutputPath(command.goModule, osArch["GOOS"], osArch["GOARCH"], command.binary))
+			bins = append(bins, mg.F(Go.build, command.goModule, command.pkg, output, osArch["GOOS"], osArch["GOARCH"]))
+		}
+	}
+
+	/*
 	for _, workDir := range goModules {
 		if _, err := os.Stat(path.Join(workDir, cmdDir)); os.IsNotExist(err) {
 			continue
@@ -85,10 +102,43 @@ func (Go) Build(ctx context.Context) error {
 			}
 		}
 	}
+	*/
 
 	mg.CtxDeps(ctx, bins...)
 
 	return nil
+}
+
+type cmd struct {
+    goModule string
+    pkg      string
+	binary   string
+}
+
+func findCommands(goModules []string) ([]cmd, error) {
+	result := []cmd{}
+	for _, goModule := range goModules {
+		if _, err := os.Stat(path.Join(goModule, cmdDir)); os.IsNotExist(err) {
+			continue
+		}
+		entries, err := os.ReadDir(path.Join(goModule, cmdDir))
+		if err != nil {
+			return nil, err
+		}
+		for _, entry := range entries {
+			if !entry.IsDir() {
+				continue
+			}
+			cmd := cmd{
+				goModule: goModule,
+				pkg:      fmt.Sprintf("./%s", path.Join(cmdDir, entry.Name())),
+				binary:   entry.Name(),
+
+			}
+			result = append(result, cmd)
+		}
+	}
+	return result, nil
 }
 
 func (Go) build(ctx context.Context, workingDirectory, input, output, goos, goarch string) error {
