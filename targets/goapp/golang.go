@@ -81,8 +81,8 @@ func (Go) Build(ctx context.Context) error {
 }
 
 type cmd struct {
-    goModule string
-    pkg      string
+	goModule string
+	pkg      string
 	binary   string
 }
 
@@ -104,7 +104,6 @@ func findCommands(goModules []string) ([]cmd, error) {
 				goModule: goModule,
 				pkg:      fmt.Sprintf("./%s", path.Join(cmdDir, entry.Name())),
 				binary:   entry.Name(),
-
 			}
 			result = append(result, cmd)
 		}
