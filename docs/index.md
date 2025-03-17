@@ -54,8 +54,8 @@ import (
 - [X] Go tests
 - [X] Go linting
 - [ ] Go mock generation
-- [ ] Docker image build
-- [ ] Docker image push
+- [X] Docker image build
+- [X] Docker image push
 - [ ] Techdocs CI
 - [ ] Kubernetes CI
 - [ ] Security Scanning

@@ -1,0 +1,13 @@
+{
+  "buildx.build.ref": "desktop-linux/desktop-linux/4mwdf0skugbvck668qfnu0ipo",
+  "containerimage.descriptor": {
+    "mediaType": "application/vnd.oci.image.index.v1+json",
+    "digest": "sha256:94c49256e2dec5add85c669fe7498aa93e188ebffb6c0c8ec4fe85105a19abdb",
+    "size": 1609,
+    "annotations": {
+      "org.opencontainers.image.created": "2025-03-11T12:58:26Z"
+    }
+  },
+  "containerimage.digest": "sha256:94c49256e2dec5add85c669fe7498aa93e188ebffb6c0c8ec4fe85105a19abdb",
+  "image.name": "ocreg.invalid/coopnorge/app1/binary2:v2025.03.11135857,ocreg.invalid/app1/binary2:latest"
+}

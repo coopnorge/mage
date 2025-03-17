@@ -40,6 +40,8 @@ In the repository add a GitHub Actions Workflow
 	    uses: coopnorge/mage/.github/workflows/mage.yaml@v0 # Use the latest available version
 	    permissions:
 	      contents: read
+	      id-token: write
+	      packages: read
 	    secrets: inherit
 
 # Run the CI targets locally
