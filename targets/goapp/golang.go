@@ -75,35 +75,6 @@ func (Go) Build(ctx context.Context) error {
 		}
 	}
 
-	/*
-	for _, workDir := range goModules {
-		if _, err := os.Stat(path.Join(workDir, cmdDir)); os.IsNotExist(err) {
-			continue
-		}
-
-		relativeRootPath, err := core.GetRelativeRootPath(rootPath, workDir)
-		if err != nil {
-			return err
-		}
-
-		entries, err := os.ReadDir(path.Join(workDir, cmdDir))
-		if err != nil {
-			return err
-		}
-
-		for _, entry := range entries {
-			if !entry.IsDir() {
-				continue
-			}
-			for _, osArch := range OsArchMatrix {
-				input := fmt.Sprintf("./%s", path.Join(cmdDir, entry.Name()))
-				output := path.Join(relativeRootPath, binaryOutputPath(workDir, osArch["GOOS"], osArch["GOARCH"], entry.Name()))
-				bins = append(bins, mg.F(Go.build, workDir, input, output, osArch["GOOS"], osArch["GOARCH"]))
-			}
-		}
-	}
-	*/
-
 	mg.CtxDeps(ctx, bins...)
 
 	return nil
