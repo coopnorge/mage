@@ -7,8 +7,10 @@ import (
 	"path/filepath"
 )
 
-// OutputDir is the destination for CI artifacts
-const OutputDir = "./var"
+const (
+	// OutputDir is the destination for CI artifacts
+	OutputDir = "./var"
+)
 
 // GetRelativeRootPath ...
 func GetRelativeRootPath(absRootPath, workDirRel string) (string, error) {

@@ -29,6 +29,30 @@ tool github.com/magefile/mage
 Create a `magefiles/magefile.go` and import the relevant target for the tech
 stack.
 
+### Go app
+
+```go title="magefiles/magefile.go"
+package main
+
+import (
+	//mage:import
+	_ "github.com/coopnorge/mage/targets/goapp"
+)
+```
+
+#### Targets for Go apps
+
+- [X] Go run
+- [X] Go build
+- [X] Go tests
+- [X] Go linting
+- [ ] Go mock generation
+- [ ] Docker image build
+- [ ] Docker image push
+- [ ] Techdocs CI
+- [ ] Kubernetes CI
+- [ ] Security Scanning
+
 ### Go module
 
 ```go title="magefiles/magefile.go"
@@ -40,7 +64,7 @@ import (
 )
 ```
 
-#### Includes
+#### Targets for Go modules
 
 - [X] Go tests
 - [X] Go linting
