@@ -16,3 +16,5 @@ spec:
         checks:
         - "cicd"
         - "policy-bot: main"
+  actions:
+    enableReusableWorkflowsForOrganizationAccess: true
