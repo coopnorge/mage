@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	// OsArchMatrix defines what CPU architectures to build binaries for
+	// OsArchMatrix defines the CPU architectures to build binaries for
 	OsArchMatrix = []map[string]string{
 		{
 			"GOOS": "darwin", "GOARCH": "arm64",
@@ -38,13 +38,71 @@ var (
 	}
 )
 
-// Generate files
+// Generate runs commands described by directives within existing files with
+// the intent to generate Go code. Those commands can run any process but the
+// intent is to create or update Go source files
+//
+// For details see [golang.Generate].
 func (Go) Generate(ctx context.Context) error {
 	mg.CtxDeps(ctx, golang.Generate)
 	return nil
 }
 
-// Build binaries from main package when found in cmd directories
+// Build compiles all commands
+//
+// Build will recursively search for all Go modules in the repository
+// containing a cmd package. The cmd package is expected to contain main
+// packages. The binaries are written to [core.OutputDir].
+//
+// Given the input:
+//
+//	.
+//	├── app1
+//	│   ├── cmd
+//	│   │   ├── dataloader
+//	│   │   │   └── main.go
+//	│   │   └── server
+//	│   │       └── main.go
+//	│   ├── go.mod
+//	│   └── go.sum
+//	└── app2
+//	    ├── cmd
+//	    │   ├── dataloader
+//	    │   │   └── main.go
+//	    │   └── server
+//	    │       └── main.go
+//	    ├── go.mod
+//	    └── go.sum
+//
+// [Go.Build] will create:
+//
+//	./var
+//	├── app1
+//	│   └── bin
+//	│       ├── darwin
+//	│       │   └── arm64
+//	│       │       ├── dataloader
+//	│       │       └── server
+//	│       └── linux
+//	│           ├── amd64
+//	│           │   ├── dataloader
+//	│           │   └── server
+//	│           └── arm64
+//	│               ├── dataloader
+//	│               └── server
+//	└── app2
+//	    └── bin
+//	        ├── darwin
+//	        │   └── arm64
+//	        │       ├── dataloader
+//	        │       └── server
+//	        └── linux
+//	            ├── amd64
+//	            │   ├── dataloader
+//	            │   └── server
+//	            └── arm64
+//	                ├── dataloader
+//	                └── server
 func (Go) Build(ctx context.Context) error {
 	mg.CtxDeps(ctx, Go.Validate)
 
@@ -134,31 +192,42 @@ func (Go) Run(ctx context.Context, workingDirectory, bin string) error {
 	return devtool.Run("golang", "go", "-C", workingDirectory, "run", fmt.Sprintf("%s/%s/main.go", cmdDir, bin))
 }
 
-// Validate files
+// Validate runs validation check on the Go source code in the repository.
+//
+// For details see [Go.Test] and [Go.Lint].
 func (Go) Validate(ctx context.Context) error {
 	mg.CtxDeps(ctx, Go.Test, Go.Lint)
 	return nil
 }
 
-// Fix files
+// Fix runs auto fixes on the Go source code in the repository.
+//
+// For details see [Go.LintFix].
 func (Go) Fix(ctx context.Context) error {
 	mg.CtxDeps(ctx, Go.LintFix)
 	return nil
 }
 
-// Test runs the test suite
+// Test automates testing the packages named by the import paths, see also: go
+// test.
+//
+// For details see [golangTargets.Test].
 func (Go) Test(ctx context.Context) error {
 	mg.CtxDeps(ctx, mg.F(golangTargets.Test))
 	return nil
 }
 
-// Lint all source code
+// Lint checks all Go source code for issues.
+//
+// For details see [golangTargets.Lint].
 func (Go) Lint(ctx context.Context) error {
 	mg.CtxDeps(ctx, golangTargets.Lint)
 	return nil
 }
 
-// LintFix linting issues
+// LintFix fixes found issues (if it's supported by the linters)
+//
+// For details see [golangTargets.LintFix].
 func (Go) LintFix(ctx context.Context) error {
 	mg.CtxDeps(ctx, golangTargets.LintFix)
 	return nil

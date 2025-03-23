@@ -6,6 +6,9 @@ metadata:
   annotations:
     github.com/project-slug: coopnorge/mage
     backstage.io/techdocs-ref: dir:.
+  links:
+    - title: Go package documentation
+      url: https://pkg.go.dev/github.com/coopnorge/mage
 spec:
   type: library
   lifecycle: experimental
