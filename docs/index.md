@@ -2,6 +2,8 @@
 
 [Mage](https://magefile.org/) CI targets
 
+Package Documentation: <https://pkg.go.dev/github.com/coopnorge/mage>
+
 ## Usage
 
 ```shell
@@ -80,6 +82,12 @@ import (
 
 ## Run CI
 
-```shell
+```console
 go tool mage <target>
+```
+
+## List targets
+
+```console
+go tool mage -l
 ```

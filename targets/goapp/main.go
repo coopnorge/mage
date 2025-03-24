@@ -1,3 +1,11 @@
+// Package goapp implements the [mage targets] for working with Go
+// applications.
+//
+// To enable the targets in a repository [import] them in
+// magefiles/magefile.go.
+//
+// [mage targets]: https://magefile.org/targets/
+// [import]: https://magefile.org/importing/
 package goapp
 
 import (
@@ -8,31 +16,43 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
-// Generate files
+// Generate runs commands described by directives within existing files with
+// the intent to generate Go code. Those commands can run any process but the
+// intent is to create or update Go source files
+//
+// For details see [Go.Generate].
 func Generate(ctx context.Context) error {
 	mg.CtxDeps(ctx, Go.Generate)
 	return nil
 }
 
-// Build OCI image
+// Build creates deployable artifacts from the source code in the repository.
+//
+// For details see [Go.Build].
 func Build(ctx context.Context) error {
 	mg.SerialCtxDeps(ctx, Validate, Go.Build)
 	return nil
 }
 
-// Validate all code
+// Validate runs validation check on the source code in the repository.
+//
+// For details see [Go.Validate].
 func Validate(ctx context.Context) error {
 	mg.CtxDeps(ctx, Go.Validate)
 	return nil
 }
 
-// Fix files
+// Fix fixes found issues (if it's supported by the linters)
+//
+// For details see [Go.Fix].
 func Fix(ctx context.Context) error {
 	mg.CtxDeps(ctx, Go.Fix)
 	return nil
 }
 
-// Clean validate and build output
+// Clean removes validate and build output.
+//
+// Deletes the [core.OutputDir].
 func Clean(_ context.Context) error {
 	return sh.Rm(core.OutputDir)
 }
