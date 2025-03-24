@@ -1,0 +1,36 @@
+name: Release Tagger
+on:
+  release:
+    types:
+      - released
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  tag:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Setup Git
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+      - name: Remove old tag and tag main with vX
+        run: |
+          git checkout main
+          # Extract vX from vX.Y.Z
+          NEW_TAG=$(echo "${{ github.event.release.tag_name }}" | cut -d'.' -f1)
+          # Check if tag already exists and delete if it does
+          if git show-ref --tags $NEW_TAG; then
+              git tag -d $NEW_TAG
+              git push --delete origin $NEW_TAG
+          fi
+          # Create new tag
+          git tag $NEW_TAG
+          git push origin refs/tags/$NEW_TAG
