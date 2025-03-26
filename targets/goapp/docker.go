@@ -150,30 +150,6 @@ func writeImageMetadata() error {
 	return os.WriteFile(path.Join(core.OutputDir, "oci-images.json"), jsonString, 0644)
 }
 
-// Load ...
-func (Docker) Load(ctx context.Context) error {
-	mg.CtxDeps(ctx, mg.F(Docker.BuildAndPush, false))
-
-	goModules, err := golang.FindGoModules(".")
-	if err != nil {
-		return err
-	}
-
-	cmds, err := findCommands(goModules)
-	if err != nil {
-		return err
-	}
-
-	for _, cmd := range cmds {
-		imagePath := imagePath(cmd.goModule, cmd.binary)
-		err = sh.RunV("docker", "load", "-i", imagePath)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // Validate Dockerfiles
 func (Docker) Validate(_ context.Context) error {
 	return docker.Validate(dockerfile)
