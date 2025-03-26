@@ -107,7 +107,7 @@ type Docker mg.Namespace
 //	    }
 //	  }
 //	}
-func (Docker) BuildAndPush(ctx context.Context, push bool) error {
+func (Docker) BuildAndPush(ctx context.Context, shouldPush bool) error {
 	mg.CtxDeps(ctx, Go.Build)
 
 	goModules, err := golang.FindGoModules(".")
@@ -122,19 +122,19 @@ func (Docker) BuildAndPush(ctx context.Context, push bool) error {
 
 	deps := []any{}
 	for _, cmd := range cmds {
-		deps = append(deps, mg.F(buildAndPush, cmd.goModule, cmd.binary, push))
+		deps = append(deps, mg.F(buildAndPush, cmd.goModule, cmd.binary, shouldPush))
 	}
 	mg.CtxDeps(ctx, deps...)
 
 	return writeImageMetadata()
 }
 
-func buildAndPush(_ context.Context, app, binary string, push bool) error {
+func buildAndPush(_ context.Context, app, binary string, shouldPush bool) error {
 	imageName := docker.FullyQualifiedlImageName(app, binary)
 	imagePath := imagePath(app, binary)
 	metadataPath := metadataPath(app, binary)
 
-	return docker.BuildAndPush(dockerfile, platforms, imageName, ".", imagePath, metadataPath, app, binary, push)
+	return docker.BuildAndPush(dockerfile, platforms, imageName, ".", imagePath, metadataPath, app, binary, shouldPush)
 }
 
 func writeImageMetadata() error {

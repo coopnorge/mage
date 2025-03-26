@@ -41,7 +41,7 @@ func Validate(dockerfileContent string) error {
 // BuildAndPush an OCI image for the provided platforms. Setting push to true
 // will push the images to the registries. When push is true images are not
 // tagged with latest.
-func BuildAndPush(dockerfileContent, platforms, image, dockerContext, imagePath, metadatafile, app, binary string, push bool) error {
+func BuildAndPush(dockerfileContent, platforms, image, dockerContext, imagePath, metadatafile, app, binary string, shouldPush bool) error {
 	versionTag := getVersionTag()
 	versionTaggedImage := fmt.Sprintf("%s:%s", image, versionTag)
 	latestImage := fmt.Sprintf("%s:latest", image)
@@ -78,12 +78,12 @@ func BuildAndPush(dockerfileContent, platforms, image, dockerContext, imagePath,
 		"--build-arg", fmt.Sprintf("BINARY=%s", binary),
 		"--metadata-file", metadatafile,
 		"--platform", platforms,
-		"--output", fmt.Sprintf("type=image,push=%v", push),
+		"--output", fmt.Sprintf("type=image,push=%v", shouldPush),
 		"--output", fmt.Sprintf("type=oci,dest=%s", imagePath),
 		"-t", versionTaggedImage,
 	}
 
-	if !push {
+	if !shouldPush {
 		args = append(
 			args,
 			"-t", latestImage,

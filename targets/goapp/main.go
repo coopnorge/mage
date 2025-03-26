@@ -75,11 +75,11 @@ func Generate(ctx context.Context) error {
 //
 // For details see [Go.Build] and [Docker.BuildAndPush].
 func Build(ctx context.Context) error {
-	push, err := push()
+	shouldPush, err := shouldPush()
 	if err != nil {
 		return err
 	}
-	mg.SerialCtxDeps(ctx, Validate, Go.Build, mg.F(Docker.BuildAndPush, push))
+	mg.SerialCtxDeps(ctx, Validate, Go.Build, mg.F(Docker.BuildAndPush, shouldPush))
 	return nil
 }
 
@@ -106,7 +106,7 @@ func Clean(_ context.Context) error {
 	return sh.Rm(core.OutputDir)
 }
 
-func push() (bool, error) {
+func shouldPush() (bool, error) {
 	val, ok := os.LookupEnv(PushEnv)
 	if !ok || val == "" {
 		return false, nil
