@@ -12,7 +12,6 @@ import (
 	"github.com/coopnorge/mage/internal/golang"
 
 	"github.com/magefile/mage/mg"
-	"github.com/magefile/mage/sh"
 )
 
 const (
