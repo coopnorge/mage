@@ -101,6 +101,8 @@ jobs:
     uses: ./.github/workflows/mage.yaml
     permissions:
       contents: read
+      id-token: write
+      packages: read
     secrets: inherit
 
   techdocs:
