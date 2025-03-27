@@ -230,5 +230,5 @@ func createDirForOutput(file string) error {
 }
 
 func getVersionTag() string {
-	return time.Now().Format("v2006.01.02.150405")
+	return time.Now().Format("v2006.01.02150405")
 }
