@@ -25,7 +25,7 @@ func (Go) Generate(ctx context.Context) error {
 //
 // See [Go.Test] and [Go.Lint] for details.
 func (Go) Validate(ctx context.Context) error {
-	mg.CtxDeps(ctx, Go.Test, Go.Lint)
+	mg.SerialCtxDeps(ctx, Go.Test, Go.Lint)
 	return nil
 }
 

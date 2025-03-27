@@ -196,7 +196,7 @@ func (Go) Run(ctx context.Context, workingDirectory, bin string) error {
 //
 // For details see [Go.Test] and [Go.Lint].
 func (Go) Validate(ctx context.Context) error {
-	mg.CtxDeps(ctx, Go.Test, Go.Lint)
+	mg.SerialCtxDeps(ctx, Go.Test, Go.Lint)
 	return nil
 }
 
