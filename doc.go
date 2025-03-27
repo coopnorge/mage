@@ -21,11 +21,11 @@ module and mage as as tool.
 	go get github.com/coopnorge/mage@latest
 	go get -tool github.com/magefile/mage
 
-Configure mage in magefiles/magefile.go (goapp is used for the example).
+Configure mage in magefiles/magefile.go (golib is used for the example).
 
 	import (
 		//mage:import
-		_ "github.com/coopnorge/mage/targets/goapp"
+		_ "github.com/coopnorge/mage/targets/golib"
 	)
 
 In the repository add a GitHub Actions Workflow
