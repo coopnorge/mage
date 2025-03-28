@@ -3,6 +3,7 @@ package golang
 import (
 	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/devtool"
+	"github.com/magefile/mage/mg"
 )
 
 const coverageReport = "coverage.out"
@@ -47,6 +49,10 @@ func FindGoModules(base string) ([]string, error) {
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	for _, v := range directories {
+		mg.Deps(mg.F(DownloadModules, v))
 	}
 	return directories, nil
 }
@@ -128,4 +134,10 @@ func LintFix(directory, golangCILintCfg string) error {
 		return err
 	}
 	return devtool.Run("golangci-lint", "bash", "-c", fmt.Sprintf("cd %s && golangci-lint run --verbose --timeout 5m --fix --config %s ./...", directory, lintCfgPath))
+}
+
+// DownloadModules downloads Go modules locally
+func DownloadModules(directory string) error {
+	log.Printf("Downloading modules for dir %q", directory)
+	return devtool.Run("golang", "go", "-C", directory, "mod", "download")
 }
