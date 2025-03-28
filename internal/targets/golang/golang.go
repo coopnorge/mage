@@ -21,6 +21,7 @@ var (
 // the intent to generate Go code. Those commands can run any process but the
 // intent is to create or update Go source files
 func Generate(ctx context.Context) error {
+	mg.CtxDeps(ctx, DownloadModules)
 	directories, err := golang.FindGoModules(".")
 	if err != nil {
 		return err
@@ -43,6 +44,7 @@ func generate(ctx context.Context, workingDirectory string) error {
 // Test automates testing the packages named by the import paths, see also: go
 // test.
 func Test(ctx context.Context) error {
+	mg.CtxDeps(ctx, DownloadModules)
 	directories, err := golang.FindGoModules(".")
 	if err != nil {
 		return err
@@ -64,6 +66,7 @@ func test(ctx context.Context, workingDirectory string) error {
 
 // Lint runs the linters
 func Lint(ctx context.Context) error {
+	mg.CtxDeps(ctx, DownloadModules)
 	directories, err := golang.FindGoModules(".")
 	if err != nil {
 		return err
@@ -85,6 +88,7 @@ func lint(ctx context.Context, workingDirectory string) error {
 
 // LintFix fixes found issues (if it's supported by the linters)
 func LintFix(ctx context.Context) error {
+	mg.CtxDeps(ctx, DownloadModules)
 	directories, err := golang.FindGoModules(".")
 	if err != nil {
 		return err
@@ -103,4 +107,24 @@ func LintFix(ctx context.Context) error {
 func lintFix(ctx context.Context, workingDirectory string) error {
 	mg.CtxDeps(ctx, mg.F(devtool.Build, "golangci-lint", GolangToolsDockerfile))
 	return golang.LintFix(workingDirectory, golangCILintCfg)
+}
+
+// DownloadModules downloads Go modules locally
+func DownloadModules(ctx context.Context) error {
+	mg.CtxDeps(ctx, mg.F(devtool.Build, "golang", GolangToolsDockerfile))
+	directories, err := golang.FindGoModules(".")
+	if err != nil {
+		return err
+	}
+	modules := []any{}
+	for _, workDir := range directories {
+		modules = append(modules, mg.F(downloadModules, workDir))
+	}
+
+	mg.SerialCtxDeps(ctx, modules...)
+	return nil
+}
+
+func downloadModules(_ context.Context, directory string) error {
+	return golang.DownloadModules(directory)
 }

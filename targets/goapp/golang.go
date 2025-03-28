@@ -104,6 +104,7 @@ func (Go) Generate(ctx context.Context) error {
 //	                ├── dataloader
 //	                └── server
 func (Go) Build(ctx context.Context) error {
+	mg.CtxDeps(ctx, golangTargets.DownloadModules)
 	mg.CtxDeps(ctx, Go.Validate)
 
 	rootPath, err := os.Getwd()

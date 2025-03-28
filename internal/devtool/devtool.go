@@ -37,9 +37,15 @@ func RunWith(env map[string]string, tool, cmd string, args ...string) error {
 		return err
 	}
 
+	goModCache, err := sh.Output("go", "env", "GOMODCACHE")
+	if err != nil {
+		return err
+	}
+
 	call := []string{
 		"run",
 		"--rm",
+		"-v", fmt.Sprintf("%s:/go/pkg/mod", goModCache),
 		"-v", "/var/run/docker.sock:/var/run/docker.sock",
 		"-v", "$HOME/.cache:/root/.cache",
 		"-v", "$HOME/.gitconfig:/root/.gitconfig",
