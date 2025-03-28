@@ -21,6 +21,7 @@ var (
 // the intent to generate Go code. Those commands can run any process but the
 // intent is to create or update Go source files
 func Generate(ctx context.Context) error {
+	mg.CtxDeps(ctx, mg.F(devtool.Build, "golang", GolangToolsDockerfile))
 	directories, err := golang.FindGoModules(".")
 	if err != nil {
 		return err
@@ -35,14 +36,14 @@ func Generate(ctx context.Context) error {
 	return nil
 }
 
-func generate(ctx context.Context, workingDirectory string) error {
-	mg.CtxDeps(ctx, mg.F(devtool.Build, "golang", GolangToolsDockerfile))
+func generate(_ context.Context, workingDirectory string) error {
 	return golang.Generate(workingDirectory)
 }
 
 // Test automates testing the packages named by the import paths, see also: go
 // test.
 func Test(ctx context.Context) error {
+	mg.CtxDeps(ctx, mg.F(devtool.Build, "golang", GolangToolsDockerfile))
 	directories, err := golang.FindGoModules(".")
 	if err != nil {
 		return err
@@ -57,13 +58,13 @@ func Test(ctx context.Context) error {
 	return nil
 }
 
-func test(ctx context.Context, workingDirectory string) error {
-	mg.CtxDeps(ctx, mg.F(devtool.Build, "golang", GolangToolsDockerfile))
+func test(_ context.Context, workingDirectory string) error {
 	return golang.Test(workingDirectory)
 }
 
 // Lint runs the linters
 func Lint(ctx context.Context) error {
+	mg.CtxDeps(ctx, mg.F(devtool.Build, "golang", GolangToolsDockerfile))
 	directories, err := golang.FindGoModules(".")
 	if err != nil {
 		return err
@@ -85,6 +86,7 @@ func lint(ctx context.Context, workingDirectory string) error {
 
 // LintFix fixes found issues (if it's supported by the linters)
 func LintFix(ctx context.Context) error {
+	mg.CtxDeps(ctx, mg.F(devtool.Build, "golang", GolangToolsDockerfile))
 	directories, err := golang.FindGoModules(".")
 	if err != nil {
 		return err
