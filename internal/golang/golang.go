@@ -3,6 +3,7 @@ package golang
 import (
 	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -128,4 +129,10 @@ func LintFix(directory, golangCILintCfg string) error {
 		return err
 	}
 	return devtool.Run("golangci-lint", "bash", "-c", fmt.Sprintf("cd %s && golangci-lint run --verbose --timeout 5m --fix --config %s ./...", directory, lintCfgPath))
+}
+
+// DownloadModules downloads Go modules locally
+func DownloadModules(directory string) error {
+	log.Printf("Downloading modules for dir %q", directory)
+	return devtool.Run("golang", "go", "-C", directory, "mod", "download", "-x")
 }
