@@ -187,12 +187,6 @@ func (Go) build(ctx context.Context, workingDirectory, input, output, goos, goar
 		input)
 }
 
-// Run runs a cmd: mage run <cmd>
-func (Go) Run(ctx context.Context, workingDirectory, bin string) error {
-	mg.CtxDeps(ctx, Go.Validate, mg.F(devtoolTarget.Build, "golang", golangTargets.GolangToolsDockerfile))
-	return devtool.Run("golang", "go", "-C", workingDirectory, "run", fmt.Sprintf("%s/%s/main.go", cmdDir, bin))
-}
-
 // Validate runs validation check on the Go source code in the repository.
 //
 // For details see [Go.Test] and [Go.Lint].

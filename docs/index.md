@@ -49,7 +49,7 @@ import (
 
 #### Targets for Go apps
 
-- [X] Go run
+- [ ] Go run
 - [X] Go build
 - [X] Go tests
 - [X] Go linting
