@@ -7,7 +7,6 @@ import (
 	"path"
 
 	"github.com/coopnorge/mage/internal/core"
-	"github.com/coopnorge/mage/internal/devtool"
 	"github.com/coopnorge/mage/internal/golang"
 	devtoolTarget "github.com/coopnorge/mage/internal/targets/devtool"
 	golangTargets "github.com/coopnorge/mage/internal/targets/golang"
@@ -175,11 +174,11 @@ func (Go) build(ctx context.Context, workingDirectory, input, output, goos, goar
 
 	environmentalVariables := map[string]string{"GOOS": goos, "GOARCH": goarch, "CGO_ENABLED": "0"}
 
-	return devtool.RunWith(
+	return golang.DevtoolGo(
 		environmentalVariables,
-		"golang",
 		"go",
-		"-C", workingDirectory,
+		"-C",
+		workingDirectory,
 		"build",
 		"-v",
 		"-tags='datadog.no_waf'",

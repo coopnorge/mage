@@ -68,7 +68,7 @@ func isDotDirectory(path string, d fs.DirEntry) bool {
 // the intent to generate Go code. Those commands can run any process but the
 // intent is to create or update Go source files
 func Generate(directory string) error {
-	return devtoolGo("go","-C", directory,"generate","./...")
+	return DevtoolGo(nil, "go", "-C", directory, "generate", "./...")
 }
 
 // Test automates testing the packages named by the import paths, see also: go
@@ -90,7 +90,7 @@ func Test(directory string) error {
 
 	output := path.Join(relativeRootPath, core.OutputDir, directory, coverageReport)
 
-	return devtoolGo("go","-C", directory, "test", "--cover", fmt.Sprintf("-coverprofile=%s", output), "-covermode=atomic", "-race", "-tags='datadog.no_waf'", "./...")
+	return DevtoolGo(nil, "go", "-C", directory, "test", "--cover", fmt.Sprintf("-coverprofile=%s", output), "-covermode=atomic", "-race", "-tags='datadog.no_waf'", "./...")
 }
 
 // Lint runs the linters
@@ -106,7 +106,7 @@ func Lint(directory, golangCILintCfg string) error {
 		return err
 	}
 
-    return devtoolGolangCILint("bash","-c",fmt.Sprintf("cd %s && golangci-lint run --verbose --timeout 5m --config %s ./...", directory, lintCfgPath))
+	return DevtoolGolangCILint(nil, "bash", "-c", fmt.Sprintf("cd %s && golangci-lint run --verbose --timeout 5m --config %s ./...", directory, lintCfgPath))
 }
 
 // LintFix fixes found issues (if it's supported by the linters)
@@ -121,58 +121,73 @@ func LintFix(directory, golangCILintCfg string) error {
 	if err != nil {
 		return err
 	}
-    return devtoolGolangCILint("bash","-c",fmt.Sprintf("cd %s && golangci-lint run --verbose --timeout 5m --fix --config %s ./...", directory, lintCfgPath))
+	return DevtoolGolangCILint(nil, "bash", "-c", fmt.Sprintf("cd %s && golangci-lint run --verbose --timeout 5m --fix --config %s ./...", directory, lintCfgPath))
 }
 
 // DownloadModules downloads Go modules locally
 func DownloadModules(directory string) error {
 	log.Printf("Downloading modules for dir %q", directory)
-	return devtoolGo("go","-C", directory,"mod","download","-x")
+	return DevtoolGo(nil, "go", "-C", directory, "mod", "download", "-x")
 }
 
-func devtoolGo(cmd string, args... string) error {
-     path, err := os.Getwd()
-	 if err != nil {
-		 return err
-	 }
+// DevtoolGo runs the devtool for Go
+func DevtoolGo(env map[string]string, cmd string, args ...string) error {
+	path, err := os.Getwd()
+	if err != nil {
+		return err
+	}
 
-	 goModCache, err := sh.Output("go", "env", "GOMODCACHE")
-	 if err != nil {
-	   goModCache = "$HOME/go/pkg/mod"
-	 }
+	goModCache, err := sh.Output("go", "env", "GOMODCACHE")
+	if err != nil {
+		goModCache = "$HOME/go/pkg/mod"
+	}
 
-	 dockerArgs := []string{
-     "--volume", fmt.Sprintf("%s:/go/pkg/mod", goModCache),
-     "--volume", "/var/run/docker.sock:/var/run/docker.sock",
-     "--volume", "$HOME/.cache:/root/.cache",
-     "--volume", "$HOME/.gitconfig:/root/.gitconfig",
-     "--volume", "$HOME/.ssh:/root/.ssh",
-     "--env", "TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal",
-     "--add-host", "host.docker.internal:host-gateway",
-     "--volume", fmt.Sprintf("%s:/app", path),
-     "--workdir", "/app",
-   }
+	dockerArgs := []string{
+		"--volume", fmt.Sprintf("%s:/go/pkg/mod", goModCache),
+		"--volume", "/var/run/docker.sock:/var/run/docker.sock",
+		"--volume", "$HOME/.cache:/root/.cache",
+		"--volume", "$HOME/.gitconfig:/root/.gitconfig",
+		"--volume", "$HOME/.ssh:/root/.ssh",
+		"--env", "TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal",
+		"--add-host", "host.docker.internal:host-gateway",
+		"--volume", fmt.Sprintf("%s:/app", path),
+		"--workdir", "/app",
+	}
 
-   return devtool.Run("golang",dockerArgs,cmd, args... )
+	if env == nil {
+		env = map[string]string{}
+	}
+	for k, v := range env {
+		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", k, v))
+	}
+
+	return devtool.Run("golang", dockerArgs, cmd, args...)
 }
 
-func devtoolGolangCILint(cmd string , args... string) error {
-     path, err := os.Getwd()
-	 if err != nil {
-		 return err
-	 }
+// DevtoolGolangCILint runs the devtool for Golangci-lint
+func DevtoolGolangCILint(env map[string]string, cmd string, args ...string) error {
+	path, err := os.Getwd()
+	if err != nil {
+		return err
+	}
 
-	 goModCache, err := sh.Output("go", "env", "GOMODCACHE")
-	 if err != nil {
-	   goModCache = "$HOME/go/pkg/mod"
-	 }
+	goModCache, err := sh.Output("go", "env", "GOMODCACHE")
+	if err != nil {
+		goModCache = "$HOME/go/pkg/mod"
+	}
 
-	 dockerArgs := []string{
-     "--volume", fmt.Sprintf("%s:/go/pkg/mod", goModCache),
-     "--volume", fmt.Sprintf("%s:/app", path),
-     "--workdir", "/app",
-   }
+	dockerArgs := []string{
+		"--volume", fmt.Sprintf("%s:/go/pkg/mod", goModCache),
+		"--volume", fmt.Sprintf("%s:/app", path),
+		"--workdir", "/app",
+	}
 
-   return devtool.Run("golangci-lint", dockerArgs,cmd,args...)
+	if env == nil {
+		env = map[string]string{}
+	}
+	for k, v := range env {
+		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", k, v))
+	}
+
+	return devtool.Run("golangci-lint", dockerArgs, cmd, args...)
 }
-

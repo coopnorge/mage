@@ -37,10 +37,10 @@ func RunWith(env map[string]string, tool string, dockerRunArgs []string, cmd str
 		"--rm",
 	}
 
-		    call = append(call, dockerRunArgs...)
+	call = append(call, dockerRunArgs...)
 	call = append(call, image, cmd)
 	call = append(call, args...)
-	return sh.RunWithV(env,"docker", call...)
+	return sh.RunWithV(env, "docker", call...)
 }
 
 // Build allow a mage target to depend on a Docker image. This will
