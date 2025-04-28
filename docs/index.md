@@ -56,6 +56,7 @@ import (
 - [ ] Go mock generation
 - [X] Docker image build
 - [X] Docker image push
+- [ ] Terraform CI
 - [ ] Techdocs CI
 - [ ] Kubernetes CI
 - [ ] Security Scanning
