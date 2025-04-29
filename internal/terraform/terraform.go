@@ -65,13 +65,13 @@ func isDotDirectory(path string, d fs.DirEntry) bool {
 // Test automates testing the packages named by the import paths, see also: go
 // test.
 func Test(directory string) error {
-	return DevtoolTerraform(nil, directory, "terraform", "validate")
+	return DevtoolTerraform(nil, directory, "validate")
 }
 
 // Lint runs the linters
 func Lint(directory string) error {
 
-	err := DevtoolTerraform(nil, directory, "terraform", "fmt","-diff","-check")
+	err := DevtoolTerraform(nil, directory, "fmt","-diff","-check")
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func Lint(directory string) error {
 // LintFix fixes found issues (if it's supported by the linters)
 func LintFix(directory string) error {
 
-    err := DevtoolTerraform(nil, directory, "terraform", "fmt","-diff")
+    err := DevtoolTerraform(nil, directory, "fmt","-diff")
 	if err != nil {
 		return err
 	}
@@ -103,7 +103,7 @@ func LintFix(directory string) error {
 // DownloadModules downloads Go modules locally
 func Init(directory string) error {
 	log.Printf("Running terraform init for  %q", directory)
-	return DevtoolTerraform(nil, directory, "terraform", "init")
+	return DevtoolTerraform(nil, directory, "init")
 }
 
 
