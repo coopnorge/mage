@@ -51,3 +51,9 @@ func (Terraform) LintFix(ctx context.Context) error {
 	mg.CtxDeps(ctx, terraformTargets.LintFix)
 	return nil
 }
+
+// For details see [terraformTargets.LintFix].
+func (Terraform) Init(ctx context.Context) error {
+	mg.CtxDeps(ctx, terraformTargets.Init)
+	return nil
+}
