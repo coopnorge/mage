@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"bufio"
+	"strings"
+	"runtime"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/magefile/mage/sh"
@@ -63,12 +66,34 @@ func Build(tool, dockerfile string) error {
 	}
 	defer cleanup()
 
+    selectedTool, err := devtoolARCHSelector(tool, dockerfile)
+	if err != nil {
+		return err
+	}
+
 	return sh.RunV(
 		"docker", "buildx", "build",
 		"-f", file,
-		"--target", tool,
+		"--target", selectedTool,
 		"-t", imageName,
 		"--load",
 		path,
 	)
+}
+
+func devtoolARCHSelector(tool, dockerfile string) (string, error) {
+  scanner := bufio.NewScanner(strings.NewReader(dockerfile))
+  // FROM docker.io/hashicorp/terraform:1.5.7 AS terraform
+  for scanner.Scan() {
+    archTool := fmt.Sprintf("%s-%s",tool,runtime.GOARCH)
+	universalTool := fmt.Sprintf("%s-universal",tool)
+
+	switch toolAvailable := strings.Fields(scanner.Text())[len(strings.Fields(scanner.Text()))-1]; toolAvailable {
+    case archTool:
+	    return archTool, nil
+	case universalTool:
+		return universalTool, nil
+	}
+  }
+  return "", fmt.Errorf("Unable to find devtool for tool \"%s\" for the host architecture %s", tool,runtime.GOARCH)
 }
