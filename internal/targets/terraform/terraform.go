@@ -28,7 +28,7 @@ func Test(ctx context.Context) error {
 		testDirs = append(testDirs, mg.F(test, workDir))
 	}
 
-	mg.SerialCtxDeps(ctx, testDirs...)
+	mg.CtxDeps(ctx, testDirs...)
 	return nil
 }
 
@@ -50,7 +50,7 @@ func Lint(ctx context.Context) error {
 		lintDirs = append(lintDirs, mg.F(lint, workDir))
 	}
 
-	mg.SerialCtxDeps(ctx, lintDirs...)
+	mg.CtxDeps(ctx, lintDirs...)
 	return nil
 }
 
@@ -82,7 +82,7 @@ func lintFix(ctx context.Context, workingDirectory string) error {
 	return terraform.LintFix(workingDirectory)
 }
 
-//
+// Init (re)initializes a terraform project
 func Init(ctx context.Context) error {
 	mg.CtxDeps(ctx, mg.F(devtool.Build, "terraform", TerraformToolsDockerfile))
 	directories, err := terraform.FindTerraformProjects(".")
@@ -100,4 +100,44 @@ func Init(ctx context.Context) error {
 
 func initTerraform(_ context.Context, directory string) error {
 	return terraform.Init(directory)
+}
+
+// Lock providers locks the providers for a certain set of host systems
+func LockProviders(ctx context.Context) error {
+	mg.CtxDeps(ctx, mg.F(devtool.Build, "terraform", TerraformToolsDockerfile))
+    directories, err := terraform.FindTerraformProjects(".")
+	if err != nil {
+		return err
+	}
+	modules := []any{}
+	for _, workDir := range directories {
+		modules = append(modules, mg.F(lockProviders, workDir))
+	}
+
+	mg.SerialCtxDeps(ctx, modules...)
+	return nil
+}
+
+func lockProviders(_ context.Context, directory string) error {
+	return terraform.ProviderLock(directory)
+}
+
+
+func Clean(ctx context.Context) error {
+    directories, err := terraform.FindTerraformProjects(".")
+	if err != nil {
+		return err
+	}
+	modules := []any{}
+	for _, workDir := range directories {
+		modules = append(modules, mg.F(clean, workDir))
+	}
+
+	mg.SerialCtxDeps(ctx, modules...)
+	return nil
+
+}
+
+func clean(_ context.Context, directory string) error {
+   return terraform.Clean(directory)
 }

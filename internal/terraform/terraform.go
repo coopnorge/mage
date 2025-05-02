@@ -18,7 +18,7 @@ func IsTerraformProject(p string, d fs.DirEntry) bool {
 	if !d.IsDir() {
 		return false
 	}
-	if _, err := os.Stat(path.Join(p, ".terraform.hcl.lock")); os.IsNotExist(err) {
+	if _, err := os.Stat(path.Join(p, ".terraform.lock.hcl")); os.IsNotExist(err) {
 		return false
 	}
 	return true
@@ -76,7 +76,7 @@ func Lint(directory string) error {
 		return err
 	}
 
-    err = DevtoolTFLint(nil, directory, "tflint")
+    err = DevtoolTFLint(nil, directory,"--color", "--enable-plugin=google", "--enable-plugin=azurerm",  "--disable-rule=terraform_unused_declarations" )
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func LintFix(directory string) error {
 		return err
 	}
 
-    err = DevtoolTFLint(nil, directory, "tflint","-fix")
+    err = DevtoolTFLint(nil, directory, "-fix", "--color", "--enable-plugin=google", "--enable-plugin=azurerm",  "--disable-rule=terraform_unused_declarations")
 	if err != nil {
 		return err
 	}
@@ -100,13 +100,34 @@ func LintFix(directory string) error {
 	return nil
 }
 
-// DownloadModules downloads Go modules locally
+// Init downloads Terraform modules locally
 func Init(directory string) error {
 	log.Printf("Running terraform init for  %q", directory)
-	return DevtoolTerraform(nil, directory, "init")
+	err := DevtoolTerraform(nil, directory, "init")
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
+// ProviderLock updates the provider lock file locking poviders for a list of
+// os architecures
+func ProviderLock(directory string) error {
+	log.Printf("Running terraform provider lock  %q", directory)
+	err := DevtoolTerraform(nil, directory, "providers", "lock",
+      "-platform=linux_arm64",
+      "-platform=linux_amd64",
+      "-platform=darwin_amd64",
+      "-platform=darwin_arm64",
+      "-platform=windows_amd64",
+    )
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
+// Cleans cache in a terraform directory
 func Clean(directory string) error {
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -169,5 +190,5 @@ func DevtoolTFLint(env map[string]string, directory string, cmd string, args ...
 		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", k, v))
 	}
 
-	return devtool.Run("golangci-lint", dockerArgs, cmd, args...)
+	return devtool.Run("tflint", dockerArgs, cmd, args...)
 }

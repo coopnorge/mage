@@ -57,3 +57,16 @@ func (Terraform) Init(ctx context.Context) error {
 	mg.CtxDeps(ctx, terraformTargets.Init)
 	return nil
 }
+
+// Updates the locks.terraform.lock.hcl file. Run this when a provider has
+// changed.
+func (Terraform) LockProviders(ctx context.Context) error {
+    mg.CtxDeps(ctx, terraformTargets.LockProviders)
+	return nil
+}
+
+// Cleans the cache directory in the terraform projects
+func (Terraform) Clean(ctx context.Context) error {
+    mg.CtxDeps(ctx, terraformTargets.Clean)
+	return nil
+}
