@@ -8,65 +8,67 @@ import (
 	"github.com/magefile/mage/mg"
 )
 
-// Go is the magefile namespace to group Go commands
+// Terraform is the magefile namespace to group Terraform commands
 type Terraform mg.Namespace
 
-
-
-// For details see [Terraform.Test] and [Terraform.Lint].
+// Validate validates all terraform projects
 func (Terraform) Validate(ctx context.Context) error {
-	mg.CtxDeps(ctx, Terraform.Test, Terraform.Lint)
+	mg.CtxDeps(ctx, Terraform.Test, Terraform.Lint, Terraform.Security)
 	return nil
 }
 
-// Fix runs auto fixes on the Go source code in the repository.
-//
-// For details see [Terraform.LintFix].
+// Fix tries to fix all validation issues where possible
 func (Terraform) Fix(ctx context.Context) error {
 	mg.CtxDeps(ctx, Terraform.LintFix)
 	return nil
 }
 
-// Test automates testing the packages named by the import paths, see also: go
-// test.
-//
-// For details see [terraformTargets.Test].
+// Test tests all terraform projects
 func (Terraform) Test(ctx context.Context) error {
 	mg.CtxDeps(ctx, mg.F(terraformTargets.Test))
 	return nil
 }
 
-// Lint checks all Go source code for issues.
-//
-// For details see [terraformTargets.Lint].
+// Lint lints all terraform projects
 func (Terraform) Lint(ctx context.Context) error {
 	mg.CtxDeps(ctx, terraformTargets.Lint)
 	return nil
 }
 
-// LintFix fixes found issues (if it's supported by the linters)
-//
-// For details see [terraformTargets.LintFix].
+// LintFix tries to fix linting issues
 func (Terraform) LintFix(ctx context.Context) error {
 	mg.CtxDeps(ctx, terraformTargets.LintFix)
 	return nil
 }
 
-// For details see [terraformTargets.LintFix].
+// Init initializes a terraform projects
 func (Terraform) Init(ctx context.Context) error {
 	mg.CtxDeps(ctx, terraformTargets.Init)
 	return nil
 }
 
-// Updates the locks.terraform.lock.hcl file. Run this when a provider has
-// changed.
-func (Terraform) LockProviders(ctx context.Context) error {
-    mg.CtxDeps(ctx, terraformTargets.LockProviders)
+// InitUpgrade upgrades the terraform projects within their version
+// constraints.
+func (Terraform) InitUpgrade(ctx context.Context) error {
+	mg.CtxDeps(ctx, terraformTargets.InitUpgrade)
 	return nil
 }
 
-// Cleans the cache directory in the terraform projects
+// LockProviders pdates the locks.terraform.lock.hcl file. Run this when a provider has
+// changed.
+func (Terraform) LockProviders(ctx context.Context) error {
+	mg.CtxDeps(ctx, terraformTargets.LockProviders)
+	return nil
+}
+
+// Clean the cache directory in the terraform projects
 func (Terraform) Clean(ctx context.Context) error {
-    mg.CtxDeps(ctx, terraformTargets.Clean)
+	mg.CtxDeps(ctx, terraformTargets.Clean)
+	return nil
+}
+
+// Security scans the security posture of the terraform projects
+func (Terraform) Security(ctx context.Context) error {
+	mg.CtxDeps(ctx, terraformTargets.Security)
 	return nil
 }
