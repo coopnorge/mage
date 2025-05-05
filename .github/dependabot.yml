@@ -21,6 +21,9 @@ updates:
       interval: "daily"
     registries:
       - coop-ghcr
+    ignore:
+    - dependency-name: hashicorp/terraform
+      versions: "> 1.6.0"
   - package-ecosystem: "gomod"
     directories:
       - "**/*"
