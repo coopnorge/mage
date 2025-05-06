@@ -1,7 +1,6 @@
 package devtool
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"path"
@@ -82,11 +81,10 @@ func Build(tool, dockerfile string) error {
 }
 
 func devtoolARCHSelector(tool, dockerfile string) (string, error) {
-	scanner := bufio.NewScanner(strings.NewReader(dockerfile))
-	for scanner.Scan() {
+	for _, line := range strings.Split(dockerfile, "\n") {
 		archTool := fmt.Sprintf("%s-%s", tool, runtime.GOARCH)
 
-		switch toolAvailable := strings.Fields(scanner.Text())[3]; toolAvailable {
+		switch toolAvailable := strings.Fields(line)[3]; toolAvailable {
 		case archTool:
 			return archTool, nil
 		case tool:
