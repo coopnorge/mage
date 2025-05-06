@@ -193,9 +193,6 @@ func DevtoolTerraform(env map[string]string, directory string, cmd string, args 
 		"--workdir", path.Join("/src", directory),
 	}
 
-	if env == nil {
-		env = map[string]string{}
-	}
 	for k, v := range env {
 		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", k, v))
 	}
@@ -216,9 +213,6 @@ func DevtoolTFLint(env map[string]string, directory string, cmd string, args ...
 		"--workdir", path.Join("/src", directory),
 	}
 
-	if env == nil {
-		env = map[string]string{}
-	}
 	for k, v := range env {
 		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", k, v))
 	}
