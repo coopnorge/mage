@@ -83,16 +83,14 @@ func Build(tool, dockerfile string) error {
 
 func devtoolARCHSelector(tool, dockerfile string) (string, error) {
 	scanner := bufio.NewScanner(strings.NewReader(dockerfile))
-	// FROM docker.io/hashicorp/terraform:1.5.7 AS terraform
 	for scanner.Scan() {
 		archTool := fmt.Sprintf("%s-%s", tool, runtime.GOARCH)
-		universalTool := fmt.Sprintf("%s-universal", tool)
 
-		switch toolAvailable := strings.Fields(scanner.Text())[len(strings.Fields(scanner.Text()))-1]; toolAvailable {
+		switch toolAvailable := strings.Fields(scanner.Text())[3]; toolAvailable {
 		case archTool:
 			return archTool, nil
-		case universalTool:
-			return universalTool, nil
+		case tool:
+			return tool, nil
 		}
 	}
 	return "", fmt.Errorf("unable to find devtool for tool \"%s\" for the host architecture %s", tool, runtime.GOARCH)
