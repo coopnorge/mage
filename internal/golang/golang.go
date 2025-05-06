@@ -38,7 +38,7 @@ func FindGoModules(base string) ([]string, error) {
 			return err
 		}
 		if isDotDirectory(workDir, d) {
-			return nil
+			return filepath.SkipDir
 		}
 		if !IsGoModule(workDir, d) {
 			return nil
