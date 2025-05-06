@@ -22,8 +22,8 @@ updates:
     registries:
       - coop-ghcr
     ignore:
-    - dependency-name: hashicorp/terraform
-      versions: "> 1.6.0"
+      - dependency-name: "hashicorp/terraform"
+        versions: ">= 1.6.0"
   - package-ecosystem: "gomod"
     directories:
       - "**/*"
