@@ -55,13 +55,14 @@ func FindGoModules(base string) ([]string, error) {
 }
 
 func isDotDirectory(path string, d fs.DirEntry) bool {
-	if !d.IsDir() {
+    if !d.IsDir() {
 		return false
 	}
-	if path == "." {
+	if filepath.Base(path) == "." {
 		return false
 	}
-	return strings.HasPrefix(path, ".")
+	return strings.HasPrefix(filepath.Base(path), ".")
+
 }
 
 // Generate runs commands described by directives within existing files with
