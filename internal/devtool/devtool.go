@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
@@ -65,7 +66,7 @@ func Build(tool, dockerfile string) error {
 	}
 	defer cleanup()
 
-	selectedTool, err := devtoolARCHSelector(tool, dockerfile)
+	selectedTool, err := archSelector(tool, dockerfile)
 	if err != nil {
 		return err
 	}
@@ -80,16 +81,25 @@ func Build(tool, dockerfile string) error {
 	)
 }
 
-func devtoolARCHSelector(tool, dockerfile string) (string, error) {
+// archSelector tries to select a devtool for a certain architecture.
+// It will select the architecture based first, then fallbackback on universal
+// and errors if not fitting tool is found.
+func archSelector(tool, dockerfile string) (string, error) {
+	targets := []string{}
 	for _, line := range strings.Split(dockerfile, "\n") {
-		archTool := fmt.Sprintf("%s-%s", tool, runtime.GOARCH)
-
-		switch toolAvailable := strings.Fields(line)[3]; toolAvailable {
-		case archTool:
-			return archTool, nil
-		case tool:
-			return tool, nil
+		fields := strings.Fields(line)
+		if len(fields) > 3 {
+			targets = append(targets, fields[3])
 		}
 	}
-	return "", fmt.Errorf("unable to find devtool for tool \"%s\" for the host architecture %s", tool, runtime.GOARCH)
+
+	archTool := fmt.Sprintf("%s-%s", tool, runtime.GOARCH)
+	switch {
+	case slices.Contains(targets, archTool):
+		return archTool, nil
+	case slices.Contains(targets, tool):
+		return tool, nil
+	default:
+		return "", fmt.Errorf("unable to find devtool for tool \"%s\" for the host architecture %s or universal", tool, runtime.GOARCH)
+	}
 }
