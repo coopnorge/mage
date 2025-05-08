@@ -7,7 +7,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/magefile/mage/sh"
 
@@ -37,7 +36,7 @@ func FindGoModules(base string) ([]string, error) {
 		if err != nil {
 			return err
 		}
-		if isDotDirectory(workDir, d) {
+		if core.IsDotDirectory(workDir, d) {
 			return filepath.SkipDir
 		}
 		if !IsGoModule(workDir, d) {
@@ -52,17 +51,6 @@ func FindGoModules(base string) ([]string, error) {
 		return nil, err
 	}
 	return directories, nil
-}
-
-func isDotDirectory(path string, d fs.DirEntry) bool {
-    if !d.IsDir() {
-		return false
-	}
-	if filepath.Base(path) == "." {
-		return false
-	}
-	return strings.HasPrefix(filepath.Base(path), ".")
-
 }
 
 // Generate runs commands described by directives within existing files with

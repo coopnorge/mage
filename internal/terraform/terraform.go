@@ -7,7 +7,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/devtool"
@@ -37,7 +36,7 @@ func FindTerraformProjects(base string) ([]string, error) {
 		if err != nil {
 			return err
 		}
-		if isDotDirectory(workDir, d) {
+		if core.IsDotDirectory(workDir, d) {
 			return filepath.SkipDir
 		}
 		if !IsTerraformProject(workDir, d) {
@@ -52,16 +51,6 @@ func FindTerraformProjects(base string) ([]string, error) {
 		return nil, err
 	}
 	return directories, nil
-}
-
-func isDotDirectory(path string, d fs.DirEntry) bool {
-	if !d.IsDir() {
-		return false
-	}
-	if filepath.Base(path) == "." {
-		return false
-	}
-	return strings.HasPrefix(filepath.Base(path), ".")
 }
 
 // Test automates testing the packages named by the import paths, see also: go
@@ -96,11 +85,12 @@ func Lint(directory, tfLintCfg string) error {
 
 // LintFix fixes found issues (if it's supported by the linters)
 func LintFix(directory, tfLintCfg string) error {
-	lintCfg, cleanup, err := core.WriteTempFile(core.OutputDir, ".tflint.hcl", tfLintCfg)
+	lintCfg, cleanup, err := core.WriteTempFile(directory, ".tflint.hcl", tfLintCfg)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
+	fmt.Println("lintCfg %s",lintCfg)
 
 	err = DevtoolTerraform(nil, directory, "fmt", "-diff")
 	if err != nil {
