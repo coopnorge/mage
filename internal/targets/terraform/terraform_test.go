@@ -15,12 +15,12 @@ func TestTestTarget(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "Terraform Test should succeed",
+			name:    "Terraform Init should succeed",
 			workdir:  "tests/succes",
 			wantErr: false,
 		},
         {
-			name:    "Terraform Test should fail",
+			name:    "Terraform Init should fail",
 			workdir:  "tests/test-fail",
 			wantErr: true,
 		},
@@ -33,14 +33,12 @@ func TestTestTarget(t *testing.T) {
 		      os.RemoveAll(".terraform.lock.hcl")
 		      os.RemoveAll(".terraform")
 		    })
-			ctx := context.Background()
-			gotErr := Test(ctx)
-			if tt.wantErr {
-				assert.Error(t, gotErr)
-			} else {
-				assert.NoError(t, gotErr)
-			}
-		//assert.Equal(t, tt.want, got)
+			gotErr := Init(context.Background())
+			 if tt.wantErr {
+			 	assert.Error(t, gotErr)
+			 } else {
+			 	assert.NoError(t, gotErr)
+			 }
 
 		})
 	}
