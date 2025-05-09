@@ -24,7 +24,7 @@ func Test(ctx context.Context) error {
 	mg.CtxDeps(ctx, Init)
 	directories, err := terraform.FindTerraformProjects(".")
 
-	fmt.Printf("tf dirs: %s\n",directories)
+	fmt.Printf("tf dirs: %s\n", directories)
 
 	if err != nil {
 		return err

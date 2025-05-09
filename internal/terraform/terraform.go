@@ -90,7 +90,6 @@ func LintFix(directory, tfLintCfg string) error {
 		return err
 	}
 	defer cleanup()
-	fmt.Println("lintCfg %s",lintCfg)
 
 	err = DevtoolTerraform(nil, directory, "fmt", "-diff")
 	if err != nil {
