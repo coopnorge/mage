@@ -3,7 +3,6 @@ package terraform
 import (
 	"context"
 	_ "embed"
-	"fmt"
 
 	"github.com/coopnorge/mage/internal/targets/devtool"
 	"github.com/coopnorge/mage/internal/terraform"
@@ -23,8 +22,6 @@ var (
 func Test(ctx context.Context) error {
 	mg.CtxDeps(ctx, Init)
 	directories, err := terraform.FindTerraformProjects(".")
-
-	fmt.Printf("tf dirs: %s\n", directories)
 
 	if err != nil {
 		return err

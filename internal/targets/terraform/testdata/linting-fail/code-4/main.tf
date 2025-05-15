@@ -1,4 +1,4 @@
-terrafaaorm {
+terraform {
   required_providers {
     random = {
       source  = "hashicorp/random"
@@ -6,8 +6,7 @@ terrafaaorm {
     }
   }
 
-  required_version = "~> 1.0"
 }
 
-proveider "random" {
+provider "random" {
 }
