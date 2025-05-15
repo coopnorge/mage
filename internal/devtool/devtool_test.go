@@ -19,7 +19,7 @@ func TestGetImageName(t *testing.T) {
 		{
 			name:    "base case",
 			target:  "golang",
-			want:    "ocreg.invalid/coopnorge/devtool/golang-devtool:latest",
+			want:    "ocreg.invalid/coopnorge/github.com/coopnorge/mage/golang-devtool:latest",
 			wantErr: false,
 		},
 	}

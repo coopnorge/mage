@@ -2,9 +2,8 @@ package devtool
 
 import (
 	"fmt"
-	"os"
-	"path"
 	"runtime"
+	"runtime/debug"
 	"slices"
 	"strings"
 
@@ -14,11 +13,8 @@ import (
 
 // GetImageName returns the name of a devtools OCI image
 func GetImageName(target string) (string, error) {
-	rootPath, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("ocreg.invalid/coopnorge/%s/%s-devtool:latest", path.Base(rootPath), target), nil
+	info, _ := debug.ReadBuildInfo()
+	return fmt.Sprintf("ocreg.invalid/coopnorge/%s/%s-devtool:latest", info.Main.Path, target), nil
 }
 
 // Run will run the specified command with arguments in the
