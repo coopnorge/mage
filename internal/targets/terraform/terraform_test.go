@@ -45,7 +45,8 @@ func TestInitTarget(t *testing.T) {
 			})
 			gotErr := Init(context.Background())
 			if tt.wantErr {
-				assert.Panics(t, func() { (context.Background()) }, "this function should panic")
+				//nolint:errcheck
+				assert.Panics(t, func() { Init(context.Background()) }, "this function should panic")
 				assert.Error(t, gotErr)
 			} else {
 				assert.NoError(t, gotErr)
@@ -88,6 +89,7 @@ func TestTestTarget(t *testing.T) {
 
 			gotErr := Test(context.Background())
 			if tt.wantErr {
+				//nolint:errcheck
 				assert.Panics(t, func() { Test(context.Background()) }, "this function should panic")
 				assert.Error(t, gotErr)
 			} else {
@@ -114,7 +116,7 @@ func TestLintTarget(t *testing.T) {
 			workdir: "testdata/formatting-fail",
 			wantErr: true,
 		},
-        {
+		{
 			name:    "Terraform Lint target should on tflint fail",
 			workdir: "testdata/linting-fail",
 			wantErr: true,
@@ -136,6 +138,7 @@ func TestLintTarget(t *testing.T) {
 
 			gotErr := Lint(context.Background())
 			if tt.wantErr {
+				//nolint:errcheck
 				assert.Panics(t, func() { Lint(context.Background()) }, "this function should panic")
 				assert.Error(t, gotErr)
 			} else {
@@ -179,6 +182,7 @@ func TestLintFixTarget(t *testing.T) {
 
 			gotErr := LintFix(context.Background())
 			if tt.wantErr {
+				//nolint:errcheck
 				assert.Panics(t, func() { LintFix(context.Background()) }, "this function should panic")
 				assert.Error(t, gotErr)
 			} else {
@@ -187,12 +191,10 @@ func TestLintFixTarget(t *testing.T) {
 
 			// Lint should pass after fix
 			gotErr = Lint(context.Background())
-			assert.NoError(t,gotErr)
-
+			assert.NoError(t, gotErr)
 		})
 	}
 }
-
 
 func TestInitUpgradeTarget(t *testing.T) {
 	tests := []struct {
@@ -223,6 +225,7 @@ func TestInitUpgradeTarget(t *testing.T) {
 
 			gotErr := InitUpgrade(context.Background())
 			if tt.wantErr {
+				//nolint:errcheck
 				assert.Panics(t, func() { InitUpgrade(context.Background()) }, "this function should panic")
 				assert.Error(t, gotErr)
 			} else {
@@ -230,15 +233,13 @@ func TestInitUpgradeTarget(t *testing.T) {
 			}
 
 			// check for dirs and files
-			assert.FileExists(t,"code-5/.terraform.lock.hcl")
-			assert.DirExists(t,"code-5/.terraform")
+			assert.FileExists(t, "code-5/.terraform.lock.hcl")
+			assert.DirExists(t, "code-5/.terraform")
 
 			lockfile, gotErr := os.ReadFile("code-5/.terraform.lock.hcl")
 			assert.NoError(t, gotErr)
 			// version     = "3.7.1"
-			assert.Contains(t,string(lockfile),"version     = \"3.7.2\"")
-
-
+			assert.Contains(t, string(lockfile), "version     = \"3.7.2\"")
 		})
 	}
 }
@@ -272,15 +273,16 @@ func TestLockProvidersTarget(t *testing.T) {
 
 			gotErr := LockProviders(context.Background())
 			if tt.wantErr {
-				assert.Panics(t, func() { InitUpgrade(context.Background()) }, "this function should panic")
+				//nolint:errcheck
+				assert.Panics(t, func() { LockProviders(context.Background()) }, "this function should panic")
 				assert.Error(t, gotErr)
 			} else {
 				assert.NoError(t, gotErr)
 			}
 
 			// check for dirs and files
-			assert.FileExists(t,"code-5/.terraform.lock.hcl")
-			assert.DirExists(t,"code-5/.terraform")
+			assert.FileExists(t, "code-5/.terraform.lock.hcl")
+			assert.DirExists(t, "code-5/.terraform")
 
 			lockfile, gotErr := os.ReadFile("code-5/.terraform.lock.hcl")
 			assert.NoError(t, gotErr)
@@ -288,7 +290,7 @@ func TestLockProvidersTarget(t *testing.T) {
 			resultlockfile, gotErr := os.ReadFile("code-5/.terraform.lock.hcl")
 			assert.NoError(t, gotErr)
 
-			assert.Equal(t,lockfile,resultlockfile)
+			assert.Equal(t, lockfile, resultlockfile)
 		})
 	}
 }
