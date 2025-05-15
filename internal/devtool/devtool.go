@@ -14,7 +14,13 @@ import (
 // GetImageName returns the name of a devtools OCI image
 func GetImageName(target string) (string, error) {
 	info, _ := debug.ReadBuildInfo()
-	return fmt.Sprintf("ocreg.invalid/coopnorge/%s/%s-devtool:latest", info.Main.Path, target), nil
+
+	// dont know why this case happens, but it happens in this repo
+	repository := info.Main.Path
+	if repository == "" {
+		repository = "unknown-coopnorge"
+	}
+	return fmt.Sprintf("ocreg.invalid/%s/%s-devtool:latest", repository, target), nil
 }
 
 // Run will run the specified command with arguments in the

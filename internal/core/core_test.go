@@ -2,9 +2,9 @@ package core_test
 
 import (
 	"os"
+	"path/filepath"
 	"regexp"
 	"testing"
-	"path/filepath"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/stretchr/testify/assert"
@@ -83,7 +83,7 @@ func TestMkdirTemp(t *testing.T) {
 			assert.NoError(t, gotErr)
 			assert.DirExists(t, got)
 			//assert.Regexp(t, regexp.MustCompile(fmt.Sprintf("%s/.+", os.TempDir())), got)
-			assert.Regexp(t, regexp.MustCompile(filepath.Join(os.TempDir(),"/.+")), got)
+			assert.Regexp(t, regexp.MustCompile(filepath.Join(os.TempDir(), "/.+")), got)
 			cleanup()
 		})
 	}
