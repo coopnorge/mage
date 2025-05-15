@@ -70,7 +70,7 @@ func MkdirTemp() (string, func(), error) {
 		return "", func() {}, err
 	}
 	cleanup := func() {
-		err := os.Remove(path)
+		err := os.RemoveAll(path)
 		if err != nil {
 			panic(err)
 		}
