@@ -2,9 +2,11 @@ package core
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -68,10 +70,21 @@ func MkdirTemp() (string, func(), error) {
 		return "", func() {}, err
 	}
 	cleanup := func() {
-		err := os.Remove(path)
+		err := os.RemoveAll(path)
 		if err != nil {
 			panic(err)
 		}
 	}
 	return path, cleanup, nil
+}
+
+// IsDotDirectory checks if the supplied direcory is starts with a dot.
+func IsDotDirectory(path string, d fs.DirEntry) bool {
+	if !d.IsDir() {
+		return false
+	}
+	if filepath.Base(path) == "." {
+		return false
+	}
+	return strings.HasPrefix(filepath.Base(path), ".")
 }
