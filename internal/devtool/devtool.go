@@ -16,7 +16,9 @@ func GetImageName(target string) (string, error) {
 	repository := "unknown-coopnorge"
 	// Try to fetch repo-info from debug-info
 	if info, ok := debug.ReadBuildInfo(); ok {
-		repository = info.Main.Path
+		if info.Main.Path != "" {
+			repository = info.Main.Path
+		}
 	}
 	return fmt.Sprintf("ocreg.invalid/%s/%s-devtool:latest", repository, target), nil
 }
