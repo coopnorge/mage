@@ -70,10 +70,9 @@ func MkdirTemp() (string, func(), error) {
 		return "", func() {}, err
 	}
 	cleanup := func() {
-
 		err := os.RemoveAll(path)
-        // Dont panic in CI. GHA  has some issues with deleting
-		if err != nil && os.Getenv("CI") != "true"{
+		// Dont panic in CI. GHA  has some issues with deleting
+		if err != nil && os.Getenv("CI") != "true" {
 			panic(err)
 		}
 	}
