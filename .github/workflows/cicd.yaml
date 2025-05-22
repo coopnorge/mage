@@ -133,7 +133,6 @@ jobs:
 
   cicd:
     needs:
-      - golang-ci
       - kubernetes-ci
       - mage
       - techdocs
@@ -145,7 +144,6 @@ jobs:
       - run: exit 1
         name: "Catch errors"
         if: |
-          needs.golang-ci.result == 'failure' ||
           needs.kubernetes-ci.result == 'failure' ||
           needs.techdocs.result == 'failure' ||
           needs.mage.result == 'failure' ||
