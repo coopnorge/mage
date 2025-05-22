@@ -1,12 +1,20 @@
 package terraform
 
 import (
+	_ "embed"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/coopnorge/mage/internal/core"
+	"github.com/coopnorge/mage/internal/devtool"
+)
+
+var (
+	//go:embed testdata/tools.Dockerfile
+	// TerraformToolsDockerfile the content of tools.Dockerfile
+	TerraformToolsDockerfile string
 )
 
 func TestFindTerraformFolders(t *testing.T) {
@@ -45,6 +53,11 @@ func TestInitUpgradet(t *testing.T) {
 			workdir: "testdata/init-upgrade",
 		},
 	}
+
+	err := devtool.Build("terraform", TerraformToolsDockerfile)
+	if err != nil {
+		panic(err)
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dir, cleanup, _ := core.MkdirTemp()
@@ -78,6 +91,10 @@ func TestLockProviders(t *testing.T) {
 			name:    "Terraform LockProviders target should succeed",
 			workdir: "testdata/providers-lock",
 		},
+	}
+	err := devtool.Build("terraform", TerraformToolsDockerfile)
+	if err != nil {
+		panic(err)
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
