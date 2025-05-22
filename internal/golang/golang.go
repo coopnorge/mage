@@ -121,6 +121,12 @@ func DownloadModules(directory string) error {
 
 // DevtoolGo runs the devtool for Go
 func DevtoolGo(env map[string]string, cmd string, args ...string) error {
+	// This is a bit hacky to use the local go binary instead of the container
+	// this is used for running the integration tests on targets.
+	if os.Getenv("GO_RUNTIME") == "local" {
+		return sh.RunWithV(env, cmd, args...)
+	}
+
 	path, err := os.Getwd()
 	if err != nil {
 		return err

@@ -117,6 +117,8 @@ jobs:
       id-token: write
       packages: read
     secrets: inherit
+    with:
+      go-runtime: local
 
   techdocs:
     needs: ["setup"]

@@ -2,6 +2,7 @@ package devtool
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"runtime/debug"
 	"slices"
@@ -51,6 +52,13 @@ func RunWith(env map[string]string, tool string, dockerRunArgs []string, cmd str
 // Build allow a mage target to depend on a Docker image. This will
 // pull the image from a Docker registry.
 func Build(tool, dockerfile string) error {
+	// This is a bit hacky to use the local go binary instead of the container.
+	// We dont need to build a depenency here
+	// this is used for running the integration tests on targets.
+	if os.Getenv("GO_RUNTIME") == "local" && tool == "golang" {
+		return nil
+	}
+
 	file, cleanup, err := core.WriteTempFile(core.OutputDir, fmt.Sprintf("%s.Dockerfile", tool), dockerfile)
 	if err != nil {
 		return err

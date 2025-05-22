@@ -21,6 +21,10 @@ on:
         type: string
         default: "europe"
         description: Artifact registry region name (e.g. "europe", "europe-north1").
+      go-runtime:
+        type: string
+        default: "docker"
+        description: Run mage go related tasks in "docker" (default) or local
     outputs:
       oci-images:
         value: ${{ jobs.mage.outputs.oci-images }}
@@ -90,6 +94,7 @@ jobs:
         env:
           OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
           PUSH_IMAGE: ${{ inputs.push-oci-image }}
+          GO_RUNTIME: ${{ inputs.go-runtime }}
       - id: oci-images
         name: Output OCI images references
         run: |
