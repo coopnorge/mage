@@ -2,7 +2,7 @@ terraform {
   required_providers {
     random = {
       source  = "hashicorp/random"
-      version = "< 3.7.3"
+      version = "3.7.2"
     }
   }
 
@@ -11,3 +11,9 @@ terraform {
 
 provider "random" {
 }
+
+
+resource "random_id" "server" {
+  byte_lengtha = 8
+}
+

@@ -3,6 +3,7 @@ package terraform
 import (
 	"context"
 	_ "embed"
+	"fmt"
 
 	"github.com/coopnorge/mage/internal/targets/devtool"
 	"github.com/coopnorge/mage/internal/terraform"
@@ -22,7 +23,7 @@ var (
 func Test(ctx context.Context) error {
 	mg.CtxDeps(ctx, Init)
 	directories, err := terraform.FindTerraformProjects(".")
-
+	fmt.Println("found test dirs", directories)
 	if err != nil {
 		return err
 	}
@@ -90,11 +91,13 @@ func lintFix(ctx context.Context, workingDirectory string) error {
 func Init(ctx context.Context) error {
 	mg.CtxDeps(ctx, mg.F(devtool.Build, "terraform", TerraformToolsDockerfile))
 	directories, err := terraform.FindTerraformProjects(".")
+	fmt.Println("found dirs", directories)
 	if err != nil {
 		return err
 	}
 	modules := []any{}
 	for _, workDir := range directories {
+		fmt.Println("adding dep initTerraform", workDir)
 		modules = append(modules, mg.F(initTerraform, workDir))
 	}
 
@@ -103,6 +106,7 @@ func Init(ctx context.Context) error {
 }
 
 func initTerraform(_ context.Context, directory string) error {
+	fmt.Println("Runninng initTerraform", directory)
 	return terraform.Init(directory)
 }
 
