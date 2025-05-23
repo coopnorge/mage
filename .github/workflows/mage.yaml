@@ -82,6 +82,24 @@ jobs:
       #   with:
       #     go-version: ${{ steps.toolchain.outputs.version }}
       #     cache-dependency-path: "**/go.sum"
+      #
+      - name: "Setup spacelift credentials"
+        run: |
+          set -x
+          mkdir -p $HOME/.terraform.d
+          CREDS_FILE=$HOME/.terraform.d/credentials.tfrc.json
+          cat << EOF > $CREDS_FILE
+          {
+          "credentials": {
+            "spacelift.io" : {
+              "token": "${SPACELIFT_READ_TOKEN:=EMPTY}"
+              }
+            }
+          }
+          EOF
+        env:
+          SPACELIFT_READ_TOKEN: ${{ secrets.spacelift-read-token }}
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
