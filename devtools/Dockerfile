@@ -1,3 +1,3 @@
 # Do not remove, used by pallet validation
-FROM ghcr.io/coopnorge/engineering-docker-images/e0/devtools-kubernetes-v1beta1:latest@sha256:0522de1387dab7fbbaa88a551f3868a4967c47df0681c0263440c8dd1756dc37 AS kubernetes-devtools
-FROM ghcr.io/coopnorge/engineering-docker-images/e0/techdocs:latest@sha256:2d761dc828f3fb22a3a9fe0b584bd5276c03837788f12d8c98a5e39d0f408659 as techdocs
+FROM ghcr.io/coopnorge/engineering-docker-images/e0/devtools-kubernetes-v1beta1:latest@sha256:6a5f6e0721fe4f43909e260cab8635c8c59cf6df7ec3fff57ea400af25847d7a AS kubernetes-devtools
+FROM ghcr.io/coopnorge/engineering-docker-images/e0/techdocs:latest@sha256:8a643f54124ae72e3ec3c1eec54f07179d5ed6ee8264bda8d8053c1c6074d318 as techdocs
