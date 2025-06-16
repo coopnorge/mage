@@ -85,17 +85,17 @@ func Build(ctx context.Context) error {
 
 // Validate runs validation check on the source code in the repository.
 //
-// For details see [Go.Validate] and [Docker.Validate].
+// For details see [Go.Validate], [Terraform.Validate] and [Docker.Validate].
 func Validate(ctx context.Context) error {
-	mg.CtxDeps(ctx, Go.Validate, Docker.Validate)
+	mg.CtxDeps(ctx, Go.Validate, Docker.Validate, Terraform.Validate)
 	return nil
 }
 
 // Fix fixes found issues (if it's supported by the linters)
 //
-// For details see [Go.Fix].
+// For details see [Go.Fix] and [Terraform.Fix].
 func Fix(ctx context.Context) error {
-	mg.CtxDeps(ctx, Go.Fix)
+	mg.CtxDeps(ctx, Go.Fix, Terraform.Fix)
 	return nil
 }
 

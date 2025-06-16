@@ -1,8 +1,8 @@
 package core_test
 
 import (
-	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"testing"
 
@@ -82,7 +82,8 @@ func TestMkdirTemp(t *testing.T) {
 			got, cleanup, gotErr := core.MkdirTemp()
 			assert.NoError(t, gotErr)
 			assert.DirExists(t, got)
-			assert.Regexp(t, regexp.MustCompile(fmt.Sprintf("%s/.+", os.TempDir())), got)
+			//assert.Regexp(t, regexp.MustCompile(fmt.Sprintf("%s/.+", os.TempDir())), got)
+			assert.Regexp(t, regexp.MustCompile(filepath.Join(os.TempDir(), "/.+")), got)
 			cleanup()
 		})
 	}
