@@ -9,13 +9,13 @@ import (
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/devtool"
+	"github.com/coopnorge/mage/internal/testhelpers"
 )
 
-var (
-	//go:embed testdata/tools.Dockerfile
-	// TerraformToolsDockerfile the content of tools.Dockerfile
-	TerraformToolsDockerfile string
-)
+// TerraformToolsDockerfile the content of tools.Dockerfile
+//
+//go:embed testdata/tools.Dockerfile
+var TerraformToolsDockerfile string
 
 func TestFindTerraformFolders(t *testing.T) {
 	tests := []struct {
@@ -34,7 +34,7 @@ func TestFindTerraformFolders(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Chdir(tt.workdir)
+			testhelpers.Chdir(t, tt.workdir)
 			got, gotErr := FindTerraformProjects(".")
 			assert.NoError(t, gotErr)
 			assert.ElementsMatch(t, tt.want, got)
@@ -62,7 +62,7 @@ func TestInitUpgradet(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			dir, cleanup, _ := core.MkdirTemp()
 			_ = os.CopyFS(dir, os.DirFS(tt.workdir))
-			t.Chdir(dir)
+			testhelpers.Chdir(t, dir)
 			t.Cleanup(func() {
 				cleanup()
 			})
@@ -100,7 +100,7 @@ func TestLockProviders(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			dir, cleanup, _ := core.MkdirTemp()
 			_ = os.CopyFS(dir, os.DirFS(tt.workdir))
-			t.Chdir(dir)
+			testhelpers.Chdir(t, dir)
 			t.Cleanup(func() {
 				cleanup()
 			})

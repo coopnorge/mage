@@ -7,6 +7,7 @@ import (
 	"text/template"
 
 	"github.com/coopnorge/mage/internal/core"
+	"github.com/coopnorge/mage/internal/testhelpers"
 	"github.com/magefile/mage/sh"
 	"github.com/stretchr/testify/assert"
 )
@@ -129,7 +130,7 @@ func TestTargets(t *testing.T) {
 				panic(err)
 			}
 
-			t.Chdir(dir)
+			testhelpers.Chdir(t, dir)
 
 			goMod, err := os.Create("go.mod")
 			if err != nil {

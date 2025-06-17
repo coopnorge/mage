@@ -1,6 +1,8 @@
 module github.com/coopnorge/mage
 
-go 1.24.0
+go 1.23.0
+
+toolchain go1.24.0
 
 require (
 	github.com/magefile/mage v1.15.0
