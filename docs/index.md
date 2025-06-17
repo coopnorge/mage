@@ -92,3 +92,36 @@ go tool mage <target>
 ```console
 go tool mage -l
 ```
+
+## Run in GitHub Actions
+
+Add this job to your GitHub actions workflow
+
+### When using goapp as target
+
+```yaml
+  mage:
+    uses: coopnorge/mage/.github/workflows/mage.yaml@main
+    permissions:
+      contents: read
+      id-token: write
+      packages: read
+    secrets: inherit
+    with:
+      oci-image-base: europe-docker.pkg.dev/helloworld-shared-0918
+      push-oci-image: ${{ github.ref == 'refs/heads/main' }}
+      workload-identity-provider: projects/889992792607/locations/global/workloadIdentityPools/github-actions/providers/github-actions-provider
+      service-account: gh-ap-helloworld@helloworld-shared-0918.iam.gserviceaccount.com
+```
+
+### When using golib as target
+
+```yaml
+  mage:
+    uses: coopnorge/mage/.github/workflows/mage.yaml@main
+    permissions:
+      contents: read
+      id-token: write
+      packages: read
+    secrets: inherit
+```
