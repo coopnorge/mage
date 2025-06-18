@@ -17,6 +17,10 @@ func IsTerraformProject(p string, d fs.DirEntry) bool {
 	if !d.IsDir() {
 		return false
 	}
+	// skip the examples dir form validation this could be more advanced
+	if filepath.Base(p) == "examples" {
+		return false
+	}
 	files, err := filepath.Glob(p + "/*.tf")
 	if err != nil {
 		panic("Unable to list .tf files")
@@ -165,6 +169,17 @@ func Security(directory string) error {
 	return DevtoolTrivy(nil, directory, "config", "--exit-code", "1", "--misconfig-scanners=terraform", "./")
 }
 
+// Docs validate if the README of a module are up to date with the
+// content of the module
+func Docs(directory string) error {
+	return DevtoolTerraformDocs(nil, directory, ".", "-c", "terraform-docs.yml", "--output-check")
+}
+
+// DocsFix updates the README to the configuration of the module
+func DocsFix(directory string) error {
+	return DevtoolTerraformDocs(nil, directory, ".", "-c", "terraform-docs.yml")
+}
+
 // DevtoolTerraform runs the devtool for terraform
 func DevtoolTerraform(env map[string]string, directory string, cmd string, args ...string) error {
 	cwd, err := os.Getwd()
@@ -227,4 +242,23 @@ func DevtoolTrivy(env map[string]string, directory string, cmd string, args ...s
 	}
 
 	return devtool.Run("trivy", dockerArgs, cmd, args...)
+}
+
+// DevtoolTerraformDocs the devtool for trivy
+func DevtoolTerraformDocs(env map[string]string, directory string, cmd string, args ...string) error {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	dockerArgs := []string{
+		"--volume", fmt.Sprintf("%s:/src", cwd),
+		"--workdir", path.Join("/src", directory),
+	}
+
+	for k, v := range env {
+		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", k, v))
+	}
+
+	return devtool.Run("terraform-docs", dockerArgs, cmd, args...)
 }
