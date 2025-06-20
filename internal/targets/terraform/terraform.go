@@ -191,3 +191,45 @@ func Security(ctx context.Context) error {
 func security(_ context.Context, directory string) error {
 	return terraform.Security(directory)
 }
+
+// DocsValidate implements validation of terraform module documentation
+func DocsValidate(ctx context.Context) error {
+	mg.CtxDeps(ctx, mg.F(devtool.Build, "terraform-docs", TerraformToolsDockerfile))
+
+	directories, err := terraform.FindTerraformProjects(".")
+	if err != nil {
+		return err
+	}
+	modules := []any{}
+	for _, workDir := range directories {
+		modules = append(modules, mg.F(terraformDocs, workDir))
+	}
+
+	mg.SerialCtxDeps(ctx, modules...)
+	return nil
+}
+
+func terraformDocs(_ context.Context, directory string) error {
+	return terraform.Docs(directory)
+}
+
+// DocsValidateFix implements fixing of terraform module documentation
+func DocsValidateFix(ctx context.Context) error {
+	mg.CtxDeps(ctx, mg.F(devtool.Build, "terraform-docs", TerraformToolsDockerfile))
+
+	directories, err := terraform.FindTerraformProjects(".")
+	if err != nil {
+		return err
+	}
+	modules := []any{}
+	for _, workDir := range directories {
+		modules = append(modules, mg.F(terraformDocsFix, workDir))
+	}
+
+	mg.SerialCtxDeps(ctx, modules...)
+	return nil
+}
+
+func terraformDocsFix(_ context.Context, directory string) error {
+	return terraform.DocsFix(directory)
+}
