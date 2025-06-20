@@ -105,21 +105,21 @@ func TestTargets(t *testing.T) {
 			wantErr:     false,
 		},
 		{
-			name:        "Terraform TerraformDocs target should succeed",
+			name:        "Terraform DocsValidate target should succeed",
 			testProject: "testdata/module-success",
-			targets:     []string{"terraformmodule:terraform:docs"},
+			targets:     []string{"terraformmodule:terraform:docsvalidate"},
 			wantErr:     false,
 		},
 		{
-			name:        "Terraform TerraformDocs target should fail",
+			name:        "Terraform DocsValidate target should fail",
 			testProject: "testdata/fail-module-docs",
-			targets:     []string{"terraformmodule:terraform:docs"},
+			targets:     []string{"terraformmodule:terraform:docsvalidate"},
 			wantErr:     true,
 		},
 		{
-			name:        "Terraform TerraformDocsFix target should fix",
+			name:        "Terraform DocsValidateFix target should fix",
 			testProject: "testdata/fail-module-docs",
-			targets:     []string{"terraformmodule:terraform:docsfix", "terraformmodule:terraform:docs"},
+			targets:     []string{"terraformmodule:terraform:docsvalidatefix", "terraformmodule:terraform:docsvalidate"},
 			wantErr:     false,
 		},
 	}

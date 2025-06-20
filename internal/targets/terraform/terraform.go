@@ -192,8 +192,8 @@ func security(_ context.Context, directory string) error {
 	return terraform.Security(directory)
 }
 
-// Docs implements validation of terraform module documentation
-func Docs(ctx context.Context) error {
+// DocsValidate implements validation of terraform module documentation
+func DocsValidate(ctx context.Context) error {
 	mg.CtxDeps(ctx, mg.F(devtool.Build, "terraform-docs", TerraformToolsDockerfile))
 
 	directories, err := terraform.FindTerraformProjects(".")
@@ -213,8 +213,8 @@ func terraformDocs(_ context.Context, directory string) error {
 	return terraform.Docs(directory)
 }
 
-// DocsFix implements fixing of terraform module documentation
-func DocsFix(ctx context.Context) error {
+// DocsValidateFix implements fixing of terraform module documentation
+func DocsValidateFix(ctx context.Context) error {
 	mg.CtxDeps(ctx, mg.F(devtool.Build, "terraform-docs", TerraformToolsDockerfile))
 
 	directories, err := terraform.FindTerraformProjects(".")

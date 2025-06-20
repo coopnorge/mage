@@ -31,13 +31,13 @@ func (Terraform) Test(ctx context.Context) error {
 
 // Lint lints all terraform projects
 func (Terraform) Lint(ctx context.Context) error {
-	mg.CtxDeps(ctx, terraformTargets.Lint, terraformTargets.Docs)
+	mg.CtxDeps(ctx, terraformTargets.Lint, terraformTargets.DocsValidate)
 	return nil
 }
 
 // LintFix tries to fix linting issues
 func (Terraform) LintFix(ctx context.Context) error {
-	mg.CtxDeps(ctx, terraformTargets.LintFix, terraformTargets.DocsFix)
+	mg.CtxDeps(ctx, terraformTargets.LintFix, terraformTargets.DocsValidateFix)
 	return nil
 }
 
@@ -66,14 +66,14 @@ func (Terraform) Security(ctx context.Context) error {
 	return nil
 }
 
-// Docs scans the security posture of the terraform projects
-func (Terraform) Docs(ctx context.Context) error {
-	mg.CtxDeps(ctx, terraformTargets.Docs)
+// DocsValidate checks if the README is up to date with content of the module
+func (Terraform) DocsValidate(ctx context.Context) error {
+	mg.CtxDeps(ctx, terraformTargets.DocsValidate)
 	return nil
 }
 
-// DocsFix scans the security posture of the terraform projects
-func (Terraform) DocsFix(ctx context.Context) error {
-	mg.CtxDeps(ctx, terraformTargets.DocsFix)
+// DocsValidateFix tries to fix the README according to terraform-docs.yml.
+func (Terraform) DocsValidateFix(ctx context.Context) error {
+	mg.CtxDeps(ctx, terraformTargets.DocsValidateFix)
 	return nil
 }
