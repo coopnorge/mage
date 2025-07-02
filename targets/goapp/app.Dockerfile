@@ -45,5 +45,6 @@ ENV DD_GIT_REPOSITORY_URL=${GIT_REPOSITORY_URL}
 ENV DD_GIT_COMMIT_SHA=${GIT_COMMIT_SHA}
 
 ENV __APP_BIN=${BINARY}
+ENV APP_BIN=/usr/local/bin/${__APP_BIN}
 
-CMD ["sh", "-c", "exec /usr/local/bin/${__APP_BIN}"]
+CMD ["sh", "-c", "exec ${APP_BIN}"]
