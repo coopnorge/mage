@@ -21,6 +21,7 @@ RUN \
 RUN mkdir /root/tmp
 WORKDIR /root/tmp
 COPY ./var/${APP}/bin/${TARGETPLATFORM}/${BINARY} /usr/local/bin/
+RUN chmod +x /usr/local/bin/${BINARY}
 
 COPY --from=scuttle /scuttle /usr/local/bin/scuttle
 
