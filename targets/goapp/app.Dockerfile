@@ -21,6 +21,7 @@ RUN \
 RUN mkdir /root/tmp
 WORKDIR /root/tmp
 COPY ./var/${APP}/bin/${TARGETPLATFORM}/${BINARY} /usr/local/bin/
+RUN chmod +x /usr/local/bin/${BINARY}
 
 COPY --from=scuttle /scuttle /usr/local/bin/scuttle
 
@@ -44,8 +45,6 @@ WORKDIR ${workdir}
 ENV DD_GIT_REPOSITORY_URL=${GIT_REPOSITORY_URL}
 ENV DD_GIT_COMMIT_SHA=${GIT_COMMIT_SHA}
 
-ENV __dba_app_executable=${BINARY}
-ENV __dba_app_name=${BINARY}
+ENV APP_BIN=/usr/local/bin/${BINARY}
 
-HEALTHCHECK CMD ["sh", "-c", "exec /usr/local/bin/${__dba_app_executable} healthcheck"]
-ENTRYPOINT ["sh", "-c", "exec /usr/local/bin/${__dba_app_executable} \"${@}\"", "/usr/local/bin/${__dba_app_executable}"]
+CMD ["sh", "-c", "exec ${APP_BIN}"]
