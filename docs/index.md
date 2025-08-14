@@ -108,6 +108,16 @@ Add this job to your GitHub actions workflow
       packages: read
     secrets: inherit
     with:
+      oci-image-base: ${{ vars.PALLET_REGISTRY_URL }}
+      push-oci-image: ${{ github.ref == 'refs/heads/main' }}
+      workload-identity-provider: ${{ vars.PALLET_WORKLOAD_IDENTITY_PROVIDER }}
+      service-account: ${{ vars.PALLET_SERVICE_ACCOUNT }}
+```
+
+If you did not create a system through inventory you have to hardcode the
+inputs.
+
+```yaml
       oci-image-base: europe-docker.pkg.dev/helloworld-shared-0918
       push-oci-image: ${{ github.ref == 'refs/heads/main' }}
       workload-identity-provider: projects/889992792607/locations/global/workloadIdentityPools/github-actions/providers/github-actions-provider
