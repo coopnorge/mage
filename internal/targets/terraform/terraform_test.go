@@ -12,8 +12,8 @@ import (
 )
 
 var goModTemplateString = `module dummy
-go 1.24.0
-require github.com/coopnorge/mage v0.4.3
+go 1.25.0
+require github.com/coopnorge/mage v0.7.0
 require github.com/magefile/mage v1.15.0 // indirect
 tool github.com/magefile/mage
 replace github.com/coopnorge/mage => {{ . }}
