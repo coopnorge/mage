@@ -78,7 +78,7 @@ jobs:
       #   id: toolchain
       #   run: echo "version=$(sed -ne '/^toolchain /s/^toolchain go//p' go.mod)" >> "$GITHUB_OUTPUT"
       # - name: Set up Go
-      #   uses: actions/setup-go@v5
+      #   uses: actions/setup-go@v6
       #   with:
       #     go-version: ${{ steps.toolchain.outputs.version }}
       #     cache-dependency-path: "**/go.sum"
@@ -101,7 +101,7 @@ jobs:
           SPACELIFT_READ_TOKEN: ${{ secrets.SPACELIFT_READ_TOKEN }}
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '>=1.24.0'
           cache-dependency-path: "**/go.sum"
