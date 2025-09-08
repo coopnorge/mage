@@ -26,8 +26,8 @@ jobs:
               - '.pallet/**'
             golang:
               - '*.go'
-              - './.github/workflow/cicd.yaml'
-              - './.github/workflow/mage.yaml'
+              - '.github/workflows/cicd.yaml'
+              - '.github/workflows/mage.yaml'
               - 'docker-compose.yaml'
               - 'devtools/**'
               - 'go.*'
