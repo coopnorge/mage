@@ -2,6 +2,7 @@ package jslib
 
 import (
 	"context"
+
 	"github.com/coopnorge/mage/internal/targets/javascript"
 	"github.com/magefile/mage/mg"
 )
@@ -17,8 +18,7 @@ func (JS) Lint(ctx context.Context) error {
 	return nil
 }
 
-
-// Publish npm package to the github package
+// PublishLib publish npm package to the github package
 //
 // See [javascript.PublishLib] for details.
 func (JS) PublishLib(ctx context.Context) error {

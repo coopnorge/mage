@@ -20,11 +20,6 @@ on:
         type: boolean
         default: false
         required: false
-      npm-publish:
-        description: 'Set to true to publish github package'
-        type: boolean
-        default: false
-        required: false
       is-npm-package-private:
         description: 'Set to true if npm package to be publish is a private'
         type: boolean
@@ -35,6 +30,12 @@ on:
         type: string
         required: false
         default: 'dist'
+      release-tag:
+        description: 'The tag name of the release event.'
+        required: false
+    secrets:
+      GITHUB_TOKEN:
+        required: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -45,8 +46,7 @@ permissions:
   packages: write
 
 jobs:
-  lint:
-    if: ${{ inputs.lint }}
+  mage:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -62,29 +62,15 @@ jobs:
         run: go install tool
 
       - name: Lint
+        if: ${{ inputs.lint }}
         run: "go tool mage -v js:lint"
 
-  publish:
-    runs-on: ubuntu-24.04
-    if: ${{ inputs.npm-publish }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '>=1.24.0'
-          cache-dependency-path: "**/go.sum"
-
-      - name: Install go Tools
-        run: go install tool
-
-      - name: Publish to GitHub Package Registry
+      - name: Publish
+        if: ${{ inputs.release-tag }}
         run: "go tool mage -v js:publishlib"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PRIVATE: ${{ inputs.is-npm-package-private }}
           DIST_DIR: ${{ inputs.build-output-dir }}
-          GITHUB_TAGNAME: ${{ github.event.release.tag_name }}
+          GITHUB_TAGNAME: ${{ inputs.release-tag }}
 
