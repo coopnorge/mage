@@ -74,15 +74,6 @@ jobs:
           password: ${{ steps.gcp-auth.outputs.access_token }}
       - name: Safe Git Workspace
         run: git config --global --add safe.directory /app
-      # - name: Detect Go toolchain
-      #   id: toolchain
-      #   run: echo "version=$(sed -ne '/^toolchain /s/^toolchain go//p' go.mod)" >> "$GITHUB_OUTPUT"
-      # - name: Set up Go
-      #   uses: actions/setup-go@v5
-      #   with:
-      #     go-version: ${{ steps.toolchain.outputs.version }}
-      #     cache-dependency-path: "**/go.sum"
-      #
       - name: "Setup spacelift credentials"
         run: |
           set -x
@@ -103,7 +94,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '>=1.24.0'
+          go-version-file: go.mod
           cache-dependency-path: "**/go.sum"
       - name: Install go Tools
         run: go install tool
