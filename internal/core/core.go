@@ -89,3 +89,10 @@ func IsDotDirectory(path string, d fs.DirEntry) bool {
 	}
 	return strings.HasPrefix(filepath.Base(path), ".")
 }
+
+// FileExists checks if the file in given path exists or not.
+func FileExists(path string) bool {
+	_, err := os.Stat(path)
+
+	return err == nil
+}
