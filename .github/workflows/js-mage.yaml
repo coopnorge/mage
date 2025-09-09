@@ -1,0 +1,98 @@
+name: mage
+
+on:
+  workflow_call:
+    inputs:
+      project-type:
+        description: 'Is it js library or application. Use "jslib" or "jsapp"'
+        required: true
+        type: string
+      skip-build:
+        description: 'Set to true if project do not need to be build'
+        type: boolean
+        default: false
+        required: false
+      build-command:
+        description: 'NPM project build command. Defaults to build'
+        type: string
+        default: 'build'
+        required: false
+      lint:
+        default: true
+        type: boolean
+        required: false
+        description: 'Set to true if you want to run'
+      test:
+        description: 'Set to true if project needs to run test'
+        type: boolean
+        default: false
+        required: false
+      private:
+        description: 'Set to true if npm package to be publish is a private'
+        type: boolean
+        required: false
+        default: false
+      app-deploy-env:
+        type: string
+        description: 'Use "production", "dev", "test", "staging", etc'
+        required: false
+        default: "production"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  mage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.24.0'
+          cache-dependency-path: "**/go.sum"
+
+      - name: Install go Tools
+        run: go install tool
+
+      - name: Lint
+        if: ${{ inputs.lint }}
+        run: "go tool mage -v ${{ inputs.project-type}}:lint"
+
+      - name: Publish
+        if: ${{ github.ref == 'refs/heads/main' && github.event.release.tag_name && inputs.project-type == 'jslib' }}
+        run: "go tool mage -v jslib:publish"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRIVATE: ${{ inputs.is-npm-package-private }}
+          DIST_DIR: ${{ inputs.build-output-dir }}
+          GITHUB_TAGNAME: ${{ github.event.release.tag_name }}
+          SKIP_BUILD: ${{ github.skip-build }}
+
+      - name: Build app and Push to docker repository
+        if: ${{ github.ref == 'refs/heads/main' && inputs.project-type == 'jsapp' }}
+        run: "go tool mage -v jsapp:build"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BUILD_COMMAND: ${{ inputs.build-command }}
+          DEPLOY_ENV: ${{ inputs.app-deploy-env }}
+
+      - id: oci-images
+        name: Output OCI images references
+        if: ${{ github.ref == 'refs/heads/main' && inputs.project-type == 'jsapp' }}
+        run: |
+          if [ -f ./var/oci-images.json ]; then
+            echo "images=$(cat ./var/oci-images.json)" >> $GITHUB_OUTPUT
+          else
+            echo "images={}" >> $GITHUB_OUTPUT
+          fi
+      - name: Show output
+        if: ${{ github.ref == 'refs/heads/main' && inputs.project-type == 'jsapp' }}
+        run: tree var/
