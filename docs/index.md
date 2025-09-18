@@ -135,3 +135,30 @@ inputs.
       packages: read
     secrets: inherit
 ```
+
+## Troubleshooting
+
+- During build the command ``` git status --porcelain ```
+  returns the error message
+  ``` fatal: detected dubious ownership in repository at '/src' ```
+
+  Solution: Add this lines to ``` .gitconfig ```
+
+```shell
+  [safe]
+    directory = *
+```
+
+- During the build you get the error message
+
+```shell
+  ERROR: failed to build: OCI exporter is not supported for the docker 
+  driver. Switch to a different driver, or turn on the containerd image store,
+  and try again. Learn more at https://docs.docker.com/go/build-exporters/
+```
+
+  Solution:
+
+```shell
+  DOCKER_BUILDKIT=1 docker buildx create --use --driver docker-container
+```
