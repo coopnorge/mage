@@ -33,3 +33,20 @@ func NormalizeGitURL(url string) (string, error) {
 	}
 	return "", fmt.Errorf("unable to parse remote url: %s", url)
 }
+
+// DiffToMain returns a list of files that have been changed
+// compared to the main branch. Files have staged or committed.
+func DiffToMain() ([]string, error) {
+	// git diff
+	// --name-only # only list file names
+	// --no-renames # rename of file is shown as delete and add
+	changedFiles := []string{}
+	gitDiff, err := sh.Output("git", "diff", "--name-only", "--no-renames", "main")
+	if err != nil {
+		return []string{}, err
+	}
+	for _, line := range strings.Split(gitDiff, "\n") {
+		changedFiles = append(changedFiles, line)
+	}
+	return changedFiles, nil
+}

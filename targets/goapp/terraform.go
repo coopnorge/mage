@@ -72,3 +72,10 @@ func (Terraform) Security(ctx context.Context) error {
 	mg.CtxDeps(ctx, terraformTargets.Security)
 	return nil
 }
+
+// Changes returns the string true or false depending on the fact that
+// the current branch contains changes compared to the main branch.
+func (Terraform) Changes(ctx context.Context) error {
+	mg.CtxDeps(ctx, terraformTargets.Changes)
+	return nil
+}

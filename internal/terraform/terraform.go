@@ -10,6 +10,7 @@ import (
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/devtool"
+	"github.com/coopnorge/mage/internal/git"
 )
 
 // IsTerraformProject returns true if a directory contains a go module.
@@ -55,6 +56,27 @@ func FindTerraformProjects(base string) ([]string, error) {
 		return nil, err
 	}
 	return directories, nil
+}
+
+// HasChanges checks if the current branch has any terraform changes compared
+// to the main branch
+func HasChanges(terraformProjects []string) (bool,error) {
+    changedFiles,err := git.DiffToMain()
+	if err != nil {
+		return false, err
+	}
+	for _, change := range changedFiles {
+		for _, terraformProject := range terraformProjects {
+			match, err := path.Match(fmt.Sprintf("%s/*",terraformProject),change)
+		    if err != nil {
+				return false, err
+			}
+			if match  {
+				return true,nil
+			}
+		}
+	}
+	return false,nil
 }
 
 // Test automates testing the packages named by the import paths, see also: go

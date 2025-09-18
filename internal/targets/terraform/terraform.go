@@ -233,3 +233,24 @@ func DocsValidateFix(ctx context.Context) error {
 func terraformDocsFix(_ context.Context, directory string) error {
 	return terraform.DocsFix(directory)
 }
+
+// Changes implements a target that check if the current branch has changes
+// related to main branch
+func Changes(ctx context.Context) error {
+
+	directories, err := terraform.FindTerraformProjects(".")
+	if err != nil {
+		return err
+	}
+	changes, err := terraform.HasChanges(directories)
+	if err != nil {
+		return err
+	}
+
+	if changes {
+		fmt.Println("true")
+		return nil
+	}
+	fmt.Println("false")
+	return nil
+}
