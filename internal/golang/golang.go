@@ -63,7 +63,7 @@ func Generate(directory string) error {
 // Test automates testing the packages named by the import paths, see also: go
 // test.
 func Test(directory string) error {
-	err := os.MkdirAll(path.Join(core.OutputDir, directory), 0700)
+	err := os.MkdirAll(path.Join(core.OutputDir, directory), 0o700)
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func Lint(directory, golangCILintCfg string) error {
 		return err
 	}
 
-	return DevtoolGolangCILint(nil, "bash", "-c", fmt.Sprintf("cd %s && golangci-lint run --verbose --timeout 5m --config %s ./...", directory, lintCfgPath))
+	return DevtoolGolangCILint(nil, "bash", "-c", fmt.Sprintf("cd %s && golangci-lint run --verbose --timeout 10m --config %s ./...", directory, lintCfgPath))
 }
 
 // LintFix fixes found issues (if it's supported by the linters)
@@ -110,7 +110,7 @@ func LintFix(directory, golangCILintCfg string) error {
 	if err != nil {
 		return err
 	}
-	return DevtoolGolangCILint(nil, "bash", "-c", fmt.Sprintf("cd %s && golangci-lint run --verbose --timeout 5m --fix --config %s ./...", directory, lintCfgPath))
+	return DevtoolGolangCILint(nil, "bash", "-c", fmt.Sprintf("cd %s && golangci-lint run --verbose --timeout 10m --fix --config %s ./...", directory, lintCfgPath))
 }
 
 // DownloadModules downloads Go modules locally
