@@ -2,13 +2,21 @@ package javascript
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"strings"
+	"io/fs"
+	"path"
+	"path/filepath"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/magefile/mage/sh"
+)
+
+const (
+	// PushEnv is the name of the environmental variable used to trigger
+	// pushing of OCI images. Set PUSH_IMAGE to true to push images.
+	PushEnv = "PUSH_IMAGE"
 )
 
 // Lint checks for the biome config file and runs the linting in a docker container
@@ -33,9 +41,10 @@ func Lint() error {
 	return nil
 }
 
+
 // PublishLib checks if package.json file exists or not, checks if distribution/build-output folder
 // exists or not, checks if .npmrc file exits or not
-func PublishLib() error {
+func PublishLib(shouldBuild bool, buildCommand string) error {
 	githubToken := os.Getenv("GITHUB_TOKEN")
 	isPrivate := os.Getenv("PRIVATE")
 	distDir := os.Getenv("DIST_DIR")
@@ -56,7 +65,7 @@ func PublishLib() error {
 		log.Fatal("No new package version set. Set PACKAGE_VERSION env variable.")
 	}
 
-	isDistDirEmpty, errOnCheckDistDir := IsDirectoryEmpty(distDir)
+	isDistDirEmpty, errOnCheckDistDir := core.IsDirectoryEmpty(distDir)
 
 	if isDistDirEmpty && errOnCheckDistDir != nil {
 		log.Fatal(errOnCheckDistDir)
@@ -66,12 +75,21 @@ func PublishLib() error {
 		log.Fatal("No build files to publish")
 	}
 
-	if !core.FileExists(".npmrc") || !IsNpmrcValidForPublish() {
-		err := WriteFile(".npmrc", "@coopnorge:registry=https://npm.pkg.github.com//npm.pkg.github.com/:_authToken=GITHUB_TOKEN")
+	if !core.FileExists(".npmrc") {
+		log.Fatal(".npmrc file missing.")
+		os.Exit(1)
+	}
 
-		if err != nil {
-			os.Exit(1)
+	if !core.IsNpmrcValidForPublish(".") {
+		log.Fatal(".npmrc has no auth configuration.")
+		os.Exit(1)
+	}
+
+	if (shouldBuild == true) {
+		if (buildCommand == "") {
+			buildCommand = "build"
 		}
+		buildCommand = fmt.Sprintf("npm ci && npm run %s", buildCommand)
 	}
 
 	if core.FileExists("package.json") && !isDistDirEmpty && errOnCheckDistDir == nil {
@@ -82,66 +100,64 @@ func PublishLib() error {
 			"node:slim",
 			"sh",
 			"-c",
-			fmt.Sprintf("cd /app && npm version %s && npm publish --access %s", newVersion, access),
+			fmt.Sprintf("cd /app %s && npm version %s && npm publish --access %s", buildCommand, newVersion, access),
 		)
 	}
 
 	return nil
 }
 
-// WriteFile creates a file with a given content or appends content to existing file
-// at the specified path
-func WriteFile(path string, content string) error {
-	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+// func shouldPush() (bool, error) {
+// 	val, ok := os.LookupEnv(PushEnv)
+// 	if !ok || val == "" {
+// 		return false, nil
+// 	}
+// 	boolValue, err := strconv.ParseBool(val)
+// 	if err != nil {
+// 		return false, err
+// 	}
+// 	return boolValue, nil
+// }
 
-	defer func() {
-		if err := file.Close(); err != nil {
-			log.Printf("Failed to close file: %v", err)
-		}
-	}()
+// IsNodeModule checks if directory is a Node.js project by looking for a
+// 'package.json' file.
+func IsNodeModule(p string, d os.DirEntry) bool {
+	// A Node.js module root must be a directory
 
-	if err != nil {
-		return fmt.Errorf("failed to create file: %w", err)
-	}
-
-	if _, err := io.WriteString(file, content); err != nil {
-		return fmt.Errorf("failed to write to file: %w", err)
-	}
-
-	return nil
-}
-
-// IsNpmrcValidForPublish checks if the .npmrc file is configured for GitHub
-// Packages.
-func IsNpmrcValidForPublish() bool {
-	registryURL := "npm.pkg.github.com"
-	scope := "@coopnorge"
-	tokenIndicator := "_authToken="
-
-	npmrcContent, err := os.ReadFile(".npmrc")
-
-	if err != nil {
+	if !d.IsDir() {
 		return false
 	}
 
-	contentStr := string(npmrcContent)
-
-	if !strings.Contains(contentStr, registryURL) && !strings.Contains(contentStr, scope) && !strings.Contains(contentStr, tokenIndicator) {
+	// Check for the existence of 'package.json' within the directory
+	if _, err := os.Stat(path.Join(p, "package.json")); os.IsNotExist(err) {
 		return false
 	}
-
 	return true
 }
 
-// IsDirectoryEmpty checks if the specified directory is empty
-// and returns true if it contains no files or subdirectories.
-// Also return error if there is any while reading the directory
-func IsDirectoryEmpty(dirPath string) (bool, error) {
-	entries, err := os.ReadDir(dirPath)
+// FindNodeModules finds all Node.js projects within a base directory.
+// It works similarly to the FindGoModules function by walking the diretory
+// tree.
+func FindNodeModules(base string) ([]string, error) {
+	directories := []string{}
 
+	err := filepath.WalkDir(base, func(workDir string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if core.IsDotDirectory(workDir, d) {
+			return filepath.SkipDir
+		}
+		if !IsNodeModule(workDir, d) {
+			return nil
+		}
+
+		directories = append(directories, workDir)
+
+		return nil
+	})
 	if err != nil {
-		return true, err
+		return nil, err
 	}
-
-	return len(entries) == 0, nil
+	return directories, nil
 }

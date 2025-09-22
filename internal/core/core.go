@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"log"
+	"io"
 	"path"
 	"path/filepath"
 	"strings"
@@ -95,4 +97,66 @@ func FileExists(path string) bool {
 	_, err := os.Stat(path)
 
 	return err == nil
+}
+
+// WriteFile creates a file with a given content or appends content to existing file
+// at the specified path
+func WriteFile(path string, content string) error {
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Printf("Failed to close file: %v", err)
+		}
+	}()
+
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+
+	if _, err := io.WriteString(file, content); err != nil {
+		return fmt.Errorf("failed to write to file: %w", err)
+	}
+
+	return nil
+}
+
+
+// IsNpmrcValidForPublish checks if the .npmrc file is configured for GitHub
+// Packages.
+func IsNpmrcValidForPublish(directory string) bool {
+	if (directory == "") {
+		directory = "."
+	}
+
+	registryURL := "npm.pkg.github.com"
+	scope := "@coopnorge"
+	tokenIndicator := "_authToken="
+
+	npmrcContent, err := os.ReadFile(fmt.Sprintf("%s/.npmrc"))
+
+	if err != nil {
+		return false
+	}
+
+	contentStr := string(npmrcContent)
+
+	if !strings.Contains(contentStr, registryURL) && !strings.Contains(contentStr, scope) && !strings.Contains(contentStr, tokenIndicator) {
+		return false
+	}
+
+	return true
+}
+
+// IsDirectoryEmpty checks if the specified directory is empty
+// and returns true if it contains no files or subdirectories.
+// Also return error if there is any while reading the directory
+func IsDirectoryEmpty(dirPath string) (bool, error) {
+	entries, err := os.ReadDir(dirPath)
+
+	if err != nil {
+		return true, err
+	}
+
+	return len(entries) == 0, nil
 }
