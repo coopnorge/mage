@@ -3,9 +3,22 @@ package git
 import (
 	"fmt"
 	"strings"
+	"path"
 
 	"github.com/magefile/mage/sh"
 )
+
+// RepoNameFromURL returns the repository name
+func RepoNameFromURL() string {
+	url, _ := RepoURL()
+	// 1. Get the last element of the URL path
+	base := path.Base(url)
+
+	// 2. Remove the ".git" suffix if it exists
+	projectName := strings.TrimSuffix(base, ".git")
+
+	return projectName
+}
 
 // RepoURL returns the remote URL to the git repository
 func RepoURL() (string, error) {

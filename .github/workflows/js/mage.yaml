@@ -30,9 +30,6 @@ on:
         type: string
         required: false
         default: 'dist'
-      release-tag:
-        description: 'The tag name of the release event.'
-        required: false
     secrets:
       GITHUB_TOKEN:
         required: true
@@ -66,11 +63,11 @@ jobs:
         run: "go tool mage -v js:lint"
 
       - name: Publish
-        if: ${{ inputs.release-tag }}
+        if: ${{ github.event.release.tag_name }}
         run: "go tool mage -v js:publishlib"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PRIVATE: ${{ inputs.is-npm-package-private }}
           DIST_DIR: ${{ inputs.build-output-dir }}
-          GITHUB_TAGNAME: ${{ inputs.release-tag }}
+          GITHUB_TAGNAME: ${{ github.event.release.tag_name }}
 
