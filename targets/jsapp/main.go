@@ -3,15 +3,16 @@ package jsapp
 import (
 	"context"
 	_ "embed"
-	"os"
 	"encoding/json"
+	"os"
+
+	"path"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/docker"
 	"github.com/coopnorge/mage/internal/git"
 	"github.com/coopnorge/mage/internal/javascript"
 	"github.com/magefile/mage/mg"
-	"path"
 )
 
 var (
@@ -19,17 +20,16 @@ var (
 	dockerfile string
 )
 
-
 const (
 	platforms = "linux/amd64,linux/arm64"
 )
 
 // JSAPP is the magefile namespace to group JSAPP commands
 type JSAPP mg.Namespace
-// Build creates deployable artifacts from the source code in the repository,
+
+// BuildApp creates deployable artifacts from the source code in the repository,
 // to push the resulting images set the environmental variable PUSH_IMAGE to
 // true. Setting PUSH_IMAGE to true will disable the latest image tag.
-
 func (JSAPP) BuildApp(ctx context.Context) error {
 	shouldPush, err := docker.ShouldPush()
 	if err != nil {
@@ -37,7 +37,7 @@ func (JSAPP) BuildApp(ctx context.Context) error {
 	}
 
 	mg.SerialCtxDeps(ctx, JSAPP.Validate, mg.F(buildAndPush, shouldPush))
-	return nil
+	return writeImageMetadata()
 }
 
 // Lint checks all javascript/typescript codd for code standards and formats
@@ -54,14 +54,12 @@ func (JSAPP) Validate(_ context.Context) error {
 }
 
 func buildAndPush(shouldPush bool) error {
-	app := git.RepoNameFromURL();
+	app := git.RepoNameFromURL()
 	imageName := docker.FullyQualifiedlImageName(app, "")
 	imagePath := imagePath(app)
 	metadataPath := metadataPath(app)
 
-	docker.BuildAndPush(dockerfile, platforms, imageName, ".", imagePath, metadataPath, app, "nodejsapp", shouldPush)
-	return writeImageMetadata()
-
+	return docker.BuildAndPush(dockerfile, platforms, imageName, ".", imagePath, metadataPath, app, "nodejsapp", shouldPush)
 }
 
 func imageDir(app string) string {
@@ -77,7 +75,7 @@ func metadataPath(app string) string {
 }
 
 func writeImageMetadata() error {
-	images, err := Images(core.OutputDir)
+	images, err := getImageMetadata(core.OutputDir)
 	if err != nil {
 		return err
 	}
@@ -89,11 +87,10 @@ func writeImageMetadata() error {
 	return os.WriteFile(path.Join(core.OutputDir, "oci-images.json"), jsonString, 0644)
 }
 
-
 type binaryImage = map[string]string
 type binaryImages = map[string]binaryImage
 
-func Images(imageDir string) (binaryImages, error) {
+func getImageMetadata(imageDir string) (binaryImages, error) {
 	metadataFiles, err := docker.FindMetadataFiles(imageDir)
 	if err != nil {
 		return nil, err

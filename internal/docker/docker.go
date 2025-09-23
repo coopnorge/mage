@@ -7,9 +7,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
-	"strconv"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/git"
@@ -21,7 +21,6 @@ const (
 	imageBaseEnv          = "OCI_IMAGE_BASE"
 	imageNameBaseFallback = "ocreg.invalid/coopnorge"
 )
-
 
 const (
 	// PushEnv is the name of the environmental variable used to trigger
@@ -101,7 +100,11 @@ func BuildAndPush(dockerfileContent, platforms, image, dockerContext, imagePath,
 	githubToken := os.Getenv("GITHUB_TOKEN")
 
 	if githubToken != "" {
-		filename, cleanup, _ := core.WriteTempFile(".", "github_token", githubToken)
+		filename, cleanup, err := core.WriteTempFile(".", "github_token", githubToken)
+
+		if err != nil {
+			return err
+		}
 
 		args = append(
 			args,
@@ -136,8 +139,6 @@ func FindMetadataFiles(base string) ([]string, error) {
 	// Second pattern: `base/*/oci/metadata`
 	return filepath.Glob(fmt.Sprintf("%s/*/oci/metadata.json", base))
 }
-
-
 
 // Metadata ...
 type Metadata struct {
@@ -281,7 +282,7 @@ func getBinaryName(imageName string) string {
 		return nameParts[1]
 	}
 
-	return "";
+	return ""
 }
 
 func getTag(imageName string) string {
@@ -296,4 +297,3 @@ func createDirForOutput(file string) error {
 func getVersionTag() string {
 	return time.Now().Format("v2006.01.02150405")
 }
-

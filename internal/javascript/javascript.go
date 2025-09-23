@@ -2,12 +2,12 @@ package javascript
 
 import (
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
-	"strings"
-	"io/fs"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/magefile/mage/sh"
@@ -40,7 +40,6 @@ func Lint() error {
 
 	return nil
 }
-
 
 // PublishLib checks if package.json file exists or not, checks if distribution/build-output folder
 // exists or not, checks if .npmrc file exits or not
@@ -77,16 +76,14 @@ func PublishLib(shouldBuild bool, buildCommand string) error {
 
 	if !core.FileExists(".npmrc") {
 		log.Fatal(".npmrc file missing.")
-		os.Exit(1)
 	}
 
 	if !core.IsNpmrcValidForPublish(".") {
 		log.Fatal(".npmrc has no auth configuration.")
-		os.Exit(1)
 	}
 
-	if (shouldBuild == true) {
-		if (buildCommand == "") {
+	if shouldBuild {
+		if buildCommand == "" {
 			buildCommand = "build"
 		}
 		buildCommand = fmt.Sprintf("npm ci && npm run %s", buildCommand)
