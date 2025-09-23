@@ -181,7 +181,6 @@ func ParseMetadata(filepath string) (Metadata, error) {
 	if len(data) == 0 {
 		return Metadata{}, fmt.Errorf("no metadata found in: %s", filepath)
 	}
-	fmt.Println("here")
 	var imageNames []string
 	for _, imageName := range strings.Split(fmt.Sprintf("%s", data["image.name"]), ",") {
 		if strings.HasSuffix(imageName, ":latest") {
