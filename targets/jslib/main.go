@@ -7,7 +7,7 @@ import (
 	"github.com/magefile/mage/mg"
 )
 
-// JS is the magefile namespace to group Javascript language specific commands
+// JSLIB is the magefile namespace to group Javascript language specific commands
 type JSLIB mg.Namespace
 
 // Lint checks all javascript/typescript codd for code standards and formats

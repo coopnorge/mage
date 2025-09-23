@@ -2,15 +2,20 @@ package git
 
 import (
 	"fmt"
-	"strings"
 	"path"
+	"strings"
 
 	"github.com/magefile/mage/sh"
 )
 
 // RepoNameFromURL returns the repository name
 func RepoNameFromURL() string {
-	url, _ := RepoURL()
+	url, err := RepoURL()
+
+	if err != nil {
+		return ""
+	}
+
 	// 1. Get the last element of the URL path
 	base := path.Base(url)
 

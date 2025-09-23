@@ -2,10 +2,10 @@ package core
 
 import (
 	"fmt"
-	"io/fs"
-	"os"
-	"log"
 	"io"
+	"io/fs"
+	"log"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -121,11 +121,10 @@ func WriteFile(path string, content string) error {
 	return nil
 }
 
-
 // IsNpmrcValidForPublish checks if the .npmrc file is configured for GitHub
 // Packages.
 func IsNpmrcValidForPublish(directory string) bool {
-	if (directory == "") {
+	if directory == "" {
 		directory = "."
 	}
 
@@ -133,7 +132,7 @@ func IsNpmrcValidForPublish(directory string) bool {
 	scope := "@coopnorge"
 	tokenIndicator := "_authToken="
 
-	npmrcContent, err := os.ReadFile(fmt.Sprintf("%s/.npmrc"))
+	npmrcContent, err := os.ReadFile(fmt.Sprintf("%s/.npmrc", directory))
 
 	if err != nil {
 		return false
