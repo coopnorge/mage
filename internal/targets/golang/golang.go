@@ -3,6 +3,7 @@ package golang
 import (
 	"context"
 	_ "embed"
+	"fmt"
 
 	"github.com/coopnorge/mage/internal/golang"
 	"github.com/coopnorge/mage/internal/targets/devtool"
@@ -127,4 +128,25 @@ func DownloadModules(ctx context.Context) error {
 
 func downloadModules(_ context.Context, directory string) error {
 	return golang.DownloadModules(directory)
+}
+
+// Changes implements a target that check if the current branch has changes
+// related to main branch
+func Changes(ctx context.Context) error {
+	directories, err := golang.FindGoSourceCodeFolders(".")
+	if err != nil {
+		return err
+	}
+
+	changes, err := golang.HasChanges(directories)
+	if err != nil {
+		return err
+	}
+
+	if changes {
+		fmt.Println("true")
+		return nil
+	}
+	fmt.Println("false")
+	return nil
 }

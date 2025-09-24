@@ -7,6 +7,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
+
+	doublestar "github.com/bmatcuk/doublestar/v4"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/devtool"
@@ -60,23 +63,32 @@ func FindTerraformProjects(base string) ([]string, error) {
 
 // HasChanges checks if the current branch has any terraform changes compared
 // to the main branch
-func HasChanges(terraformProjects []string) (bool,error) {
-    changedFiles,err := git.DiffToMain()
+func HasChanges(terraformProjects []string) (bool, error) {
+	changedFiles, err := git.DiffToMain()
 	if err != nil {
 		return false, err
 	}
 	for _, change := range changedFiles {
 		for _, terraformProject := range terraformProjects {
-			match, err := path.Match(fmt.Sprintf("%s/*",terraformProject),change)
-		    if err != nil {
+			match, err := path.Match(fmt.Sprintf("%s/*", terraformProject), change)
+			if err != nil {
 				return false, err
 			}
-			if match  {
-				return true,nil
+			if match {
+				return true, nil
+			}
+		}
+		for _, pattern := range strings.Split(os.Getenv("ADDITIONAL_GLOBS_TERRAFORM"), ",") {
+			matchAdditional, err := doublestar.Match(pattern, change)
+			if err != nil {
+				return false, err
+			}
+			if matchAdditional {
+				return true, nil
 			}
 		}
 	}
-	return false,nil
+	return false, nil
 }
 
 // Test automates testing the packages named by the import paths, see also: go

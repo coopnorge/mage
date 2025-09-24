@@ -1,14 +1,14 @@
 package git_test
 
 import (
-	"testing"
-    "strings"
+	"github.com/coopnorge/mage/internal/core"
+	"github.com/coopnorge/mage/internal/git"
+	"github.com/magefile/mage/sh"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
-	"github.com/coopnorge/mage/internal/core"
-	"github.com/magefile/mage/sh"
-	"github.com/coopnorge/mage/internal/git"
-	"github.com/stretchr/testify/assert"
+	"strings"
+	"testing"
 )
 
 func TestNormalizeGitURL(t *testing.T) {
@@ -62,7 +62,7 @@ func TestGitDiff(t *testing.T) {
 			wantErr:  true,
 		},
 		{
-			name:     "no diff",
+			name: "no diff",
 			commands: []string{
 				"git init",
 				"git checkout -b main",
@@ -71,43 +71,43 @@ func TestGitDiff(t *testing.T) {
 				`git commit -am "init"`,
 				"git checkout -b diff-one",
 			},
-			want:     []string{""},
-			wantErr:  false,
+			want:    []string{""},
+			wantErr: false,
 		},
-        {
-			name:     "add change with commit",
+		{
+			name: "add change with commit",
 			commands: []string{
 				"cp $TD/2.txt ./1.txt",
 			},
-			want:     []string{"1.txt"},
-			wantErr:  false,
+			want:    []string{"1.txt"},
+			wantErr: false,
 		},
-        {
-			name:     "commit the change",
+		{
+			name: "commit the change",
 			commands: []string{
 				`git commit -am "change" `,
 			},
-			want:     []string{"1.txt"},
-			wantErr:  false,
+			want:    []string{"1.txt"},
+			wantErr: false,
 		},
-        {
-			name:     "add file but dont stage",
+		{
+			name: "add file but dont stage",
 			commands: []string{
 				"cp $TD/3.txt ./3.txt",
 			},
-			want:     []string{"1.txt"},
-			wantErr:  false,
+			want:    []string{"1.txt"},
+			wantErr: false,
 		},
-        {
-			name:     "stage file",
+		{
+			name: "stage file",
 			commands: []string{
 				"git add 3.txt",
 			},
-			want:     []string{"1.txt","3.txt"},
-			wantErr:  false,
+			want:    []string{"1.txt", "3.txt"},
+			wantErr: false,
 		},
-        {
-			name:     "rename file",
+		{
+			name: "rename file",
 			commands: []string{
 				`git commit -am "add3"`,
 				"git checkout main",
@@ -115,32 +115,29 @@ func TestGitDiff(t *testing.T) {
 				"git checkout -b diff-two",
 				"mv 1.txt 4.txt",
 			},
-			want:     []string{"1.txt"},
-			wantErr:  false,
+			want:    []string{"1.txt"},
+			wantErr: false,
 		},
-        {
-			name:     "stage new after rename",
+		{
+			name: "stage new after rename",
 			commands: []string{
 				"git add 4.txt",
 			},
-			want:     []string{"1.txt","4.txt"},
-			wantErr:  false,
+			want:    []string{"1.txt", "4.txt"},
+			wantErr: false,
 		},
-        {
-			name:     "delete file",
+		{
+			name: "delete file",
 			commands: []string{
 				"rm 3.txt",
 			},
-			want:     []string{"1.txt","3.txt","4.txt"},
-			wantErr:  false,
+			want:    []string{"1.txt", "3.txt", "4.txt"},
+			wantErr: false,
 		},
-
-
-
 	}
 
 	wd, err := os.Getwd()
-	env := map[string]string{"TD": filepath.Join(wd,"testdata/files")}
+	env := map[string]string{"TD": filepath.Join(wd, "testdata/files")}
 	assert.NoError(t, err)
 	dir, cleanup, _ := core.MkdirTemp()
 	t.Chdir(dir)
@@ -148,9 +145,9 @@ func TestGitDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			for _,command := range  tt.commands {
-              cmd:= strings.Fields(command)
-			  assert.NoError(t, sh.RunWith(env,cmd[0],cmd[1:]... ))
+			for _, command := range tt.commands {
+				cmd := strings.Fields(command)
+				assert.NoError(t, sh.RunWith(env, cmd[0], cmd[1:]...))
 			}
 			got, gotErr := git.DiffToMain()
 			if tt.wantErr {

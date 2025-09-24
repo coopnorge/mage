@@ -7,11 +7,15 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
+
+	doublestar "github.com/bmatcuk/doublestar/v4"
 
 	"github.com/magefile/mage/sh"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/devtool"
+	"github.com/coopnorge/mage/internal/git"
 )
 
 const coverageReport = "coverage.out"
@@ -51,6 +55,90 @@ func FindGoModules(base string) ([]string, error) {
 		return nil, err
 	}
 	return directories, nil
+}
+
+// IsGoModule returns true if a directory contains a go module. It returns
+// true is a directory contains a .go file.
+func ContainsGoSourceCode(p string, d fs.DirEntry) (bool, error) {
+	if !d.IsDir() {
+		return false, nil
+	}
+
+	entries, err := os.ReadDir(p)
+	if err != nil {
+		return false, err
+	}
+
+	for _, entry := range entries {
+		ext := filepath.Ext(entry.Name())
+		if strings.EqualFold(".go", ext) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// FindGoSourceCodeFolders will return a list of directories at contain
+// golang source code
+func FindGoSourceCodeFolders(base string) ([]string, error) {
+	directories := []string{}
+
+	err := filepath.WalkDir(base, func(workDir string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if core.IsDotDirectory(workDir, d) {
+			return filepath.SkipDir
+		}
+
+		sourceCodeDir, err := ContainsGoSourceCode(workDir, d)
+		if err != nil {
+
+			return err
+		}
+		if !sourceCodeDir {
+			return nil
+		}
+
+		directories = append(directories, workDir)
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return directories, nil
+}
+
+// HasChanges checks if the current branch has any terraform changes compared
+// to the main branch
+func HasChanges(goSourceCodeFolders []string) (bool, error) {
+	changedFiles, err := git.DiffToMain()
+	if err != nil {
+		return false, err
+	}
+	for _, change := range changedFiles {
+		for _, folder := range goSourceCodeFolders {
+			match, err := path.Match(fmt.Sprintf("%s/*", folder), change)
+			if err != nil {
+				return false, err
+			}
+			if match {
+				return true, nil
+			}
+		}
+		for _, pattern := range strings.Split(os.Getenv("ADDITIONAL_GLOBS_GO"), ",") {
+			matchAdditional, err := doublestar.Match(pattern, change)
+			if err != nil {
+				return false, err
+			}
+			if matchAdditional {
+				return true, nil
+			}
+		}
+
+	}
+	return false, nil
 }
 
 // Generate runs commands described by directives within existing files with
