@@ -61,12 +61,12 @@ jobs:
         id: go
         run: echo "golang=$(go tool mage go:changes)" >> $GITHUB_OUTPUT
         env:
-          ADDITIONAL_GLOBS_GO: ${{ input.additional-globs-go }}
+          ADDITIONAL_GLOBS_GO: ${{ inputs.additional-globs-go }}
       - name: Check for Terraform changes
         id: go
         run: echo "terraform=$(go tool mage terrafom:changes)" >> $GITHUB_OUTPUT
         env:
-          ADDITIONAL_GLOBS_TERRAFORM: ${{ input.additional-globs-terraform }}
+          ADDITIONAL_GLOBS_TERRAFORM: ${{ inputs.additional-globs-terraform }}
 
   goapp:
     needs: ["detect-changes"]
