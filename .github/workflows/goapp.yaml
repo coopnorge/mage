@@ -70,6 +70,7 @@ jobs:
           ADDITIONAL_GLOBS_TERRAFORM: ${{ inputs.additional-globs-terraform }}
 
   goapp:
+    name: Go application
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.golang == 'true'  }}
     uses: coopnorge/mage/.github/workflows/reusable-goapp.yaml@add-detect-changes
@@ -85,6 +86,7 @@ jobs:
       service-account: ${{ inputs.service-account }}
 
   terraform:
+    name: Terraform
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.terraform == 'true'  }}
     uses: coopnorge/mage/.github/workflows/reusable-terraform.yaml@add-detect-changes

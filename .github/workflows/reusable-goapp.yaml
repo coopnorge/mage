@@ -32,6 +32,7 @@ on:
 
 jobs:
   goapp:
+    name: Go application CI
     runs-on: ubuntu-24.04
     permissions:
       contents: read

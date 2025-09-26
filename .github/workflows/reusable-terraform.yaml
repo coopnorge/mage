@@ -37,10 +37,11 @@ on:
 
 jobs:
   validate-terraform:
+    name: Terraform CI
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: "Setup TFE Credentials"
         run: |
@@ -80,6 +81,7 @@ jobs:
       pull-requests: read
 
   spacelift:
+    name: Spacelift CI
     permissions:
       checks: read
       contents: read
