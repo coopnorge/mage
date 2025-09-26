@@ -205,7 +205,6 @@ func DevtoolTerraform(env map[string]string, directory string, cmd string, args 
 	dockerArgs := []string{
 		"--volume", "$HOME/.cache:/root/.cache",
 		"--volume", "$HOME/.terraform.d:/root/.terraform.d",
-		"--volume", "$HOME/.gitconfig:/root/.gitconfig",
 		"--volume", "$HOME/.ssh:/root/.ssh",
 		"--volume", fmt.Sprintf("%s:/src", cwd),
 		"--workdir", path.Join("/src", directory),
