@@ -1,3 +1,6 @@
+concurrency:
+  group: reusable-terraform-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 on:
   workflow_call:
     inputs:
@@ -66,7 +69,7 @@ jobs:
 
       - name: Code Validation
         id: validate
-        run: go tool mage terraform:build
+        run: go tool mage terraform:validate
 
       - name: Cleanup
         if: always()
