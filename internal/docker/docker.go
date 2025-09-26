@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,6 +20,12 @@ import (
 const (
 	imageBaseEnv          = "OCI_IMAGE_BASE"
 	imageNameBaseFallback = "ocreg.invalid/coopnorge"
+)
+
+const (
+	// PushEnv is the name of the environmental variable used to trigger
+	// pushing of OCI images. Set PUSH_IMAGE to true to push images.
+	PushEnv = "PUSH_IMAGE"
 )
 
 // Validate the content of a Dockerfile
@@ -90,6 +97,24 @@ func BuildAndPush(dockerfileContent, platforms, image, dockerContext, imagePath,
 		)
 	}
 
+	githubToken := os.Getenv("GITHUB_TOKEN")
+
+	if githubToken != "" {
+		filename, cleanup, err := core.WriteTempFile(".", "github_token", githubToken)
+
+		if err != nil {
+			return err
+		}
+
+		args = append(
+			args,
+			"--secret",
+			fmt.Sprintf("id=github_token,src=%s", filename),
+		)
+
+		defer cleanup()
+	}
+
 	args = append(args,
 		"-f", dockerfilePath,
 		dockerContext,
@@ -100,7 +125,19 @@ func BuildAndPush(dockerfileContent, platforms, image, dockerContext, imagePath,
 
 // FindMetadataFiles ...
 func FindMetadataFiles(base string) ([]string, error) {
-	return filepath.Glob(fmt.Sprintf("%s/*/oci/*/metadata.json", base))
+	// First pattern: `base/*/oci/*/metadata.json`
+	patternMatch1, err := filepath.Glob(fmt.Sprintf("%s/*/oci/*/metadata.json", base))
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(patternMatch1) > 0 {
+		return patternMatch1, nil
+	}
+
+	// Second pattern: `base/*/oci/metadata`
+	return filepath.Glob(fmt.Sprintf("%s/*/oci/metadata.json", base))
 }
 
 // Metadata ...
@@ -192,12 +229,29 @@ func Images(imageDir string) (AppImages, error) {
 		result[metadata.App][metadata.Binary]["tag"] = metadata.Tag
 		result[metadata.App][metadata.Binary]["image"] = metadata.ImageName
 	}
+
 	return result, nil
 }
 
 // FullyQualifiedlImageName ...
 func FullyQualifiedlImageName(app, binary string) string {
+	if binary == "" {
+		return fmt.Sprintf("%s/%s", imageBase(), app)
+	}
 	return fmt.Sprintf("%s/%s/%s", imageBase(), app, binary)
+}
+
+// ShouldPush checks if docker image should be pushed to the repository or not
+func ShouldPush() (bool, error) {
+	val, ok := os.LookupEnv(PushEnv)
+	if !ok || val == "" {
+		return false, nil
+	}
+	boolValue, err := strconv.ParseBool(val)
+	if err != nil {
+		return false, err
+	}
+	return boolValue, nil
 }
 
 func imageBase() string {
@@ -217,7 +271,18 @@ func getAppName(imageName string) string {
 func getBinaryName(imageName string) string {
 	imageName = strings.TrimPrefix(imageName, fmt.Sprintf("%s/", imageBase()))
 	imageName = strings.Split(imageName, ":")[0]
-	return strings.Split(imageName, "/")[1]
+
+	// checks if there is a multiple projects or not.
+	// minside:v2025.09.18211159,ocreg.invalid/coopnorge/minside:latest
+	// helloworld/helloworld/cmd:v2025.09.18211159,ocreg.invalid/coopnorge/helloworld:latest
+	// helloworld/goodbyeworld/cmd:v2025.09.18211159,ocreg.invalid/coopnorge/goodbyeworld:latest
+	nameParts := strings.Split(imageName, "/")
+
+	if len(nameParts) > 1 {
+		return nameParts[1]
+	}
+
+	return ""
 }
 
 func getTag(imageName string) string {

@@ -1,0 +1,73 @@
+name: Lint, Test, Build and Publish to GitHub Package Registry
+
+on:
+  workflow_call:
+    inputs:
+      build:
+        description: 'Set to true if project needs to be build before publishing to github packages'
+        type: boolean
+        default: false
+        required: false
+      build-command:
+        description: 'NPM project build command. Defaults to build'
+        type: string
+        default: 'build'
+        required: false
+      lint:
+        description: 'Set to true if you want to run '
+      test:
+        description: 'Set to true if project needs to run test'
+        type: boolean
+        default: false
+        required: false
+      is-npm-package-private:
+        description: 'Set to true if npm package to be publish is a private'
+        type: boolean
+        required: false
+        default: false
+      build-output-dir:
+        description: 'Project to be deployed or published build output folder name. Defaults to dist'
+        type: string
+        required: false
+        default: 'dist'
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  mage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.24.0'
+          cache-dependency-path: "**/go.sum"
+
+      - name: Install go Tools
+        run: go install tool
+
+      - name: Lint
+        if: ${{ inputs.lint }}
+        run: "go tool mage -v js:lint"
+
+      - name: Publish
+        if: ${{ github.event.release.tag_name }}
+        run: "go tool mage -v js:publishlib"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRIVATE: ${{ inputs.is-npm-package-private }}
+          DIST_DIR: ${{ inputs.build-output-dir }}
+          GITHUB_TAGNAME: ${{ github.event.release.tag_name }}
+
