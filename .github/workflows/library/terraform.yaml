@@ -1,0 +1,241 @@
+on:
+  workflow_call:
+    inputs:
+      dependabot-automerge-enabled:
+        type: boolean
+        default: false
+        description: |
+          Should dependabot be auto merged when here are no changes to terraform plan. Must be combined with
+          dependabot-automerge-preview.
+      dependabot-automerge-preview:
+        type: boolean
+        default: true
+        description: |
+          If automerge-enabled is set to true this will only print if this pr can be auto merged
+       ok-plan-regex:
+        type: string
+        default: ^(Plan\ contains\ no\ changes|[0-1]\ to\ add, 0\ to\ change, 0\ to\ destroy|Push\ ignored\ as\ per\ policy)$
+        description: |
+          A regex which should match ok outputs to terraform plans as defined by
+          spacelift.
+      merge-strategy:
+        type: string
+        required: false
+        default: "squash and merge"
+        description: |
+          Strategy type to use when Dependabot merges the PR.
+          See https://docs.github.com/en/code-security/dependabot/working-with-dependabot/managing-pull-requests-for-dependency-updates#managing-dependabot-pull-requests-with-comment-commands
+      validation-only:
+        type: boolean
+        default: false
+        description: |
+          Only run validation and skip spacelift checks
+    secrets: {}
+
+jobs:
+  validate-terraform:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "Setup TFE Credentials"
+        run: |
+          set -x
+          mkdir -p $HOME/.terraform.d
+          CREDS_FILE=$HOME/.terraform.d/credentials.tfrc.json
+          cat << EOF > $CREDS_FILE
+          {
+          "credentials": {
+            "spacelift.io" : {
+              "token": "${SPACELIFT_READ_TOKEN:=EMPTY}"
+              }
+            }
+          }
+          EOF
+        env:
+          SPACELIFT_READ_TOKEN: ${{ secrets.SPACELIFT_READ_TOKEN }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: "**/go.sum"
+      - name: Install go Tools
+        run: go install tool
+
+      - name: Code Validation
+        id: validate
+        run: go tool mage terraform:build
+
+      - name: Cleanup
+        if: always()
+        run: rm -fr $HOME/.terraform.d/credentials.tfrc.json || true
+
+    permissions:
+      contents: read
+      pull-requests: read
+
+  spacelift:
+    permissions:
+      checks: read
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-24.04
+    needs: ['validate-terraform']
+    steps:
+      #- uses: actions/checkout@v4
+      - name: Waiting for checks suites to populate
+        run: sleep 10
+
+      - name: check for automerge spacelift
+        id: spacelift-check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GIT_REV: ${{ github.event.pull_request.head.sha }}
+          APP_SLUG_FILTER: spacelift-io
+          TIMEOUT_MINUTES: 30
+        shell: bash
+        run: |
+          export APP_SLUG_FILTER
+          OK_REGEX="${{ inputs.ok-plan-regex }}"
+
+          ### WAIT FOR CHECKS TO BE FINISHED
+          time=0
+          sleep=5
+          timeout_seconds=$((TIMEOUT_MINUTES*60))
+
+          until gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/$GITHUB_REPOSITORY/commits/$GIT_REV/check-suites \
+            | yq -Pe '.check_suites[] | select(.app.slug == "spacelift-io").status | select(test("^completed$"))' > /dev/null 2>&1 ; do
+              status=$(gh api \
+                -H "Accept: application/vnd.github+json" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                /repos/$GITHUB_REPOSITORY/commits/$GIT_REV/check-suites \
+                | yq -Pe '.check_suites[] | select(.app.slug == "spacelift-io").status')
+              echo ----------------------------
+              if [ $time -gt $timeout_seconds ] ; then
+                echo ERROR: Did not receive and completed checks within $TIMEOUT_MINUTES mintues
+                exit 1
+              fi
+              echo status: $status
+              echo waiting for $sleep seconds
+              sleep $sleep
+          done
+          echo -----------------------------------
+          echo all spacelift plans completed
+
+
+          if gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/$GITHUB_REPOSITORY/commits/$GIT_REV/check-suites \
+            | yq -Pe '.check_suites[] | select(.app.slug == "spacelift-io").conclusion | select(test("^success|neutral|skipped$"))' > /dev/null 2>&1 ; then
+            echo ----------------------
+            echo all spacelift plans succeeded without failures.
+          else
+            conclusion=$(gh api \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              /repos/$GITHUB_REPOSITORY/commits/$GIT_REV/check-suites \
+              | yq -Pe '.check_suites[] | select(.app.slug == "spacelift-io").conclusion')
+              echo ----------------------------------
+              echo FAIL: test outcome is  $conclusion
+              exit 1
+          fi
+
+          check_url=$(gh api \
+                        -H "Accept: application/vnd.github+json" \
+                        -H "X-GitHub-Api-Version: 2022-11-28" \
+                        /repos/$GITHUB_REPOSITORY/commits/$GIT_REV/check-suites \
+                        | yq -P '.check_suites[] | select(.app.slug == "spacelift-io").check_runs_url')
+
+          gh api \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              $check_url | yq -P > check_runs.yaml
+
+          total_count=$(yq .total_count check_runs.yaml)
+
+          ok_count=0
+          for i in $(seq 0 $((total_count -1)) ) ; do
+
+            title=$(elem=$i yq -e '.check_runs.[env(elem)].output.title' check_runs.yaml)
+            stack=$(elem=$i yq -e '.check_runs.[env(elem)].name' check_runs.yaml)
+            details_url=$(elem=$i yq -e '.check_runs.[env(elem)].details_url' check_runs.yaml)
+
+            if pattern=$OK_REGEX \
+                 elem=$i \
+                 yq -e '.check_runs.[env(elem)].output.title | select(test(strenv(pattern)))' check_runs.yaml > /dev/null 2>&1 ; then
+              echo -------------------------
+              echo Plan allowed for automerging!
+              echo \"$title\" matches \"$OK_REGEX\"
+              echo stack: $stack
+              ok_count=$((ok_count +1))
+            else
+              echo -------------------------
+              echo Plan not allowed for automerging!
+              echo \"$title\" does NOT match \"$OK_REGEX\"
+              echo stack: $stack
+              echo details: $details_url
+            fi
+
+          done
+
+          if [ $ok_count -eq $total_count ] ; then
+            echo hurray
+            echo "automerge=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo non hurray
+            echo "automerge=no" >> "$GITHUB_OUTPUT"
+          fi
+
+
+      - name: Set dependabot comment
+        id: comment
+        run: |
+          search_string="Mergeable by dependabot"
+          echo "search_string=$search_string" >> "$GITHUB_OUTPUT"
+          echo "\`\`\`diff" > dependabot_body.md
+          if [[ "${{steps.spacelift-check.outputs.automerge}}" == "yes" ]] ; then
+            echo "+ $search_string" >> dependabot_body.md
+          else
+            echo "- Not $search_string" >> dependabot_body.md
+          fi
+          echo "\`\`\`" >> dependabot_body.md
+
+      - name: Find old dependabot comment
+        uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e # pin@v3
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-includes: ${{ steps.comment.outputs.search_string }}
+          token: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
+
+      - name: create or update dependabot comment
+        uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # pin@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          body-file: 'dependabot_body.md'
+          reactions: eyes
+          token: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
+          edit-mode: replace
+
+      - name: Approve pr
+        env:
+          GH_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
+        if: |
+          inputs.dependabot-automerge-preview == false &&
+          github.actor == 'dependabot[bot]'
+        run: |
+          if [[ "${{steps.spacelift-check.outputs.automerge}}" == "yes" ]] ; then
+            gh pr review \
+              --approve \
+              --body "@dependabot ${{ inputs.merge-strategy }}" \
+              --repo ${{ github.repository }} ${{ github.event.number }}
+          else
+            echo "no auto approve"
+          fi

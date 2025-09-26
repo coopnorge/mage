@@ -1,0 +1,101 @@
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+on:
+  workflow_call:
+    secrets: {}
+    inputs:
+      oci-image-base:
+        type: string
+        required: true
+      push-oci-image:
+        type: boolean
+        required: false
+        default: false
+      workload-identity-provider:
+        type: string
+        required: true
+      service-account:
+        type: string
+      artifact-registry-location:
+        type: string
+        default: "europe"
+        description: Artifact registry region name (e.g. "europe", "europe-north1").
+      go-runtime:
+        type: string
+        default: "docker"
+        description: Run mage go related tasks in "docker" (default) or local
+    outputs:
+      oci-images:
+        value: ${{ jobs.mage.outputs.oci-images }}
+        description: OCI image references.
+
+jobs:
+  goapp:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+      packages: read
+    outputs:
+      oci-images: ${{ steps.oci-images.outputs.images }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Configure access to internal and private GitHub repos
+        run: git config --global url."https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
+      - name: Autenticate with GCP
+        id: gcp-auth
+        if: ${{ inputs.push-oci-image }}
+        uses: google-github-actions/auth@v3
+        with:
+          token_format: access_token
+          workload_identity_provider: ${{ inputs.workload-identity-provider }}
+          service_account: ${{ inputs.service-account }}
+          create_credentials_file: true
+      # - name: Configure Google Cloud Artifact Registry for Docker
+      #   if: ${{ inputs.push-oci-image }}
+      #   run: gcloud auth print-access-token | docker login https://${{ inputs.artifact-registry-location }}-docker.pkg.dev -u oauth2accesstoken --password-stdin
+      - name: Login to Google Cloud Artifact Registry
+        if: ${{ inputs.push-oci-image }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ inputs.artifact-registry-location }}-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.gcp-auth.outputs.access_token }}
+      - name: Safe Git Workspace
+        run: git config --global --add safe.directory /app
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: "**/go.sum"
+      - name: Install go Tools
+        run: go install tool
+      - name: Build
+        run: "go tool mage -v go:build"
+        env:
+          OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
+          PUSH_IMAGE: ${{ inputs.push-oci-image }}
+          GO_RUNTIME: ${{ inputs.go-runtime }}
+      - id: oci-images
+        name: Output OCI images references
+        run: |
+          if [ -f ./var/oci-images.json ]; then
+            echo "images=$(cat ./var/oci-images.json)" >> $GITHUB_OUTPUT
+          else
+            echo "images={}" >> $GITHUB_OUTPUT
+          fi
+      - name: Show output
+        if: always()
+        run: tree var/
