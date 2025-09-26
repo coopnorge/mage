@@ -40,11 +40,25 @@ func DiffToMain() ([]string, error) {
 	// git diff
 	// --name-only # only list file names
 	// --no-renames # rename of file is shown as delete and add
+
 	changedFiles := []string{}
-	gitDiff, err := sh.Output("git", "diff", "--name-only", "--no-renames", "origin/main")
+	// We assume the default branch is main, preferred origin/main. We should
+	// add the ability for adding a specific branch as well.
+	diffBranch := "origin/main"
+	if checkBranch(diffBranch) != nil {
+		diffBranch = "main"
+	}
+	if checkBranch(diffBranch) != nil {
+		return changedFiles, fmt.Errorf("unable to find branch %s", diffBranch)
+	}
+	gitDiff, err := sh.Output("git", "diff", "--name-only", "--no-renames", diffBranch)
 	if err != nil {
 		return []string{}, err
 	}
 	changedFiles = append(changedFiles, strings.Split(gitDiff, "\n")...)
 	return changedFiles, nil
+}
+
+func checkBranch(branch string) error {
+	return sh.Run("git", "rev-parse", "--verify", branch)
 }
