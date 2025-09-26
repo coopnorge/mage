@@ -18,7 +18,7 @@ func (JSLib) Lint(ctx context.Context) error {
 	return nil
 }
 
-// PublishLib publish npm package to the github package
+// Publish publish npm package to the github package
 //
 // See [javascript.Publish] for details.
 func (JSLib) Publish(ctx context.Context) error {

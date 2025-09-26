@@ -1,10 +1,10 @@
 package javascript
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
-	"errors"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/magefile/mage/sh"
@@ -99,6 +99,4 @@ func PublishLib(shouldBuild bool, buildCommand string) error {
 		"-c",
 		fmt.Sprintf("cd /app %s && npm version %s && npm publish --access %s", buildCommand, newVersion, access),
 	)
-
-	return nil
 }
