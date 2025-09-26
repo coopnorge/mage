@@ -274,7 +274,8 @@ func getBinaryName(imageName string) string {
 
 	// checks if there is a multiple projects or not.
 	// minside:v2025.09.18211159,ocreg.invalid/coopnorge/minside:latest
-	// helloworld/cmd:v2025.09.18211159,ocreg.invalid/coopnorge/helloworld:latest
+	// helloworld/helloworld/cmd:v2025.09.18211159,ocreg.invalid/coopnorge/helloworld:latest
+	// helloworld/goodbyeworld/cmd:v2025.09.18211159,ocreg.invalid/coopnorge/goodbyeworld:latest
 	nameParts := strings.Split(imageName, "/")
 
 	if len(nameParts) > 1 {

@@ -2,12 +2,9 @@ package javascript
 
 import (
 	"fmt"
-	"io/fs"
-	"log"
 	"os"
-	"path"
-	"path/filepath"
 	"strings"
+	"errors"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/magefile/mage/sh"
@@ -35,7 +32,7 @@ func Lint() error {
 			)
 		}
 	} else {
-		log.Fatal("Biome not setup in your project. Install @coopnorge/web-devtools.")
+		return errors.New("Biome not setup in your project. Install @coopnorge/web-devtools.")
 	}
 
 	return nil
@@ -56,30 +53,34 @@ func PublishLib(shouldBuild bool, buildCommand string) error {
 
 	access := "public"
 
-	if isPrivate == "" {
+	if isPrivate != "" {
 		access = "private"
 	}
 
 	if newVersion == "" {
-		log.Fatal("No new package version set. Set PACKAGE_VERSION env variable.")
+		return errors.New("No new package version set. Set PACKAGE_VERSION env variable.")
 	}
 
 	isDistDirEmpty, errOnCheckDistDir := core.IsDirectoryEmpty(distDir)
 
-	if isDistDirEmpty && errOnCheckDistDir != nil {
-		log.Fatal(errOnCheckDistDir)
+	if isDistDirEmpty {
+		return errors.New("No build files to publish.")
 	}
 
-	if isDistDirEmpty && errOnCheckDistDir == nil {
-		log.Fatal("No build files to publish")
+	if errOnCheckDistDir != nil {
+		return errOnCheckDistDir
 	}
 
 	if !core.FileExists(".npmrc") {
-		log.Fatal(".npmrc file missing.")
+		return errors.New(".npmrc file missing.")
 	}
 
 	if !core.IsNpmrcValidForPublish(".") {
-		log.Fatal(".npmrc has no auth configuration.")
+		return errors.New(".npmrc has no auth configuration.")
+	}
+
+	if !core.FileExists("package.json") {
+		return errors.New("Not a js node project.")
 	}
 
 	if shouldBuild {
@@ -89,72 +90,15 @@ func PublishLib(shouldBuild bool, buildCommand string) error {
 		buildCommand = fmt.Sprintf("npm ci && npm run %s", buildCommand)
 	}
 
-	if core.FileExists("package.json") && !isDistDirEmpty && errOnCheckDistDir == nil {
-		return sh.RunV(
-			"docker", "run", "--rm",
-			"-e", fmt.Sprintf("GITHUB_TOKEN=%s", githubToken),
-			"-v", "./:/app",
-			"node:slim",
-			"sh",
-			"-c",
-			fmt.Sprintf("cd /app %s && npm version %s && npm publish --access %s", buildCommand, newVersion, access),
-		)
-	}
+	return sh.RunV(
+		"docker", "run", "--rm",
+		"-e", fmt.Sprintf("GITHUB_TOKEN=%s", githubToken),
+		"-v", "./:/app",
+		"node:slim",
+		"sh",
+		"-c",
+		fmt.Sprintf("cd /app %s && npm version %s && npm publish --access %s", buildCommand, newVersion, access),
+	)
 
 	return nil
-}
-
-// func shouldPush() (bool, error) {
-// 	val, ok := os.LookupEnv(PushEnv)
-// 	if !ok || val == "" {
-// 		return false, nil
-// 	}
-// 	boolValue, err := strconv.ParseBool(val)
-// 	if err != nil {
-// 		return false, err
-// 	}
-// 	return boolValue, nil
-// }
-
-// IsNodeModule checks if directory is a Node.js project by looking for a
-// 'package.json' file.
-func IsNodeModule(p string, d os.DirEntry) bool {
-	// A Node.js module root must be a directory
-
-	if !d.IsDir() {
-		return false
-	}
-
-	// Check for the existence of 'package.json' within the directory
-	if _, err := os.Stat(path.Join(p, "package.json")); os.IsNotExist(err) {
-		return false
-	}
-	return true
-}
-
-// FindNodeModules finds all Node.js projects within a base directory.
-// It works similarly to the FindGoModules function by walking the diretory
-// tree.
-func FindNodeModules(base string) ([]string, error) {
-	directories := []string{}
-
-	err := filepath.WalkDir(base, func(workDir string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if core.IsDotDirectory(workDir, d) {
-			return filepath.SkipDir
-		}
-		if !IsNodeModule(workDir, d) {
-			return nil
-		}
-
-		directories = append(directories, workDir)
-
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return directories, nil
 }
