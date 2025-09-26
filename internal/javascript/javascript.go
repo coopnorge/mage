@@ -32,7 +32,7 @@ func Lint() error {
 			)
 		}
 	} else {
-		return errors.New("Biome not setup in your project. Install @coopnorge/web-devtools.")
+		return errors.New("biome not setup in your project. Install @coopnorge/web-devtools")
 	}
 
 	return nil
@@ -58,13 +58,13 @@ func PublishLib(shouldBuild bool, buildCommand string) error {
 	}
 
 	if newVersion == "" {
-		return errors.New("No new package version set. Set PACKAGE_VERSION env variable.")
+		return errors.New("no new package version set. Set PACKAGE_VERSION env variable")
 	}
 
 	isDistDirEmpty, errOnCheckDistDir := core.IsDirectoryEmpty(distDir)
 
 	if isDistDirEmpty {
-		return errors.New("No build files to publish.")
+		return errors.New("no build files to publish")
 	}
 
 	if errOnCheckDistDir != nil {
@@ -72,15 +72,15 @@ func PublishLib(shouldBuild bool, buildCommand string) error {
 	}
 
 	if !core.FileExists(".npmrc") {
-		return errors.New(".npmrc file missing.")
+		return errors.New(".npmrc file missing")
 	}
 
 	if !core.IsNpmrcValidForPublish(".") {
-		return errors.New(".npmrc has no auth configuration.")
+		return errors.New(".npmrc has no auth configuration")
 	}
 
 	if !core.FileExists("package.json") {
-		return errors.New("Not a js node project.")
+		return errors.New("not a js node project")
 	}
 
 	if shouldBuild {
