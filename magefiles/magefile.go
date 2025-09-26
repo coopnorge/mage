@@ -6,7 +6,4 @@ import (
 
 	//mage:import
 	_ "github.com/coopnorge/mage/targets/jslib"
-
-	//mage:import
-	_ "github.com/coopnorge/mage/targets/jsapp"
 )
