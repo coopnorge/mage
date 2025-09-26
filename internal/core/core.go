@@ -7,6 +7,8 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+
+	doublestar "github.com/bmatcuk/doublestar/v4"
 )
 
 const (
@@ -88,4 +90,30 @@ func IsDotDirectory(path string, d fs.DirEntry) bool {
 		return false
 	}
 	return strings.HasPrefix(filepath.Base(path), ".")
+}
+
+// CompareChangesToPaths takes a list of paths comapring if the first matches
+// the latter. You can also add additional globs to match the first list.
+func CompareChangesToPaths(changes []string, paths []string, additionalGlobs []string) (bool, error) {
+	for _, change := range changes {
+		for _, p := range paths {
+			match, err := path.Match(fmt.Sprintf("%s/*", p), change)
+			if err != nil {
+				return false, err
+			}
+			if match {
+				return true, nil
+			}
+		}
+		for _, pattern := range additionalGlobs {
+			matchAdditional, err := doublestar.Match(pattern, change)
+			if err != nil {
+				return false, err
+			}
+			if matchAdditional {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }

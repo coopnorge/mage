@@ -88,3 +88,55 @@ func TestMkdirTemp(t *testing.T) {
 		})
 	}
 }
+
+func TestCompareChangesToPaths(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		changes         []string
+		paths           []string
+		additionalGlobs []string
+		want            bool
+		wantErr         bool
+	}{
+		{
+			name:            "simple match",
+			changes:         []string{"a/b.txt"},
+			paths:           []string{"a"},
+			additionalGlobs: []string{},
+			want:            true,
+			wantErr:         false,
+		},
+		{
+			name:            "no match",
+			changes:         []string{"a/b.txt"},
+			paths:           []string{"b/c/a.yaml"},
+			additionalGlobs: []string{""},
+			want:            false,
+			wantErr:         false,
+		},
+		{
+			name:            "match on additional glob",
+			changes:         []string{"a/b.txt"},
+			paths:           []string{"b/c/a.yaml"},
+			additionalGlobs: []string{"**/*.txt"},
+			want:            true,
+			wantErr:         false,
+		},
+		{
+			name:            "multiple additionalGlobs",
+			changes:         []string{"a/b.txt"},
+			paths:           []string{"b/c"},
+			additionalGlobs: []string{"**/*.yaml", "**/*.txt"},
+			want:            true,
+			wantErr:         false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, gotErr := core.CompareChangesToPaths(tt.changes, tt.paths, tt.additionalGlobs)
+			assert.NoError(t, gotErr)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

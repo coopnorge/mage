@@ -56,7 +56,7 @@ import (
 - [ ] Go mock generation
 - [X] Docker image build
 - [X] Docker image push
-- [ ] Terraform CI
+- [X] Terraform CI
 - [ ] Techdocs CI
 - [ ] Kubernetes CI
 - [ ] Security Scanning
@@ -100,12 +100,14 @@ Add this job to your GitHub actions workflow
 ### When using goapp as target
 
 ```yaml
-  mage:
-    uses: coopnorge/mage/.github/workflows/mage.yaml@main
+  go-app:
+    uses: coopnorge/mage/.github/workflows/goapp.yaml@main
     permissions:
       contents: read
       id-token: write
-      packages: read
+      packages: write
+      pull-requests: write
+      checks: read
     secrets: inherit
     with:
       oci-image-base: ${{ vars.PALLET_REGISTRY_URL }}

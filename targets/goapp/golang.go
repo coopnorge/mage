@@ -234,3 +234,10 @@ func binaryOutputPath(app, os, arch, binary string) string {
 func binaryOutputBasePath(app string) string {
 	return path.Join(core.OutputDir, app, binDir)
 }
+
+// Changes returns the string true or false depending on the fact that
+// the current branch contains changes compared to the main branch.
+func (Go) Changes(ctx context.Context) error {
+	mg.CtxDeps(ctx, golangTargets.Changes)
+	return nil
+}

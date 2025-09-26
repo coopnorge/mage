@@ -7,11 +7,13 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/magefile/mage/sh"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/devtool"
+	"github.com/coopnorge/mage/internal/git"
 )
 
 const coverageReport = "coverage.out"
@@ -51,6 +53,69 @@ func FindGoModules(base string) ([]string, error) {
 		return nil, err
 	}
 	return directories, nil
+}
+
+// ContainsGoSourceCode returns true if a directory contains a .go file.
+func ContainsGoSourceCode(p string, d fs.DirEntry) (bool, error) {
+	if !d.IsDir() {
+		return false, nil
+	}
+
+	entries, err := os.ReadDir(p)
+	if err != nil {
+		return false, err
+	}
+
+	for _, entry := range entries {
+		ext := filepath.Ext(entry.Name())
+		if strings.EqualFold(".go", ext) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// FindGoSourceCodeFolders will return a list of directories that contains
+// golang source code
+func FindGoSourceCodeFolders(base string) ([]string, error) {
+	directories := []string{}
+
+	err := filepath.WalkDir(base, func(workDir string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if core.IsDotDirectory(workDir, d) {
+			return filepath.SkipDir
+		}
+
+		sourceCodeDir, err := ContainsGoSourceCode(workDir, d)
+		if err != nil {
+			return err
+		}
+		if !sourceCodeDir {
+			return nil
+		}
+
+		directories = append(directories, workDir)
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return directories, nil
+}
+
+// HasChanges checks if the current branch has any Go changes compared
+// to the main branch
+func HasChanges(goSourceCodeFolders []string) (bool, error) {
+	changedFiles, err := git.DiffToMain()
+	if err != nil {
+		return false, err
+	}
+	// always trigger on go.mod/sum and workflows because of changes in ci.
+	additionalGlobs := append([]string{"**/go.mod", "**/go.sum", ".github/workflows/*"}, strings.Split(os.Getenv("ADDITIONAL_GLOBS_GO"), ",")...)
+	return core.CompareChangesToPaths(changedFiles, goSourceCodeFolders, additionalGlobs)
 }
 
 // Generate runs commands described by directives within existing files with
