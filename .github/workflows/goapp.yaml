@@ -71,7 +71,7 @@ jobs:
   goapp:
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.golang == 'true'  }}
-    uses: .github/workflows/library/goapp.yaml
+    uses: .github/workflows/reusable-goapp.yaml
     permissions:
       contents: read
       id-token: write
@@ -86,7 +86,7 @@ jobs:
   terraform:
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.terraform == 'true'  }}
-    uses: .github/workflows/library/terraform.yaml
+    uses: .github/workflows/reusable-terraform.yaml
     permissions:
       contents: read
       id-token: write
