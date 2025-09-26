@@ -55,7 +55,7 @@ func FindGoModules(base string) ([]string, error) {
 	return directories, nil
 }
 
-// ContainsGoSourceCode returns true is a directory contains a .go file.
+// ContainsGoSourceCode returns true if a directory contains a .go file.
 func ContainsGoSourceCode(p string, d fs.DirEntry) (bool, error) {
 	if !d.IsDir() {
 		return false, nil
@@ -75,7 +75,7 @@ func ContainsGoSourceCode(p string, d fs.DirEntry) (bool, error) {
 	return false, nil
 }
 
-// FindGoSourceCodeFolders will return a list of directories at contain
+// FindGoSourceCodeFolders will return a list of directories that contains
 // golang source code
 func FindGoSourceCodeFolders(base string) ([]string, error) {
 	directories := []string{}
@@ -106,7 +106,7 @@ func FindGoSourceCodeFolders(base string) ([]string, error) {
 	return directories, nil
 }
 
-// HasChanges checks if the current branch has any terraform changes compared
+// HasChanges checks if the current branch has any Go changes compared
 // to the main branch
 func HasChanges(goSourceCodeFolders []string) (bool, error) {
 	changedFiles, err := git.DiffToMain()

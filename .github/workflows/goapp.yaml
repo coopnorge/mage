@@ -40,7 +40,7 @@ on:
 jobs:
 
   detect-changes:
-    name: Detect Chagnes
+    name: Detect Changes
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -64,7 +64,7 @@ jobs:
           ADDITIONAL_GLOBS_GO: ${{ inputs.additional-globs-go }}
       - name: Check for Terraform changes
         id: terraform
-        run: echo "terraform=$(go tool mage terrafom:changes)" >> $GITHUB_OUTPUT
+        run: echo "terraform=$(go tool mage terraform:changes)" >> $GITHUB_OUTPUT
         env:
           ADDITIONAL_GLOBS_TERRAFORM: ${{ inputs.additional-globs-terraform }}
 

@@ -35,7 +35,7 @@ func NormalizeGitURL(url string) (string, error) {
 }
 
 // DiffToMain returns a list of files that have been changed
-// compared to the main branch. Files have staged or committed.
+// compared to the main branch. Files have to be staged or committed.
 func DiffToMain() ([]string, error) {
 	// git diff
 	// --name-only # only list file names
