@@ -60,17 +60,20 @@ func PublishLib() error {
 	}
 
 	if newVersion == "" {
-		return errors.New("no new package version set. Set PACKAGE_VERSION env variable")
+		return errors.New("no new package version set. Set GITHUB_TAGNAME env variable")
 	}
 
-	isDistDirEmpty, errOnCheckDistDir := core.IsDirectoryEmpty(distDir)
 
-	if isDistDirEmpty {
-		return errors.New("no build files to publish")
-	}
+	if skipBuild != "" {
+		isDistDirEmpty, errOnCheckDistDir := core.IsDirectoryEmpty(distDir)
 
-	if errOnCheckDistDir != nil {
-		return errOnCheckDistDir
+		if isDistDirEmpty {
+			return errors.New("no build files to publish")
+		}
+
+		if errOnCheckDistDir != nil {
+			return errOnCheckDistDir
+		}
 	}
 
 	if !core.FileExists(".npmrc") {
