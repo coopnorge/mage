@@ -64,7 +64,7 @@ func PublishLib() error {
 	}
 
 
-	if skipBuild != "" {
+	if skipBuild == "" {
 		isDistDirEmpty, errOnCheckDistDir := core.IsDirectoryEmpty(distDir)
 
 		if isDistDirEmpty {
