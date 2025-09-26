@@ -3,7 +3,7 @@ package jslib
 import (
 	"context"
 
-	"github.com/coopnorge/mage/internal/targets/javascript"
+	"github.com/coopnorge/mage/internal/javascript"
 	"github.com/magefile/mage/mg"
 )
 
