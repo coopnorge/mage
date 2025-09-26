@@ -88,8 +88,10 @@ jobs:
     uses: coopnorge/mage/.github/workflows/reusable-terraform.yaml@add-detect-changes
     permissions:
       contents: read
+      pull-requests: write
       id-token: write
       packages: read
+      checks: read
     secrets: inherit
     with:
       dependabot-automerge-enabled: true
