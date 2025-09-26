@@ -73,7 +73,7 @@ jobs:
     name: Go application
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.golang == 'true'  }}
-    uses: coopnorge/mage/.github/workflows/reusable-goapp.yaml@add-detect-changes
+    uses: coopnorge/mage/.github/workflows/reusable-goapp.yaml@main
     permissions:
       contents: read
       id-token: write
@@ -89,7 +89,7 @@ jobs:
     name: Terraform
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.terraform == 'true'  }}
-    uses: coopnorge/mage/.github/workflows/reusable-terraform.yaml@add-detect-changes
+    uses: coopnorge/mage/.github/workflows/reusable-terraform.yaml@main
     permissions:
       contents: read
       pull-requests: write
