@@ -9,8 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	doublestar "github.com/bmatcuk/doublestar/v4"
-
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/devtool"
 	"github.com/coopnorge/mage/internal/git"
@@ -68,27 +66,9 @@ func HasChanges(terraformProjects []string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	for _, change := range changedFiles {
-		for _, terraformProject := range terraformProjects {
-			match, err := path.Match(fmt.Sprintf("%s/*", terraformProject), change)
-			if err != nil {
-				return false, err
-			}
-			if match {
-				return true, nil
-			}
-		}
-		for _, pattern := range strings.Split(os.Getenv("ADDITIONAL_GLOBS_TERRAFORM"), ",") {
-			matchAdditional, err := doublestar.Match(pattern, change)
-			if err != nil {
-				return false, err
-			}
-			if matchAdditional {
-				return true, nil
-			}
-		}
-	}
-	return false, nil
+	// always trigger on go.mod/sum and workflows because of changes in ci.
+	additionalGlobs := append([]string{"**/go.mod", "**/go.sum", ".github/workflows/*"}, strings.Split(os.Getenv("ADDITIONAL_GLOBS_TERRAFORM"), ",")...)
+	return core.CompareChangesToPaths(changedFiles, terraformProjects, additionalGlobs)
 }
 
 // Test automates testing the packages named by the import paths, see also: go

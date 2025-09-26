@@ -45,8 +45,6 @@ func DiffToMain() ([]string, error) {
 	if err != nil {
 		return []string{}, err
 	}
-	for _, line := range strings.Split(gitDiff, "\n") {
-		changedFiles = append(changedFiles, line)
-	}
+	changedFiles = append(changedFiles, strings.Split(gitDiff, "\n")...)
 	return changedFiles, nil
 }

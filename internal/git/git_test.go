@@ -1,14 +1,15 @@
 package git_test
 
 import (
-	"github.com/coopnorge/mage/internal/core"
-	"github.com/coopnorge/mage/internal/git"
-	"github.com/magefile/mage/sh"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/coopnorge/mage/internal/core"
+	"github.com/coopnorge/mage/internal/git"
+	"github.com/magefile/mage/sh"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNormalizeGitURL(t *testing.T) {
@@ -158,5 +159,4 @@ func TestGitDiff(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
-
 }

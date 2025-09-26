@@ -236,8 +236,7 @@ func terraformDocsFix(_ context.Context, directory string) error {
 
 // Changes implements a target that check if the current branch has changes
 // related to main branch
-func Changes(ctx context.Context) error {
-
+func Changes(_ context.Context) error {
 	directories, err := terraform.FindTerraformProjects(".")
 	if err != nil {
 		return err

@@ -9,8 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	doublestar "github.com/bmatcuk/doublestar/v4"
-
 	"github.com/magefile/mage/sh"
 
 	"github.com/coopnorge/mage/internal/core"
@@ -57,8 +55,7 @@ func FindGoModules(base string) ([]string, error) {
 	return directories, nil
 }
 
-// IsGoModule returns true if a directory contains a go module. It returns
-// true is a directory contains a .go file.
+// ContainsGoSourceCode returns true is a directory contains a .go file.
 func ContainsGoSourceCode(p string, d fs.DirEntry) (bool, error) {
 	if !d.IsDir() {
 		return false, nil
@@ -93,7 +90,6 @@ func FindGoSourceCodeFolders(base string) ([]string, error) {
 
 		sourceCodeDir, err := ContainsGoSourceCode(workDir, d)
 		if err != nil {
-
 			return err
 		}
 		if !sourceCodeDir {
@@ -117,28 +113,9 @@ func HasChanges(goSourceCodeFolders []string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	for _, change := range changedFiles {
-		for _, folder := range goSourceCodeFolders {
-			match, err := path.Match(fmt.Sprintf("%s/*", folder), change)
-			if err != nil {
-				return false, err
-			}
-			if match {
-				return true, nil
-			}
-		}
-		for _, pattern := range strings.Split(os.Getenv("ADDITIONAL_GLOBS_GO"), ",") {
-			matchAdditional, err := doublestar.Match(pattern, change)
-			if err != nil {
-				return false, err
-			}
-			if matchAdditional {
-				return true, nil
-			}
-		}
-
-	}
-	return false, nil
+	// always trigger on go.mod/sum and workflows because of changes in ci.
+	additionalGlobs := append([]string{"**/go.mod", "**/go.sum", ".github/workflows/*"}, strings.Split(os.Getenv("ADDITIONAL_GLOBS_GO"), ",")...)
+	return core.CompareChangesToPaths(changedFiles, goSourceCodeFolders, additionalGlobs)
 }
 
 // Generate runs commands described by directives within existing files with
