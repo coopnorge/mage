@@ -7,21 +7,21 @@ import (
 	"github.com/magefile/mage/mg"
 )
 
-// JSLIB is the magefile namespace to group Javascript language specific commands
-type JSLIB mg.Namespace
+// JSLib is the magefile namespace to group Javascript language specific commands
+type JSLib mg.Namespace
 
 // Lint checks all javascript/typescript codd for code standards and formats
 //
 // See [javascript.Lint] for details.
-func (JSLIB) Lint(ctx context.Context) error {
+func (JSLib) Lint(ctx context.Context) error {
 	mg.CtxDeps(ctx, javascript.Lint)
 	return nil
 }
 
 // PublishLib publish npm package to the github package
 //
-// See [javascript.PublishLib] for details.
-func (JSLIB) PublishLib(ctx context.Context) error {
+// See [javascript.Publish] for details.
+func (JSLib) Publish(ctx context.Context) error {
 	mg.CtxDeps(ctx, javascript.PublishLib)
 	return nil
 }

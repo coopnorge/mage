@@ -24,32 +24,32 @@ const (
 	platforms = "linux/amd64,linux/arm64"
 )
 
-// JSAPP is the magefile namespace to group JSAPP commands
-type JSAPP mg.Namespace
+// JSApp is the magefile namespace to group JSAPP commands
+type JSApp mg.Namespace
 
 // BuildApp creates deployable artifacts from the source code in the repository,
 // to push the resulting images set the environmental variable PUSH_IMAGE to
 // true. Setting PUSH_IMAGE to true will disable the latest image tag.
-func (JSAPP) BuildApp(ctx context.Context) error {
+func (JSApp) BuildApp(ctx context.Context) error {
 	shouldPush, err := docker.ShouldPush()
 	if err != nil {
 		return err
 	}
 
-	mg.SerialCtxDeps(ctx, JSAPP.Validate, mg.F(buildAndPush, shouldPush))
+	mg.SerialCtxDeps(ctx, JSApp.Validate, mg.F(buildAndPush, shouldPush))
 	return writeImageMetadata()
 }
 
 // Lint checks all javascript/typescript codd for code standards and formats
 //
 // See [javascript.Lint] for details.
-func (JSAPP) Lint(ctx context.Context) error {
+func (JSApp) Lint(ctx context.Context) error {
 	mg.CtxDeps(ctx, javascript.Lint)
 	return nil
 }
 
 // Validate Dockerfiles
-func (JSAPP) Validate(_ context.Context) error {
+func (JSApp) Validate(_ context.Context) error {
 	return docker.Validate(dockerfile)
 }
 
