@@ -46,8 +46,8 @@ jobs:
       contents: read
       pull-requests: read
     outputs:
-      golang: ${{ steps.go.outputs.trigger-golang-ci-on == 'true' && github.event_name == 'pull_request' }}
-      terraform: ${{ steps.terraform.outputs.trigger-terraform-ci-on == 'true' && github.event_name == 'pull_request' }}
+      golang: ${{ steps.go.outputs.golang == 'true' && github.event_name == 'pull_request' }}
+      terraform: ${{ steps.terraform.outputs.terraform == 'true' && github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v5
       - name: Set up Go
@@ -63,7 +63,7 @@ jobs:
         env:
           ADDITIONAL_GLOBS_GO: ${{ inputs.additional-globs-go }}
       - name: Check for Terraform changes
-        id: go
+        id: terraform
         run: echo "terraform=$(go tool mage terrafom:changes)" >> $GITHUB_OUTPUT
         env:
           ADDITIONAL_GLOBS_TERRAFORM: ${{ inputs.additional-globs-terraform }}
