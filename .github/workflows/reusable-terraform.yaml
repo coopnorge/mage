@@ -12,7 +12,7 @@ on:
         default: true
         description: |
           If automerge-enabled is set to true this will only print if this pr can be auto merged
-       ok-plan-regex:
+      ok-plan-regex:
         type: string
         default: ^(Plan\ contains\ no\ changes|[0-1]\ to\ add, 0\ to\ change, 0\ to\ destroy|Push\ ignored\ as\ per\ policy)$
         description: |
