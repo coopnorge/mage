@@ -66,6 +66,8 @@ func TestGitDiff(t *testing.T) {
 			name: "no diff",
 			commands: []string{
 				"git init",
+				`git config user.email "mage@coop.no"`,
+				`git config user.name "Mage CI"`,
 				"git checkout -b main",
 				"cp $TD/1.txt ./1.txt",
 				"git add 1.txt",
