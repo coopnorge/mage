@@ -41,7 +41,7 @@ func DiffToMain() ([]string, error) {
 	// --name-only # only list file names
 	// --no-renames # rename of file is shown as delete and add
 	changedFiles := []string{}
-	gitDiff, err := sh.Output("git", "diff", "--name-only", "--no-renames", "main")
+	gitDiff, err := sh.Output("git", "diff", "--name-only", "--no-renames", "origin/main")
 	if err != nil {
 		return []string{}, err
 	}
