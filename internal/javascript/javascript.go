@@ -40,11 +40,13 @@ func Lint() error {
 
 // PublishLib checks if package.json file exists or not, checks if distribution/build-output folder
 // exists or not, checks if .npmrc file exits or not
-func PublishLib(shouldBuild bool, buildCommand string) error {
+func PublishLib() error {
 	githubToken := os.Getenv("GITHUB_TOKEN")
 	isPrivate := os.Getenv("PRIVATE")
 	distDir := os.Getenv("DIST_DIR")
 	githubTagname := os.Getenv("GITHUB_TAGNAME")
+	skipBuild := os.Getenv("SKIP_BUILD")
+	buildCommand := os.Getenv("BUILD_COMMAND")
 	newVersion := strings.TrimPrefix(githubTagname, "v")
 
 	if distDir == "" {
@@ -83,11 +85,12 @@ func PublishLib(shouldBuild bool, buildCommand string) error {
 		return errors.New("not a js node project")
 	}
 
-	if shouldBuild {
+	// Run build if build command is set or skip build is not set.
+	if buildCommand != "" || skipBuild == "" {
 		if buildCommand == "" {
 			buildCommand = "build"
 		}
-		buildCommand = fmt.Sprintf("npm ci && npm run %s", buildCommand)
+		buildCommand = fmt.Sprintf("npm install && npm run %s", buildCommand)
 	}
 
 	return sh.RunV(
