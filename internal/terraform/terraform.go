@@ -67,7 +67,7 @@ func HasChanges(terraformProjects []string) (bool, error) {
 		return false, err
 	}
 	// always trigger on go.mod/sum and workflows because of changes in ci.
-	additionalGlobs := append([]string{"**/go.mod", "**/go.sum", ".github/workflows/*"}, strings.Split(os.Getenv("ADDITIONAL_GLOBS_TERRAFORM"), ",")...)
+	additionalGlobs := append([]string{"go.mod", "go.sum", ".github/workflows/*"}, strings.Split(os.Getenv("ADDITIONAL_GLOBS_TERRAFORM"), ",")...)
 	return core.CompareChangesToPaths(changedFiles, terraformProjects, additionalGlobs)
 }
 
