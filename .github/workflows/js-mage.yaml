@@ -90,3 +90,15 @@ jobs:
           DIST_DIR: ${{ inputs.build-output-dir }}
           BUILD_COMMAND: ${{ inputs.build-command }}
           DEPLOY_ENV: ${{ inputs.app-deploy-env }}
+
+      - id: oci-images
+        name: Output OCI images references
+        run: |
+          if [ -f ./var/oci-images.json ]; then
+            echo "images=$(cat ./var/oci-images.json)" >> $GITHUB_OUTPUT
+          else
+            echo "images={}" >> $GITHUB_OUTPUT
+          fi
+      - name: Show output
+        if: always()
+        run: tree var/
