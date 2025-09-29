@@ -42,9 +42,6 @@ on:
         description: 'Use "production", "dev", "test", "staging", etc'
         required: false
         default: "production"
-    secrets:
-      GITHUB_TOKEN:
-        required: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
