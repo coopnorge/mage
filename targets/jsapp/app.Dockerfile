@@ -1,8 +1,6 @@
 FROM node:lts-slim@sha256:fe64023c6490eb001c7a28e9f92ef8deb6e40e1b7fc5352d695dcaef59e1652d AS builder
 
-ARG ENVIRONMENT=production
 ARG BUILD_SCRIPT=build
-ENV BUILD_ENV=$ENVIRONMENT
 
 WORKDIR /app
 COPY . .
@@ -10,9 +8,8 @@ COPY . .
 RUN --mount=type=secret,id=github_token \
     GITHUB_TOKEN=$(cat /run/secrets/github_token) npm install
 
-RUN npm run build
+RUN npm run ${BUILD_SCRIPT}
 
-# Production image, copy all the files and run next
 FROM builder AS runner
 WORKDIR /app
 
@@ -26,8 +23,6 @@ ARG DISTFOLDER=.next
 RUN addgroup --system --gid 1001 ${GROUP}
 RUN adduser --system --uid 1001 ${USER}
 
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=${USER}:${GROUP} /app/${DISTFOLDER}/standalone ./
 COPY --from=builder --chown=${USER}:${GROUP} /app/${DISTFOLDER}/static ./static
 COPY --from=builder --chown=${USER}:${GROUP} /app/public ./public
@@ -51,5 +46,4 @@ ENV PORT=3000
 # https://nextjs.org/docs/pages/api-reference/next-config-js/output
 ENV HOSTNAME="0.0.0.0"
 
-ENV APP_ENV=$BUILD_ENV
 CMD ["node", "server.js"]
