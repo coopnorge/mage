@@ -54,12 +54,18 @@ func (JSApp) Validate(_ context.Context) error {
 }
 
 func buildAndPush(shouldPush bool) error {
+	env := os.Getenv("DEPLOY_ENV")
+
+	if env == "" {
+		env = "production"
+	}
+
 	app := git.RepoNameFromURL()
-	imageName := docker.FullyQualifiedlImageName(app, "")
+	imageName := docker.FullyQualifiedlImageName(app, env)
 	imagePath := imagePath(app)
 	metadataPath := metadataPath(app)
 
-	return docker.BuildAndPush(dockerfile, platforms, imageName, ".", imagePath, metadataPath, app, "nodejsapp", shouldPush)
+	return docker.BuildAndPush(dockerfile, platforms, imageName, ".", imagePath, metadataPath, app, env, shouldPush)
 }
 
 func imageDir(app string) string {

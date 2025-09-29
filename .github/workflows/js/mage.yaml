@@ -1,10 +1,13 @@
-name: Lint, Test, Build and Publish to GitHub Package Registry
+name: mage
 
 on:
   workflow_call:
     inputs:
-      build:
-        description: 'Set to true if project needs to be build before publishing to github packages'
+      project-type:
+        description: 'Is it js library or application. Use "jslib" or "jsapp"'
+        required: true
+      skip-build:
+        description: 'Set to true if project do not need to be build'
         type: boolean
         default: false
         required: false
@@ -14,13 +17,16 @@ on:
         default: 'build'
         required: false
       lint:
-        description: 'Set to true if you want to run '
+        default: true
+        type: boolean
+        required: false
+        description: 'Set to true if you want to run'
       test:
         description: 'Set to true if project needs to run test'
         type: boolean
         default: false
         required: false
-      is-npm-package-private:
+      private:
         description: 'Set to true if npm package to be publish is a private'
         type: boolean
         required: false
@@ -30,6 +36,10 @@ on:
         type: string
         required: false
         default: 'dist'
+      app-deploy-env:
+        description: 'Use "production", "dev", "test", "staging", etc'
+        required: false
+        default: "production"
     secrets:
       GITHUB_TOKEN:
         required: true
@@ -60,14 +70,24 @@ jobs:
 
       - name: Lint
         if: ${{ inputs.lint }}
-        run: "go tool mage -v js:lint"
+        run: "go tool mage -v ${{ inputs.project-type}}:lint"
 
       - name: Publish
-        if: ${{ github.event.release.tag_name }}
-        run: "go tool mage -v js:publishlib"
+        if: ${{ github.ref == 'refs/heads/main' && github.event.release.tag_name && inputs.project-type == "jslib" }}
+        run: "go tool mage -v jslib:publish"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PRIVATE: ${{ inputs.is-npm-package-private }}
           DIST_DIR: ${{ inputs.build-output-dir }}
           GITHUB_TAGNAME: ${{ github.event.release.tag_name }}
+          SKIP_BUILD: ${{ github.skip-build }}
+          BUILD_COMMAND: ${{ github.build-command }}
 
+      - name: Build app and Push to docker repository
+        if: ${{ github.ref == 'refs/heads/main' && inputs.project-type == "jsapp" }}
+        run: "go tool mage -v jsapp:build"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DIST_DIR: ${{ inputs.build-output-dir }}
+          BUILD_COMMAND: ${{ inputs.build-command }}
+          DEPLOY_ENV: ${{ inputs.app-deploy-env }}
