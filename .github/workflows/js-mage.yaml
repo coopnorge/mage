@@ -6,6 +6,7 @@ on:
       project-type:
         description: 'Is it js library or application. Use "jslib" or "jsapp"'
         required: true
+        type: string
       skip-build:
         description: 'Set to true if project do not need to be build'
         type: boolean
@@ -37,6 +38,7 @@ on:
         required: false
         default: 'dist'
       app-deploy-env:
+        type: string
         description: 'Use "production", "dev", "test", "staging", etc'
         required: false
         default: "production"
