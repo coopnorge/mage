@@ -93,6 +93,7 @@ jobs:
 
       - id: oci-images
         name: Output OCI images references
+        if: ${{ github.ref == 'refs/heads/main' && inputs.project-type == 'jsapp' }}
         run: |
           if [ -f ./var/oci-images.json ]; then
             echo "images=$(cat ./var/oci-images.json)" >> $GITHUB_OUTPUT
@@ -100,5 +101,5 @@ jobs:
             echo "images={}" >> $GITHUB_OUTPUT
           fi
       - name: Show output
-        if: always()
+        if: ${{ github.ref == 'refs/heads/main' && inputs.project-type == 'jsapp' }}
         run: tree var/
