@@ -56,13 +56,12 @@ func PublishLib() error {
 	access := "public"
 
 	if isPrivate != "" {
-		access = "private"
+		access = "restricted"
 	}
 
 	if newVersion == "" {
 		return errors.New("no new package version set. Set GITHUB_TAGNAME env variable")
 	}
-
 
 	if skipBuild == "" {
 		isDistDirEmpty, errOnCheckDistDir := core.IsDirectoryEmpty(distDir)
