@@ -75,7 +75,7 @@ jobs:
         run: "go tool mage -v ${{ inputs.project-type}}:lint"
 
       - name: Publish
-        if: ${{ github.ref == 'refs/heads/main' && github.event.release.tag_name && inputs.project-type == "jslib" }}
+        if: ${{ github.ref == 'refs/heads/main' && github.event.release.tag_name && inputs.project-type == 'jslib' }}
         run: "go tool mage -v jslib:publish"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -86,7 +86,7 @@ jobs:
           BUILD_COMMAND: ${{ github.build-command }}
 
       - name: Build app and Push to docker repository
-        if: ${{ github.ref == 'refs/heads/main' && inputs.project-type == "jsapp" }}
+        if: ${{ github.ref == 'refs/heads/main' && inputs.project-type == 'jsapp' }}
         run: "go tool mage -v jsapp:build"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
