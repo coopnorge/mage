@@ -7,9 +7,11 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/devtool"
+	"github.com/coopnorge/mage/internal/git"
 )
 
 // IsTerraformProject returns true if a directory contains a go module.
@@ -55,6 +57,18 @@ func FindTerraformProjects(base string) ([]string, error) {
 		return nil, err
 	}
 	return directories, nil
+}
+
+// HasChanges checks if the current branch has any terraform changes compared
+// to the main branch
+func HasChanges(terraformProjects []string) (bool, error) {
+	changedFiles, err := git.DiffToMain()
+	if err != nil {
+		return false, err
+	}
+	// always trigger on go.mod/sum and workflows because of changes in ci.
+	additionalGlobs := append([]string{"go.mod", "go.sum", ".github/workflows/*"}, strings.Split(os.Getenv("ADDITIONAL_GLOBS_TERRAFORM"), ",")...)
+	return core.CompareChangesToPaths(changedFiles, terraformProjects, additionalGlobs)
 }
 
 // Test automates testing the packages named by the import paths, see also: go
@@ -191,7 +205,6 @@ func DevtoolTerraform(env map[string]string, directory string, cmd string, args 
 	dockerArgs := []string{
 		"--volume", "$HOME/.cache:/root/.cache",
 		"--volume", "$HOME/.terraform.d:/root/.terraform.d",
-		"--volume", "$HOME/.gitconfig:/root/.gitconfig",
 		"--volume", "$HOME/.ssh:/root/.ssh",
 		"--volume", fmt.Sprintf("%s:/src", cwd),
 		"--workdir", path.Join("/src", directory),

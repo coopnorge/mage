@@ -1,0 +1,101 @@
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+on:
+  workflow_call:
+    secrets: {}
+    inputs:
+      oci-image-base:
+        type: string
+        required: true
+      push-oci-image:
+        type: boolean
+        required: false
+        default: false
+      workload-identity-provider:
+        type: string
+        required: true
+      service-account:
+        type: string
+      artifact-registry-location:
+        type: string
+        default: "europe"
+        description: Artifact registry region name (e.g. "europe", "europe-north1").
+      go-runtime:
+        type: string
+        default: "docker"
+        description: Run mage go related tasks in "docker" (default) or local
+      additional-globs-go:
+        type: string
+        default: ""
+        description: A comma separated list of Globs which triggers golang ci
+      additional-globs-terraform:
+        type: string
+        default: ""
+        description: A comma separated list of Globs which triggers terraform ci
+    outputs:
+      oci-images:
+        value: ${{ jobs.goapp.outputs.oci-images }}
+        description: OCI image references.
+jobs:
+
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      golang: ${{ steps.go.outputs.golang == 'true' && github.event_name == 'pull_request' }}
+      terraform: ${{ steps.terraform.outputs.terraform == 'true' && github.event_name == 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: "**/go.sum"
+      - name: Install go Tools
+        run: go install tool
+      - name: Check for Go changes
+        id: go
+        run: echo "golang=$(go tool mage go:changes)" >> $GITHUB_OUTPUT
+        env:
+          ADDITIONAL_GLOBS_GO: ${{ inputs.additional-globs-go }}
+      - name: Check for Terraform changes
+        id: terraform
+        run: echo "terraform=$(go tool mage terraform:changes)" >> $GITHUB_OUTPUT
+        env:
+          ADDITIONAL_GLOBS_TERRAFORM: ${{ inputs.additional-globs-terraform }}
+
+  goapp:
+    name: Go application
+    needs: ["detect-changes"]
+    if: ${{  needs.detect-changes.outputs.golang == 'true'  }}
+    uses: coopnorge/mage/.github/workflows/reusable-goapp.yaml@main
+    permissions:
+      contents: read
+      id-token: write
+      packages: read
+    secrets: inherit
+    with:
+      oci-image-base: ${{ inputs.oci-image-base }}
+      push-oci-image: ${{ inputs.push-oci-image }}
+      workload-identity-provider: ${{ inputs.workload-identity-provider }}
+      service-account: ${{ inputs.service-account }}
+
+  terraform:
+    name: Terraform
+    needs: ["detect-changes"]
+    if: ${{  needs.detect-changes.outputs.terraform == 'true'  }}
+    uses: coopnorge/mage/.github/workflows/reusable-terraform.yaml@main
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+      packages: read
+      checks: read
+    secrets: inherit
+    with:
+      dependabot-automerge-enabled: true
