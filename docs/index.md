@@ -28,15 +28,33 @@ require github.com/magefile/mage v1.15.0 // indirect
 tool github.com/magefile/mage
 ```
 
-Create a `magefiles/magefile.go` and import the relevant target for the tech
-stack.
-
 ### Go app
 
-Ensure that the `main` packages for the commands in the Go modules are in
-`cmd/<command>/main.go`. See [Organizing a Go module: Multiple
-commands](https://go.dev/doc/modules/layout#multiple-commands) for more
-information on the topic.
+Ensure the following project structure is used. See [helloworld repo](https://github.com/coopnorge/helloworld)
+for reference and [Organizing a Go module: Multiple commands](https://go.dev/doc/modules/layout#multiple-commands)
+for more information on the topic.
+
+```title="project structure"
+helloworld/
+├── cmd/
+│   ├── helloworld/
+│   │   └── main.go
+│   └── data-sync/
+│       └── main.go
+├── internal/
+├── go.mod
+├── go.sum
+magefiles/
+└── magefile.go
+go.mod
+go.sum
+...
+```
+
+#### Create `magefiles/magefile.go`
+
+Create a `magefiles/magefile.go` file and import the shared
+mage module and other relevant targets for the tech stack.
 
 ```go title="magefiles/magefile.go"
 package main
@@ -91,6 +109,15 @@ go tool mage <target>
 
 ```console
 go tool mage -l
+```
+
+## Build Go binaries
+
+Builds binaries for all commands
+in the cmd directory.
+
+```console
+go tool mage go:build
 ```
 
 ## Run in GitHub Actions
@@ -154,7 +181,7 @@ inputs.
 - During the build you get the error message
 
 ```shell
-  ERROR: failed to build: OCI exporter is not supported for the docker 
+  ERROR: failed to build: OCI exporter is not supported for the docker
   driver. Switch to a different driver, or turn on the containerd image store,
   and try again. Learn more at https://docs.docker.com/go/build-exporters/
 ```
