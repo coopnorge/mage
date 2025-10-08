@@ -33,6 +33,10 @@ on:
         type: string
         default: ""
         description: A comma separated list of Globs which triggers terraform ci
+      go-maxprocs:
+        type: number
+        default: 2
+        description: Set the GOMAXPROCS env to this value. Runners have 2 cpus for private repos and 4 for public repos
     outputs:
       oci-images:
         value: ${{ jobs.goapp.outputs.oci-images }}
@@ -73,7 +77,7 @@ jobs:
     name: Go application
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.golang == 'true'  }}
-    uses: coopnorge/mage/.github/workflows/reusable-goapp.yaml@main
+    uses: coopnorge/mage/.github/workflows/reusable-goapp.yaml@update-go-app-workflow
     permissions:
       contents: read
       id-token: write
@@ -84,12 +88,13 @@ jobs:
       push-oci-image: ${{ inputs.push-oci-image }}
       workload-identity-provider: ${{ inputs.workload-identity-provider }}
       service-account: ${{ inputs.service-account }}
+      go-maxprocs: ${{ inputs.go-maxprocs }}
 
   terraform:
     name: Terraform
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.terraform == 'true'  }}
-    uses: coopnorge/mage/.github/workflows/reusable-terraform.yaml@main
+    uses: coopnorge/mage/.github/workflows/reusable-terraform.yaml@update-go-app-workflow
     permissions:
       contents: read
       pull-requests: write
@@ -99,3 +104,4 @@ jobs:
     secrets: inherit
     with:
       dependabot-automerge-enabled: true
+      go-maxprocs: ${{ inputs.go-maxprocs }}

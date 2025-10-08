@@ -33,6 +33,10 @@ on:
         default: false
         description: |
           Only run validation and skip spacelift checks
+      go-maxprocs:
+        type: number
+        default: 2
+        description: Set the GOMAXPROCS env to this value. Runners have 2 cpus for private repos and 4 for public repos
     secrets: {}
 
 jobs:
@@ -71,6 +75,8 @@ jobs:
       - name: Code Validation
         id: validate
         run: go tool mage terraform:validate
+        env:
+          GOMAXPROCS: ${{ inputs.go-maxprocs }}
 
       - name: Cleanup
         if: always()
