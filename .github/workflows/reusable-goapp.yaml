@@ -25,6 +25,11 @@ on:
         type: string
         default: "docker"
         description: Run mage go related tasks in "docker" (default) or local
+      go-maxprocs:
+        type: number
+        default: 2
+        description: Set the GOMAXPROCS env to this value. Runners have 2 cpus for private repos and 4 for public repos
+
     outputs:
       oci-images:
         value: ${{ jobs.mage.outputs.oci-images }}
@@ -89,6 +94,7 @@ jobs:
           OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
           PUSH_IMAGE: ${{ inputs.push-oci-image }}
           GO_RUNTIME: ${{ inputs.go-runtime }}
+          GOMAXPROCS: ${{ inputs.go-maxprocs }}
       - id: oci-images
         name: Output OCI images references
         run: |
