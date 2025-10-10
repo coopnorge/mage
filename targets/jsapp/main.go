@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"os"
 	"path"
+
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/docker"
 	"github.com/coopnorge/mage/internal/git"
@@ -115,7 +116,6 @@ func imagePath(app string, env string) string {
 func metadataPath(app string, env string) string {
 	return path.Join(imageDir(app, env), "metadata.json")
 }
-
 
 func writeImageMetadata() error {
 	images, err := docker.Images(core.OutputDir)

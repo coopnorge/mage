@@ -149,7 +149,6 @@ func WriteFile(path string, content string) error {
 	return nil
 }
 
-
 // IsDirectoryEmpty checks if the specified directory is empty
 // and returns true if it contains no files or subdirectories.
 // Also return error if there is any while reading the directory
@@ -162,4 +161,3 @@ func IsDirectoryEmpty(dirPath string) (bool, error) {
 
 	return len(entries) == 0, nil
 }
-

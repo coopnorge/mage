@@ -13,13 +13,10 @@ import (
 // Lint checks for the biome config file and runs the linting in a docker container
 // Prints error and exits
 func Lint() error {
-	if core.FileExists("biome.json") {
-		return devtoolBiomeLint()
-	} else {
+	if !core.FileExists("biome.json") {
 		return errors.New("biome not setup in your project. Install @coopnorge/web-devtools")
 	}
-
-	return nil
+	return devtoolBiomeLint()
 }
 
 // PublishLib checks if package.json file exists or not, checks if distribution/build-output folder
@@ -78,7 +75,6 @@ func PublishLib() error {
 	}
 
 	return devtoolPublishNpmLib(buildCommand, newVersion, access, githubToken)
-
 }
 
 // IsNpmrcValidForPublish checks if the .npmrc file is configured for GitHub
@@ -107,7 +103,6 @@ func IsNpmrcValidForPublish(directory string) bool {
 	return true
 }
 
-
 func devtoolBiomeLint() error {
 	// Get the current working directory to mount it.
 	cwd, err := os.Getwd()
@@ -125,7 +120,7 @@ func devtoolBiomeLint() error {
 	return err
 }
 
-func devtoolPublishNpmLib (buildCommand string, newVersion string, access string, githubToken string) error {
+func devtoolPublishNpmLib(buildCommand string, newVersion string, access string, githubToken string) error {
 	// Get the current working directory to mount it.
 	cwd, err := os.Getwd()
 
