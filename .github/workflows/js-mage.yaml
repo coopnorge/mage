@@ -32,11 +32,6 @@ on:
         type: boolean
         required: false
         default: false
-      build-output-dir:
-        description: 'Project to be deployed or published build output folder name. Defaults to dist'
-        type: string
-        required: false
-        default: 'dist'
       app-deploy-env:
         type: string
         description: 'Use "production", "dev", "test", "staging", etc'
@@ -80,14 +75,12 @@ jobs:
           DIST_DIR: ${{ inputs.build-output-dir }}
           GITHUB_TAGNAME: ${{ github.event.release.tag_name }}
           SKIP_BUILD: ${{ github.skip-build }}
-          BUILD_COMMAND: ${{ github.build-command }}
 
       - name: Build app and Push to docker repository
         if: ${{ github.ref == 'refs/heads/main' && inputs.project-type == 'jsapp' }}
         run: "go tool mage -v jsapp:build"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DIST_DIR: ${{ inputs.build-output-dir }}
           BUILD_COMMAND: ${{ inputs.build-command }}
           DEPLOY_ENV: ${{ inputs.app-deploy-env }}
 

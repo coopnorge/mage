@@ -5,9 +5,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"os"
-
 	"path"
-
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/docker"
 	"github.com/coopnorge/mage/internal/git"
@@ -26,6 +24,39 @@ const (
 
 // JSApp is the magefile namespace to group JSAPP commands
 type JSApp mg.Namespace
+
+// BuildAndPush OCI image. Setting push to true will push the images to the
+// registries. When push is true images are not tagged with latest.
+//
+// [BuildApp] will create:
+//
+//	./var
+//	├── oci-images.json
+//	└── app
+//		└── oci
+//	       ├── production
+//	       │   ├── image.tar
+//	       │   └── metadata.json
+//	       └── testing
+//	           ├── image.tar
+//	           └── metadata.json
+//
+// oci-images.json will contain a map over the images and tags for app per
+// environment. Use case: We add data-test-id for automating browser testing.
+// These are quite a lot of ids and we remove them for production build/env.
+//
+//	{
+//	  "app": {
+//	    "testing": {
+//	      "image": "ocreg.invalid/coopnorge/app/testing:v2025.03.11135857",
+//	      "tag": "v2025.03.11135857"
+//	    },
+//	    "production": {
+//	      "image": "ocreg.invalid/coopnorge/app1/production:v2025.03.11135857",
+//	      "tag": "v2025.03.11135857"
+//	    }
+//	  }
+//	}
 
 // BuildApp creates deployable artifacts from the source code in the repository,
 // to push the resulting images set the environmental variable PUSH_IMAGE to
@@ -60,28 +91,34 @@ func buildAndPush(shouldPush bool) error {
 		env = "production"
 	}
 
-	app := git.RepoNameFromURL()
+	app, err := git.RepoNameFromURL()
+
+	if err != nil {
+		return err
+	}
+
 	imageName := docker.FullyQualifiedlImageName(app, env)
-	imagePath := imagePath(app)
-	metadataPath := metadataPath(app)
+	imagePath := imagePath(app, env)
+	metadataPath := metadataPath(app, env)
 
 	return docker.BuildAndPush(dockerfile, platforms, imageName, ".", imagePath, metadataPath, app, env, shouldPush)
 }
 
-func imageDir(app string) string {
-	return path.Join(core.OutputDir, app, "oci")
+func imageDir(app string, env string) string {
+	return path.Join(core.OutputDir, app, "oci", env)
 }
 
-func imagePath(app string) string {
-	return path.Join(imageDir(app), "image.tar")
+func imagePath(app string, env string) string {
+	return path.Join(imageDir(app, env), "image.tar")
 }
 
-func metadataPath(app string) string {
-	return path.Join(imageDir(app), "metadata.json")
+func metadataPath(app string, env string) string {
+	return path.Join(imageDir(app, env), "metadata.json")
 }
+
 
 func writeImageMetadata() error {
-	images, err := getImageMetadata(core.OutputDir)
+	images, err := docker.Images(core.OutputDir)
 	if err != nil {
 		return err
 	}
@@ -91,29 +128,4 @@ func writeImageMetadata() error {
 		return err
 	}
 	return os.WriteFile(path.Join(core.OutputDir, "oci-images.json"), jsonString, 0644)
-}
-
-type binaryImage = map[string]string
-type binaryImages = map[string]binaryImage
-
-func getImageMetadata(imageDir string) (binaryImages, error) {
-	metadataFiles, err := docker.FindMetadataFiles(imageDir)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make(binaryImages)
-	for _, file := range metadataFiles {
-		metadata, err := docker.ParseMetadata(file)
-		if err != nil {
-			return nil, err
-		}
-		if _, ok := result[metadata.App]; !ok {
-			result[metadata.App] = make(binaryImage)
-		}
-		result[metadata.App]["tag"] = metadata.Tag
-		result[metadata.App]["image"] = metadata.ImageName
-	}
-
-	return result, nil
 }

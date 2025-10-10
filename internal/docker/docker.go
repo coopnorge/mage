@@ -125,19 +125,7 @@ func BuildAndPush(dockerfileContent, platforms, image, dockerContext, imagePath,
 
 // FindMetadataFiles ...
 func FindMetadataFiles(base string) ([]string, error) {
-	// First pattern: `base/*/oci/*/metadata.json`
-	patternMatch1, err := filepath.Glob(fmt.Sprintf("%s/*/oci/*/metadata.json", base))
-
-	if err != nil {
-		return nil, err
-	}
-
-	if len(patternMatch1) > 0 {
-		return patternMatch1, nil
-	}
-
-	// Second pattern: `base/*/oci/metadata`
-	return filepath.Glob(fmt.Sprintf("%s/*/oci/metadata.json", base))
+	return filepath.Glob(fmt.Sprintf("%s/*/oci/*/metadata.json", base))
 }
 
 // Metadata ...
@@ -271,18 +259,7 @@ func getAppName(imageName string) string {
 func getBinaryName(imageName string) string {
 	imageName = strings.TrimPrefix(imageName, fmt.Sprintf("%s/", imageBase()))
 	imageName = strings.Split(imageName, ":")[0]
-
-	// checks if there is a multiple projects or not.
-	// minside:v2025.09.18211159,ocreg.invalid/coopnorge/minside:latest
-	// helloworld/helloworld/cmd:v2025.09.18211159,ocreg.invalid/coopnorge/helloworld:latest
-	// helloworld/goodbyeworld/cmd:v2025.09.18211159,ocreg.invalid/coopnorge/goodbyeworld:latest
-	nameParts := strings.Split(imageName, "/")
-
-	if len(nameParts) > 1 {
-		return nameParts[1]
-	}
-
-	return ""
+	return strings.Split(imageName, "/")[1]
 }
 
 func getTag(imageName string) string {

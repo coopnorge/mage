@@ -9,11 +9,11 @@ import (
 )
 
 // RepoNameFromURL returns the repository name
-func RepoNameFromURL() string {
+func RepoNameFromURL() (string, error) {
 	url, err := RepoURL()
 
 	if err != nil {
-		return ""
+		return "", err
 	}
 
 	// 1. Get the last element of the URL path
@@ -22,7 +22,7 @@ func RepoNameFromURL() string {
 	// 2. Remove the ".git" suffix if it exists
 	projectName := strings.TrimSuffix(base, ".git")
 
-	return projectName
+	return projectName, nil
 }
 
 // RepoURL returns the remote URL to the git repository

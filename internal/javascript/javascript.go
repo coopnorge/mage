@@ -10,27 +10,11 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
-const (
-	// PushEnv is the name of the environmental variable used to trigger
-	// pushing of OCI images. Set PUSH_IMAGE to true to push images.
-	PushEnv = "PUSH_IMAGE"
-)
-
 // Lint checks for the biome config file and runs the linting in a docker container
 // Prints error and exits
 func Lint() error {
 	if core.FileExists("biome.json") {
-		// Get the current working directory to mount it.
-		cwd, err := os.Getwd()
-
-		if err == nil {
-			return sh.RunV(
-				"docker", "run", "--rm",
-				"-v", fmt.Sprintf("%s:/app", cwd),
-				"ghcr.io/biomejs/biome:1.8.3",
-				"lint", "/app",
-			)
-		}
+		return devtoolBiomeLint()
 	} else {
 		return errors.New("biome not setup in your project. Install @coopnorge/web-devtools")
 	}
@@ -42,20 +26,18 @@ func Lint() error {
 // exists or not, checks if .npmrc file exits or not
 func PublishLib() error {
 	githubToken := os.Getenv("GITHUB_TOKEN")
-	isPrivate := os.Getenv("PRIVATE")
-	distDir := os.Getenv("DIST_DIR")
+	privateEnv := os.Getenv("PRIVATE")
+	isPrivate := strings.ToLower(privateEnv) == "true" || privateEnv == "1"
 	githubTagname := os.Getenv("GITHUB_TAGNAME")
 	skipBuild := os.Getenv("SKIP_BUILD")
 	buildCommand := os.Getenv("BUILD_COMMAND")
 	newVersion := strings.TrimPrefix(githubTagname, "v")
 
-	if distDir == "" {
-		distDir = "dist"
-	}
+	distDir := "dist"
 
 	access := "public"
 
-	if isPrivate != "" {
+	if isPrivate {
 		access = "restricted"
 	}
 
@@ -79,7 +61,7 @@ func PublishLib() error {
 		return errors.New(".npmrc file missing")
 	}
 
-	if !core.IsNpmrcValidForPublish(".") {
+	if !IsNpmrcValidForPublish(".") {
 		return errors.New(".npmrc has no auth configuration")
 	}
 
@@ -95,13 +77,70 @@ func PublishLib() error {
 		buildCommand = fmt.Sprintf("npm install && npm run %s", buildCommand)
 	}
 
-	return sh.RunV(
-		"docker", "run", "--rm",
-		"-e", fmt.Sprintf("GITHUB_TOKEN=%s", githubToken),
-		"-v", "./:/app",
-		"node:slim",
-		"sh",
-		"-c",
-		fmt.Sprintf("cd /app %s && npm version %s && npm publish --access %s", buildCommand, newVersion, access),
-	)
+	return devtoolPublishNpmLib(buildCommand, newVersion, access, githubToken)
+
+}
+
+// IsNpmrcValidForPublish checks if the .npmrc file is configured for GitHub
+// Packages.
+func IsNpmrcValidForPublish(directory string) bool {
+	if directory == "" {
+		directory = "."
+	}
+
+	registryURL := "npm.pkg.github.com"
+	scope := "@coopnorge"
+	tokenIndicator := "_authToken="
+
+	npmrcContent, err := os.ReadFile(fmt.Sprintf("%s/.npmrc", directory))
+
+	if err != nil {
+		return false
+	}
+
+	contentStr := string(npmrcContent)
+
+	if !strings.Contains(contentStr, registryURL) && !strings.Contains(contentStr, scope) && !strings.Contains(contentStr, tokenIndicator) {
+		return false
+	}
+
+	return true
+}
+
+
+func devtoolBiomeLint() error {
+	// Get the current working directory to mount it.
+	cwd, err := os.Getwd()
+
+	if err == nil {
+		return sh.RunV(
+			"docker", "run", "--rm",
+			"--volume", fmt.Sprintf("%s:/app", cwd),
+			"--workdir", "/app",
+			"ghcr.io/biomejs/biome:1.8.3",
+			"lint",
+		)
+	}
+
+	return err
+}
+
+func devtoolPublishNpmLib (buildCommand string, newVersion string, access string, githubToken string) error {
+	// Get the current working directory to mount it.
+	cwd, err := os.Getwd()
+
+	if err == nil {
+		return sh.RunV(
+			"docker", "run", "--rm",
+			"-e", fmt.Sprintf("GITHUB_TOKEN=%s", githubToken),
+			"--volume", fmt.Sprintf("%s:/app", cwd),
+			"--workdir", "/app",
+			"node:slim",
+			"sh",
+			"-c",
+			fmt.Sprintf("%s && npm version %s && npm publish --access %s", buildCommand, newVersion, access),
+		)
+	}
+
+	return err
 }
