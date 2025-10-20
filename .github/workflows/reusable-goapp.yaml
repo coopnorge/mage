@@ -27,7 +27,7 @@ on:
         description: Run mage go related tasks in "docker" (default) or local
     outputs:
       oci-images:
-        value: ${{ jobs.mage.outputs.oci-images }}
+        value: ${{ jobs.goapp.outputs.oci-images }}
         description: OCI image references.
 
 jobs:
