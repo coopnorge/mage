@@ -38,14 +38,13 @@ on:
         value: ${{ jobs.goapp.outputs.oci-images }}
         description: OCI image references.
 jobs:
-
   detect-changes:
     name: Detect Changes
     runs-on: ubuntu-24.04
     permissions:
       contents: read
     outputs:
-      golang: ${{ steps.go.outputs.golang == 'true' && github.event_name == 'pull_request' }}
+      golang: ${{ steps.go.outputs.golang == 'true' || github.event_name == 'workflow_dispatch' }}
       terraform: ${{ steps.terraform.outputs.terraform == 'true' && github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v5
