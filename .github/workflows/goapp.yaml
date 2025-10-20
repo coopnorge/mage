@@ -44,7 +44,7 @@ jobs:
     permissions:
       contents: read
     outputs:
-      golang: ${{ steps.go.outputs.golang == 'true' }}
+      golang: ${{ steps.go.outputs.golang == 'true' || github.event_name == 'workflow_dispatch' }}
       terraform: ${{ steps.terraform.outputs.terraform == 'true' && github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v5
