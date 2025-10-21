@@ -45,8 +45,6 @@ package goapp
 
 import (
 	"context"
-	"os"
-	"strconv"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/magefile/mage/mg"
@@ -75,11 +73,7 @@ func Generate(ctx context.Context) error {
 //
 // For details see [Go.Build] and [Docker.BuildAndPush].
 func Build(ctx context.Context) error {
-	shouldPush, err := shouldPush()
-	if err != nil {
-		return err
-	}
-	mg.SerialCtxDeps(ctx, Validate, Go.Build, mg.F(Docker.BuildAndPush, shouldPush))
+	mg.SerialCtxDeps(ctx, Validate, Go.Build, Docker.BuildAndPush)
 	return nil
 }
 
@@ -104,16 +98,4 @@ func Fix(ctx context.Context) error {
 // Deletes the [core.OutputDir].
 func Clean(_ context.Context) error {
 	return sh.Rm(core.OutputDir)
-}
-
-func shouldPush() (bool, error) {
-	val, ok := os.LookupEnv(PushEnv)
-	if !ok || val == "" {
-		return false, nil
-	}
-	boolValue, err := strconv.ParseBool(val)
-	if err != nil {
-		return false, err
-	}
-	return boolValue, nil
 }
