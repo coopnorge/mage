@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"os"
 	"path"
+	"strconv"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/docker"
@@ -18,15 +19,13 @@ const (
 	platforms = "linux/amd64,linux/arm64"
 )
 
-var (
-	//go:embed app.Dockerfile
-	dockerfile string
-)
+//go:embed app.Dockerfile
+var dockerfile string
 
 // Docker is the magefile namespace to group Docker commands
 type Docker mg.Namespace
 
-// BuildAndPush OCI image. Setting push to true will push the images to the
+// BuildAndPush OCI image. Setting the PUSH_IMAGE environmental variable to true will push the images to the
 // registries. When push is true images are not tagged with latest.
 //
 // Given the input:
@@ -106,7 +105,11 @@ type Docker mg.Namespace
 //	    }
 //	  }
 //	}
-func (Docker) BuildAndPush(ctx context.Context, shouldPush bool) error {
+func (Docker) BuildAndPush(ctx context.Context) error {
+	shouldPush, err := shouldPush()
+	if err != nil {
+		return err
+	}
 	mg.CtxDeps(ctx, Go.Build)
 
 	goModules, err := golang.FindGoModules(".")
@@ -146,7 +149,7 @@ func writeImageMetadata() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path.Join(core.OutputDir, "oci-images.json"), jsonString, 0644)
+	return os.WriteFile(path.Join(core.OutputDir, "oci-images.json"), jsonString, 0o644)
 }
 
 // Validate Dockerfiles
@@ -164,4 +167,16 @@ func imagePath(app, binary string) string {
 
 func metadataPath(app, binary string) string {
 	return path.Join(imageDir(app, binary), "metadata.json")
+}
+
+func shouldPush() (bool, error) {
+	val, ok := os.LookupEnv(PushEnv)
+	if !ok || val == "" {
+		return false, nil
+	}
+	boolValue, err := strconv.ParseBool(val)
+	if err != nil {
+		return false, err
+	}
+	return boolValue, nil
 }

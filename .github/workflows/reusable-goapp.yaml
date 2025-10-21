@@ -84,7 +84,7 @@ jobs:
       - name: Install go Tools
         run: go install tool
       - name: Build
-        run: "go tool mage -v go:build"
+        run: "go tool mage -v docker:buildAndPush"
         env:
           OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
           PUSH_IMAGE: ${{ inputs.push-oci-image }}
