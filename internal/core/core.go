@@ -106,6 +106,9 @@ func CompareChangesToPaths(changes []string, paths []string, additionalGlobs []s
 			}
 		}
 		for _, pattern := range additionalGlobs {
+			if pattern == "" {
+				continue
+			}
 			matchAdditional, err := doublestar.Match(pattern, change)
 			if err != nil {
 				return false, err
