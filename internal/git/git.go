@@ -2,6 +2,7 @@ package git
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/magefile/mage/sh"
@@ -42,6 +43,11 @@ func DiffToMain() ([]string, error) {
 	// --no-renames # rename of file is shown as delete and add
 
 	changedFiles := []string{}
+	changedFilesFromEnv, ok := os.LookupEnv("CHANGED_FILES")
+	if ok {
+		changedFiles = strings.Split(changedFilesFromEnv, ",")
+		return changedFiles, nil
+	}
 	// We assume the default branch is main, preferred origin/main. We should
 	// add the ability for adding a specific branch as well.
 	diffBranch := "origin/main"
