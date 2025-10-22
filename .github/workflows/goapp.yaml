@@ -43,6 +43,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      pull-requests: read
     outputs:
       golang: ${{ steps.go.outputs.golang == 'true' || github.event_name == 'workflow_dispatch' }}
       terraform: ${{ steps.terraform.outputs.terraform == 'true' && github.event_name == 'pull_request' }}
@@ -55,6 +56,13 @@ jobs:
         with:
           go-version-file: go.mod
           cache-dependency-path: "**/go.sum"
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          list-files: csv
+          filters: |
+            changed:
+              - '**'
       - name: Install go Tools
         run: go install tool
       - name: List changes
@@ -65,11 +73,13 @@ jobs:
         run: echo "golang=$(go tool mage go:changes)" >> $GITHUB_OUTPUT
         env:
           ADDITIONAL_GLOBS_GO: ${{ inputs.additional-globs-go }}
+          CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
       - name: Check for Terraform changes
         id: terraform
         run: echo "terraform=$(go tool mage terraform:changes)" >> $GITHUB_OUTPUT
         env:
           ADDITIONAL_GLOBS_TERRAFORM: ${{ inputs.additional-globs-terraform }}
+          CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
 
   goapp:
     name: Go application
