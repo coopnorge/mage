@@ -57,6 +57,9 @@ jobs:
           cache-dependency-path: "**/go.sum"
       - name: Install go Tools
         run: go install tool
+      - name: List changes
+        id: list
+        run: go tool mage git:listChanges
       - name: Check for Go changes
         id: go
         run: echo "golang=$(go tool mage go:changes)" >> $GITHUB_OUTPUT
