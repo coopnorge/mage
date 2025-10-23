@@ -38,14 +38,14 @@ on:
         value: ${{ jobs.goapp.outputs.oci-images }}
         description: OCI image references.
 jobs:
-
   detect-changes:
     name: Detect Changes
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      pull-requests: read
     outputs:
-      golang: ${{ steps.go.outputs.golang == 'true' && github.event_name == 'pull_request' }}
+      golang: ${{ steps.go.outputs.golang == 'true' || github.event_name == 'workflow_dispatch' }}
       terraform: ${{ steps.terraform.outputs.terraform == 'true' && github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v5
@@ -56,18 +56,30 @@ jobs:
         with:
           go-version-file: go.mod
           cache-dependency-path: "**/go.sum"
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3
+        id: filter
+        with:
+          list-files: csv
+          filters: |
+            changed:
+              - '**'
       - name: Install go Tools
         run: go install tool
+      - name: List changes
+        id: list
+        run: go tool mage git:listChanges
       - name: Check for Go changes
         id: go
         run: echo "golang=$(go tool mage go:changes)" >> $GITHUB_OUTPUT
         env:
           ADDITIONAL_GLOBS_GO: ${{ inputs.additional-globs-go }}
+          CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
       - name: Check for Terraform changes
         id: terraform
         run: echo "terraform=$(go tool mage terraform:changes)" >> $GITHUB_OUTPUT
         env:
           ADDITIONAL_GLOBS_TERRAFORM: ${{ inputs.additional-globs-terraform }}
+          CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
 
   goapp:
     name: Go application

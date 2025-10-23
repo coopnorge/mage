@@ -51,10 +51,11 @@ func TestNormalizeGitURL(t *testing.T) {
 
 func TestGitDiff(t *testing.T) {
 	tests := []struct {
-		name     string
-		commands []string
-		want     []string
-		wantErr  bool
+		name            string
+		commands        []string
+		want            []string
+		wantErr         bool
+		changedFilesEnv string
 	}{
 		{
 			name:     "no git directory",
@@ -137,6 +138,13 @@ func TestGitDiff(t *testing.T) {
 			want:    []string{"1.txt", "3.txt", "4.txt"},
 			wantErr: false,
 		},
+		{
+			name:            "env override",
+			commands:        []string{},
+			want:            []string{"i", "am", `"over riden"`},
+			changedFilesEnv: `i,am,"over riden"`,
+			wantErr:         false,
+		},
 	}
 
 	wd, err := os.Getwd()
@@ -151,6 +159,9 @@ func TestGitDiff(t *testing.T) {
 			for _, command := range tt.commands {
 				cmd := strings.Fields(command)
 				assert.NoError(t, sh.RunWith(env, cmd[0], cmd[1:]...))
+			}
+			if tt.changedFilesEnv != "" {
+				os.Setenv("CHANGED_FILES", tt.changedFilesEnv)
 			}
 			got, gotErr := git.DiffToMain()
 			if tt.wantErr {
