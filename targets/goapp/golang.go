@@ -104,8 +104,14 @@ func (Go) Generate(ctx context.Context) error {
 //	                └── server
 func (Go) Build(ctx context.Context) error {
 	mg.CtxDeps(ctx, golangTargets.DownloadModules)
-	mg.CtxDeps(ctx, Go.Validate)
+	mg.SerialCtxDeps(ctx, Go.Validate, Go.BuildBinaries)
 
+	return nil
+}
+
+// BuildBinaries just finds and builds the binaries
+// just like `go build`.
+func (Go) BuildBinaries(ctx context.Context) error {
 	rootPath, err := os.Getwd()
 	if err != nil {
 		return err
@@ -135,6 +141,12 @@ func (Go) Build(ctx context.Context) error {
 
 	mg.CtxDeps(ctx, bins...)
 
+	return nil
+}
+
+// DownloadModules download the go modules
+func (Go) DownloadModules(ctx context.Context) error {
+	mg.CtxDeps(ctx, golangTargets.DownloadModules)
 	return nil
 }
 

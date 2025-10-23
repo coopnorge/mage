@@ -83,8 +83,16 @@ jobs:
           cache-dependency-path: "**/go.sum"
       - name: Install go Tools
         run: go install tool
-      - name: Build
-        run: "go tool mage -v docker:buildAndPush"
+      - name: Download Go modules
+        run: "go tool mage -v go:downloadModules"
+      - name: Run Go Lint
+        run: "go tool mage -v go:lint"
+      - name: Run Go Test
+        run: "go tool mage -v go:test"
+      - name: Run Go build
+        run: "go tool mage -v go:buildBinaries"
+      - name: Build Docker Images
+        run: "go tool mage -v docker:buildImages"
         env:
           OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
           PUSH_IMAGE: ${{ inputs.push-oci-image }}
