@@ -94,19 +94,19 @@ jobs:
           compare-to: ${{ steps.coop-mage-version.outputs.coop_mage_version }}
       # this block requires coopnorge/mage > v0.10.0
       - name: Download Go modules
-        if: "${{ steps.version.outputs.comparison-result }} == '>'"
+        if: contains(${{ steps.version.outputs.comparison-result }},'>')
         run: "go tool mage -v go:downloadModules"
       - name: Run Go Lint
-        if: "${{ steps.version.outputs.comparison-result }} == '>'"
+        if: contains(${{ steps.version.outputs.comparison-result }},'>')
         run: "go tool mage -v go:lint"
       - name: Run Go Test
-        if: "${{ steps.version.outputs.comparison-result }} == '>'"
+        if: contains(${{ steps.version.outputs.comparison-result }},'>')
         run: "go tool mage -v go:test"
       - name: Run Go build
-        if: "${{ steps.version.outputs.comparison-result }} == '>'"
+        if: contains(${{ steps.version.outputs.comparison-result }},'>')
         run: "go tool mage -v go:buildBinaries"
       - name: Build Docker Images
-        if: "${{ steps.version.outputs.comparison-result }} == '>'"
+        if: contains(${{ steps.version.outputs.comparison-result }},'>')
         run: "go tool mage -v docker:buildImages"
         env:
           OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
@@ -114,7 +114,7 @@ jobs:
           GO_RUNTIME: ${{ inputs.go-runtime }}
        # this block is uses when <= v0.10.0
       - name: Build Go and Docker Images
-        if: "${{ steps.version.outputs.comparison-result }} == '<' || ${{ steps.version.outputs.comparison-result }} == '='"
+        if: contains(${{ steps.version.outputs.comparison-result }}, '<') || contains(${{ steps.version.outputs.comparison-result }},'=')
         run: "go tool mage -v docker:buildAndPush"
         env:
           OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
