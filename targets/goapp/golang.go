@@ -182,7 +182,7 @@ func findCommands(goModules []string) ([]cmd, error) {
 }
 
 func (Go) build(ctx context.Context, workingDirectory, input, output, goos, goarch string) error {
-	mg.CtxDeps(ctx, Go.Validate, mg.F(devtoolTarget.Build, "golang", golangTargets.GolangToolsDockerfile))
+	mg.CtxDeps(ctx, mg.F(devtoolTarget.Build, "golang", golangTargets.GolangToolsDockerfile))
 
 	environmentalVariables := map[string]string{"GOOS": goos, "GOARCH": goarch, "CGO_ENABLED": "0"}
 

@@ -89,19 +89,19 @@ jobs:
 
         # this block requires coopnorge/mage > v0.10.0
       - name: Download Go modules
-        if: ${{ steps.has-multiple-cmds.outputs.outcome }} == '1'
+        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
         run: "go tool mage -v go:downloadModules"
       - name: Run Go Lint
-        if: ${{ steps.has-multiple-cmds.outputs.outcome }} == '1'
+        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
         run: "go tool mage -v go:lint"
       - name: Run Go Test
-        if: ${{ steps.has-multiple-cmds.outputs.outcome }} == '1'
+        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
         run: "go tool mage -v go:test"
       - name: Run Go build
-        if: ${{ steps.has-multiple-cmds.outputs.outcome }} == '1'
+        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
         run: "go tool mage -v go:buildBinaries"
       - name: Build Docker Images
-        if: ${{ steps.has-multiple-cmds.outputs.outcome }} == '1'
+        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
         run: "go tool mage -v docker:buildImages"
         env:
           OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
@@ -109,7 +109,7 @@ jobs:
           GO_RUNTIME: ${{ inputs.go-runtime }}
        # this block is uses when <= v0.10.0
       - name: Build Go and Docker Images
-        if: ${{ steps.has-multiple-cmds.outputs.outcome }} == '0'
+        if: ${{ steps.has-multiple-cmds.outputs.outcome == '0' }}
         run: "go tool mage -v docker:buildAndPush"
         env:
           OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
