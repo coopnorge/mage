@@ -85,7 +85,7 @@ jobs:
     name: Go application
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.golang == 'true'  }}
-    uses: coopnorge/mage/.github/workflows/reusable-goapp.yaml@main
+    uses: coopnorge/mage/.github/workflows/reusable-goapp.yaml@fix-go-app-outputs
     permissions:
       contents: read
       id-token: write
