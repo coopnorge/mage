@@ -83,16 +83,39 @@ jobs:
           cache-dependency-path: "**/go.sum"
       - name: Install go Tools
         run: go install tool
+      - name: Get coop mage version
+        id: coop-mage-version
+        run: echo "coop_mage_version=$(go list -m all | grep github.com/coopnorge/mage | cut -d ' ' -f2)" >> $GITHUB_OUTPUT
+      - name: Mage has multiple go targets
+        uses: madhead/semver-utils@latest
+        id: version
+        with:
+          version: v0.10.0
+          compare-to: ${{ steps.coop-mage-version.outputs.coop_mage_version }}
+      # this block requires coopnorge/mage > v0.10.0
       - name: Download Go modules
+        if: "${{ steps.version.outputs.comparison-result }} == '>'"
         run: "go tool mage -v go:downloadModules"
       - name: Run Go Lint
+        if: "${{ steps.version.outputs.comparison-result }} == '>'"
         run: "go tool mage -v go:lint"
       - name: Run Go Test
+        if: "${{ steps.version.outputs.comparison-result }} == '>'"
         run: "go tool mage -v go:test"
       - name: Run Go build
+        if: "${{ steps.version.outputs.comparison-result }} == '>'"
         run: "go tool mage -v go:buildBinaries"
       - name: Build Docker Images
+        if: "${{ steps.version.outputs.comparison-result }} == '>'"
         run: "go tool mage -v docker:buildImages"
+        env:
+          OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
+          PUSH_IMAGE: ${{ inputs.push-oci-image }}
+          GO_RUNTIME: ${{ inputs.go-runtime }}
+       # this block is uses when <= v0.10.0
+      - name: Build Go and Docker Images
+        if: "${{ steps.version.outputs.comparison-result }} == '<' || ${{ steps.version.outputs.comparison-result }} == '='"
+        run: "go tool mage -v docker:buildAndPush"
         env:
           OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
           PUSH_IMAGE: ${{ inputs.push-oci-image }}
