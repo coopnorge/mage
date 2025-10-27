@@ -97,7 +97,7 @@ jobs:
       - name: Run Go Test
         if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
         run: "go tool mage -v go:test"
-      - name: Run Go build
+      - name: Run Go Build
         if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
         run: "go tool mage -v go:buildBinaries"
       - name: Build Docker Images
