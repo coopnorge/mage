@@ -106,12 +106,19 @@ type Docker mg.Namespace
 //	  }
 //	}
 func (Docker) BuildAndPush(ctx context.Context) error {
+	mg.SerialCtxDeps(ctx, Go.Build, Docker.BuildImages)
+	return nil
+}
+
+// BuildImages just builds docker images. It expects the
+// binaries to present in the ./var/bin/ directories.
+// Setting the PUSH_IMAGE environmental variable to true will push the images to the
+// registries.
+func (Docker) BuildImages(ctx context.Context) error {
 	shouldPush, err := shouldPush()
 	if err != nil {
 		return err
 	}
-	mg.CtxDeps(ctx, Go.Build)
-
 	goModules, err := golang.FindGoModules(".")
 	if err != nil {
 		return err
