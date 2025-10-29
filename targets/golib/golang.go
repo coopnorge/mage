@@ -25,6 +25,8 @@ func (Go) Generate(ctx context.Context) error {
 //
 // See [Go.Test] and [Go.Lint] for details.
 func (Go) Validate(ctx context.Context) error {
+	mg.CtxDeps(ctx, Go.DownloadDevTools)
+	mg.CtxDeps(ctx, Go.DownloadModules)
 	mg.CtxDeps(ctx, Go.Test, Go.Lint)
 	return nil
 }
@@ -66,5 +68,22 @@ func (Go) LintFix(ctx context.Context) error {
 // the current branch contains changes compared to the main branch.
 func (Go) Changes(ctx context.Context) error {
 	mg.CtxDeps(ctx, golang.Changes)
+	return nil
+}
+
+// DownloadDevTools download all devtools required for running the golang
+// targets
+func (Go) DownloadDevTools(ctx context.Context) error {
+	mg.CtxDeps(
+		ctx,
+		mg.F(golang.DownloadDevTool, "golang"),
+		mg.F(golang.DownloadDevTool, "golangci-lint"),
+	)
+	return nil
+}
+
+// DownloadModules download the go modules
+func (Go) DownloadModules(ctx context.Context) error {
+	mg.CtxDeps(ctx, golang.DownloadModules)
 	return nil
 }
