@@ -8,7 +8,6 @@ import (
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/golang"
-	devtoolTarget "github.com/coopnorge/mage/internal/targets/devtool"
 	golangTargets "github.com/coopnorge/mage/internal/targets/golang"
 
 	"github.com/magefile/mage/mg"
@@ -22,20 +21,18 @@ const (
 	binDir = "bin"
 )
 
-var (
-	// OsArchMatrix defines the CPU architectures to build binaries for
-	OsArchMatrix = []map[string]string{
-		{
-			"GOOS": "darwin", "GOARCH": "arm64",
-		},
-		{
-			"GOOS": "linux", "GOARCH": "amd64",
-		},
-		{
-			"GOOS": "linux", "GOARCH": "arm64",
-		},
-	}
-)
+// OsArchMatrix defines the CPU architectures to build binaries for
+var OsArchMatrix = []map[string]string{
+	{
+		"GOOS": "darwin", "GOARCH": "arm64",
+	},
+	{
+		"GOOS": "linux", "GOARCH": "amd64",
+	},
+	{
+		"GOOS": "linux", "GOARCH": "arm64",
+	},
+}
 
 // Generate runs commands described by directives within existing files with
 // the intent to generate Go code. Those commands can run any process but the
@@ -103,7 +100,8 @@ func (Go) Generate(ctx context.Context) error {
 //	                ├── dataloader
 //	                └── server
 func (Go) Build(ctx context.Context) error {
-	mg.CtxDeps(ctx, golangTargets.DownloadModules)
+	mg.CtxDeps(ctx, Go.DownloadDevTools)
+	mg.CtxDeps(ctx, Go.DownloadModules)
 	mg.SerialCtxDeps(ctx, Go.Validate, Go.BuildBinaries)
 
 	return nil
@@ -181,9 +179,7 @@ func findCommands(goModules []string) ([]cmd, error) {
 	return result, nil
 }
 
-func (Go) build(ctx context.Context, workingDirectory, input, output, goos, goarch string) error {
-	mg.CtxDeps(ctx, mg.F(devtoolTarget.Build, "golang", golangTargets.GolangToolsDockerfile))
-
+func (Go) build(_ context.Context, workingDirectory, input, output, goos, goarch string) error {
 	environmentalVariables := map[string]string{"GOOS": goos, "GOARCH": goarch, "CGO_ENABLED": "0"}
 
 	return golang.DevtoolGo(
@@ -202,6 +198,8 @@ func (Go) build(ctx context.Context, workingDirectory, input, output, goos, goar
 //
 // For details see [Go.Test] and [Go.Lint].
 func (Go) Validate(ctx context.Context) error {
+	mg.CtxDeps(ctx, Go.DownloadDevTools)
+	mg.CtxDeps(ctx, Go.DownloadModules)
 	mg.CtxDeps(ctx, Go.Test, Go.Lint)
 	return nil
 }
@@ -210,6 +208,8 @@ func (Go) Validate(ctx context.Context) error {
 //
 // For details see [Go.LintFix].
 func (Go) Fix(ctx context.Context) error {
+	mg.CtxDeps(ctx, Go.DownloadDevTools)
+	mg.CtxDeps(ctx, Go.DownloadModules)
 	mg.CtxDeps(ctx, Go.LintFix)
 	return nil
 }
@@ -251,5 +251,16 @@ func binaryOutputBasePath(app string) string {
 // the current branch contains changes compared to the main branch.
 func (Go) Changes(ctx context.Context) error {
 	mg.CtxDeps(ctx, golangTargets.Changes)
+	return nil
+}
+
+// DownloadDevTools download all devtools required for running the golang
+// targets
+func (Go) DownloadDevTools(ctx context.Context) error {
+	mg.CtxDeps(
+		ctx,
+		mg.F(golangTargets.DownloadDevTool, "golang"),
+		mg.F(golangTargets.DownloadDevTool, "golangci-lint"),
+	)
 	return nil
 }
