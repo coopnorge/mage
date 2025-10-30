@@ -203,14 +203,15 @@ func DevtoolGo(env map[string]string, cmd string, args ...string) error {
 	}
 
 	dockerArgs := []string{
-		"--volume", fmt.Sprintf("%s:/go/pkg/mod", goModCache),
-		"--volume", "/var/run/docker.sock:/var/run/docker.sock",
-		"--volume", "$HOME/.cache:/root/.cache",
-		"--volume", "$HOME/.gitconfig:/root/.gitconfig",
-		"--volume", "$HOME/.ssh:/root/.ssh",
-		"--env", "TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal",
-		"--add-host", "host.docker.internal:host-gateway",
-		"--volume", fmt.Sprintf("%s:/app", path),
+		"--volume", fmt.Sprintf("%s:/go/pkg/mod", goModCache), // Mount downloaded go modules
+		"--volume", "/var/run/docker.sock:/var/run/docker.sock", // Mount Docker socket for docker-in-docker
+		"--volume", "$HOME/.cache:/root/.cache", // Mount caches, such as linter cache, Go build cache, etc.
+		"--volume", "$HOME/.gitconfig:/root/.gitconfig", // Mount Git config, for access to private repos
+		"--volume", "$HOME/.ssh:/root/.ssh", // Mount SSH config, for access to private repos
+		"--volume", fmt.Sprintf("%s:/app", path), // Mount the source code
+		"--env", "TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal", // For testcontainers to work when running with docker-in-docker
+		"--env", "GOMODCACHE=/go/pkg/mod", // Ensure that the GOMODCACHE env is set correctly
+		"--add-host", "host.docker.internal:host-gateway", // For testcontainers to work when running with docker-in-docker
 		"--workdir", "/app",
 	}
 
@@ -237,8 +238,10 @@ func DevtoolGolangCILint(env map[string]string, cmd string, args ...string) erro
 	}
 
 	dockerArgs := []string{
-		"--volume", fmt.Sprintf("%s:/go/pkg/mod", goModCache),
-		"--volume", fmt.Sprintf("%s:/app", path),
+		"--volume", fmt.Sprintf("%s:/go/pkg/mod", goModCache), // Mount downloaded go modules
+		"--volume", fmt.Sprintf("%s:/app", path), // Mount the source code
+		"--volume", "$HOME/.cache:/root/.cache", // Mount caches, such as linter cache, Go build cache, etc.
+		"--env", "GOMODCACHE=/go/pkg/mod", // Ensure that the GOMODCACHE env is set correctly
 		"--workdir", "/app",
 	}
 
