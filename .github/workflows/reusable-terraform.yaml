@@ -4,35 +4,12 @@ concurrency:
 on:
   workflow_call:
     inputs:
-      dependabot-automerge-enabled:
-        type: boolean
-        default: false
-        description: |
-          Should dependabot be auto merged when here are no changes to terraform plan. Must be combined with
-          dependabot-automerge-preview.
-      dependabot-automerge-preview:
-        type: boolean
-        default: true
-        description: |
-          If automerge-enabled is set to true this will only print if this pr can be auto merged
       ok-plan-regex:
         type: string
         default: ^(Plan\ contains\ no\ changes|[0-1]\ to\ add, 0\ to\ change, 0\ to\ destroy|Push\ ignored\ as\ per\ policy)$
         description: |
           A regex which should match ok outputs to terraform plans as defined by
           spacelift.
-      merge-strategy:
-        type: string
-        required: false
-        default: "squash and merge"
-        description: |
-          Strategy type to use when Dependabot merges the PR.
-          See https://docs.github.com/en/code-security/dependabot/working-with-dependabot/managing-pull-requests-for-dependency-updates#managing-dependabot-pull-requests-with-comment-commands
-      validation-only:
-        type: boolean
-        default: false
-        description: |
-          Only run validation and skip spacelift checks
     secrets: {}
 
 jobs:
@@ -43,7 +20,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: "Setup TFE Credentials"
+      - name: "Setup Spacelift Credentials"
         run: |
           set -x
           mkdir -p $HOME/.terraform.d
@@ -195,52 +172,4 @@ jobs:
           else
             echo non hurray
             echo "automerge=no" >> "$GITHUB_OUTPUT"
-          fi
-
-
-      - name: Set dependabot comment
-        id: comment
-        run: |
-          search_string="Mergeable by dependabot"
-          echo "search_string=$search_string" >> "$GITHUB_OUTPUT"
-          echo "\`\`\`diff" > dependabot_body.md
-          if [[ "${{steps.spacelift-check.outputs.automerge}}" == "yes" ]] ; then
-            echo "+ $search_string" >> dependabot_body.md
-          else
-            echo "- Not $search_string" >> dependabot_body.md
-          fi
-          echo "\`\`\`" >> dependabot_body.md
-
-      - name: Find old dependabot comment
-        uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad # pin@v3
-        id: fc
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          body-includes: ${{ steps.comment.outputs.search_string }}
-          token: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
-
-      - name: create or update dependabot comment
-        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # pin@v4
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          body-file: 'dependabot_body.md'
-          reactions: eyes
-          token: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
-          edit-mode: replace
-
-      - name: Approve pr
-        env:
-          GH_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
-        if: |
-          inputs.dependabot-automerge-preview == false &&
-          github.actor == 'dependabot[bot]'
-        run: |
-          if [[ "${{steps.spacelift-check.outputs.automerge}}" == "yes" ]] ; then
-            gh pr review \
-              --approve \
-              --body "@dependabot ${{ inputs.merge-strategy }}" \
-              --repo ${{ github.repository }} ${{ github.event.number }}
-          else
-            echo "no auto approve"
           fi
