@@ -109,5 +109,3 @@ jobs:
       packages: read
       checks: read
     secrets: inherit
-    with:
-      dependabot-automerge-enabled: true
