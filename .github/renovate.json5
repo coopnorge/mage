@@ -1,0 +1,8 @@
+{
+    "baseBranchPatterns": ["main"],
+    "rebaseWhen": "conflicted",
+    "labels": ["dependencies", "renovate"],
+    "automerge": true,
+    "automergeStrategy": "squash",
+    "enabledManagers": ["tflint-plugin"]
+}
