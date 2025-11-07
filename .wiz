@@ -1,4 +1,0 @@
-ignore:
-  global_paths:
-    testdata/**
-      reason: BY_DESIGN
