@@ -3,25 +3,39 @@ package jslib
 import (
 	"context"
 
-	"github.com/coopnorge/mage/internal/javascript"
 	"github.com/magefile/mage/mg"
+	"github.com/magefile/mage/sh"
 )
 
-// JSLib is the magefile namespace to group Javascript language specific commands
-type JSLib mg.Namespace
-
-// Lint checks all javascript/typescript codd for code standards and formats
-//
-// See [javascript.Lint] for details.
-func (JSLib) Lint(ctx context.Context) error {
-	mg.CtxDeps(ctx, javascript.Lint)
+// BuildAndPublish checks for linting and formatting issue runs for unit test
+// if not skipped and builds the project and publish it to the npm repository
+func BuildAndPublish(ctx context.Context) error {
+	mg.SerialCtxDeps(ctx, Lint, Format, UnitTest, JavaScript.Build, JavaScript.Publish)
 	return nil
 }
 
-// Publish publish npm package to the github package
-//
-// See [javascript.Publish] for details.
-func (JSLib) Publish(ctx context.Context) error {
-	mg.CtxDeps(ctx, javascript.PublishLib)
+
+// Install fetches all Node.js dependencies.
+func Install(ctx context.Context) error {
+	mg.CtxDeps(ctx, JavaScript.Install)
+	return nil
+}
+
+// Lint runs the standard linting script defined in package.json.
+func Lint(ctx context.Context) error {
+	mg.CtxDeps(ctx, JavaScript.Lint)
+	return nil
+}
+
+// Format runs the standard formatting check script defined in package.json.
+func Format(ctx context.Context) error {
+	mg.CtxDeps(ctx, JavaScript.Format)
+	return nil
+}
+
+// UnitTest unit tests using the package.json script.
+func UnitTest(ctx context.Context) error {
+
+	mg.CtxDeps(ctx, JavaScript.UnitTest)
 	return nil
 }

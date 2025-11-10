@@ -130,9 +130,9 @@ func FileExists(path string) bool {
 	return err == nil
 }
 
-// WriteFile creates a file with a given content or appends content to existing file
+// CreateOrAppendFile creates a file with a given content or appends content to existing file
 // at the specified path
-func WriteFile(path string, content string) error {
+func CreateOrAppendFile(path string, content string) error {
 	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 
 	defer func() {

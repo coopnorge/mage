@@ -1,0 +1,76 @@
+name: js-app
+
+on:
+  workflow_call:
+    inputs:
+      build-command:
+        description: 'NPM project build command. Defaults to build'
+        type: string
+        default: 'build'
+        required: false
+      skip-unit-tests:
+        description: 'Set to true if project needs to skip running unit tests'
+        type: boolean
+        default: false
+        required: false
+      skip-e2e-tests:
+        description: 'Set to true if project needs to skip running browser tests'
+        type: boolean
+        default: false
+        required: false
+      app-deploy-env:
+        type: string
+        description: 'Use "production", "dev", "test", "staging", etc'
+        required: false
+        default: "production"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  js-app-build:
+    name: Build nextjs app
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.24.0'
+          cache-dependency-path: "**/go.sum"
+
+      - name: Install go Tools
+        run: go install tool
+
+      - name: Setup Node.js (for the JS project)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build app and Push to docker repository
+        run: "go tool mage -v buildandpublish"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BUILD_COMMAND: ${{ inputs.build-command }}
+          DEPLOY_ENV: ${{ inputs.app-deploy-env }}
+          SKIP_UNIT_TEST: ${{ github.skip-unit-tests }}
+          SKIP_E2E_TEST: ${{ github.skip-e2e-tests }}
+
+      - id: oci-images
+        name: Output OCI images references
+        run: |
+          if [ -f ./var/oci-images.json ]; then
+            echo "images=$(cat ./var/oci-images.json)" >> $GITHUB_OUTPUT
+          else
+            echo "images={}" >> $GITHUB_OUTPUT
+          fi
+      - name: Show output
+        run: tree var/
+

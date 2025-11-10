@@ -1,0 +1,67 @@
+name: mage
+
+on:
+  workflow_call:
+    inputs:
+      skip-build:
+        description: 'Set to true if project do not need to be build'
+        type: boolean
+        default: false
+        required: false
+      build-command:
+        description: 'NPM project build command. Defaults to build:library'
+        type: string
+        default: 'build:library'
+        required: false
+      skip-unit-tests:
+        description: 'Set to true if want to skip unit tests'
+        type: boolean
+        default: false
+        required: false
+      private:
+        description: 'Set to true if npm package to be publish is a private'
+        type: boolean
+        required: false
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  publish-js-lib:
+    name: Publish to github npm repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.24.0'
+          cache-dependency-path: "**/go.sum"
+
+      - name: Install go Tools
+        run: go install tool
+
+      - name: Setup Node.js (for the JS project)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build and publish
+        run: go tool mage -v buildandpublish
+        env:
+          BUILD_COMMAND: ${{ github.build-command }}
+          SKIP_BUILD: ${{ gibhub.skip-build }}
+          SKIP_UNIT_TEST: ${{ github.skip-unit-tests }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRIVATE: ${{ inputs.is-npm-package-private }}
+          GITHUB_TAGNAME: ${{ github.event.release.tag_name }}
+
+
