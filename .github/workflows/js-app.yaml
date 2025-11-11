@@ -55,7 +55,7 @@ jobs:
           node-version: '20'
 
       - name: Build app and Push to docker repository
-        run: "go tool mage -v buildandpublish"
+        run: "go tool mage -v buildAndPublish"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BUILD_COMMAND: ${{ inputs.build-command }}

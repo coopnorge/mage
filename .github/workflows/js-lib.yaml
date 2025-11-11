@@ -55,7 +55,7 @@ jobs:
           node-version: '20'
 
       - name: Build and publish
-        run: go tool mage -v buildandpublish
+        run: go tool mage -v buildAndPublish
         env:
           BUILD_COMMAND: ${{ github.build-command }}
           SKIP_BUILD: ${{ github.skip-build }}
