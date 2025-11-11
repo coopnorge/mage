@@ -1,24 +1,24 @@
 package javascript
 
 import (
+	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
-	"github.com/coopnorge/mage/internal/javascript"
-	"github.com/magefile/mage/mg"
+	"strings"
+
+	"github.com/coopnorge/mage/internal/core"
 	"github.com/magefile/mage/sh"
 )
 
 // Install fetches all Node.js dependencies.
 func Install() error {
-	if javascript.HasPackageConfig() {
+	if HasPackageConfig() {
 		tokenName := "GITHUB_TOKEN"
 		tokenValue := os.Getenv(tokenName)
 
-
 		env := map[string]string{}
 
-		if githubToken != "" && IsNpmrcConfiguredForPrivateRepo() {
+		if tokenValue != "" && IsNpmrcConfiguredForPrivateRepo() {
 			env[tokenName] = tokenValue
 		}
 
@@ -35,11 +35,11 @@ func Lint() error {
 	envData := os.Getenv("SKIP_LINT")
 	skip := strings.ToLower(envData) == "true" || envData == "1"
 
-	if (skip) {
+	if skip {
 		return nil
 	}
 
-	if javascript.HasBiomeConfig() {
+	if HasBiomeConfig() {
 		return errors.New("biome not setup in your project. Install @coopnorge/web-devtools")
 	}
 
@@ -55,11 +55,11 @@ func Format() error {
 	envData := os.Getenv("SKIP_FORMAT")
 	skip := strings.ToLower(envData) == "true" || envData == "1"
 
-	if (skip) {
+	if skip {
 		return nil
 	}
 
-	if javascript.HasBiomeConfig() {
+	if HasBiomeConfig() {
 		return errors.New("biome not setup in your project. Install @coopnorge/web-devtools")
 	}
 
@@ -75,7 +75,7 @@ func UnitTest() error {
 	envData := os.Getenv("SKIP_UNIT_TEST")
 	skip := strings.ToLower(envData) == "true" || envData == "1"
 
-	if (skip) {
+	if skip {
 		return nil
 	}
 
@@ -91,7 +91,7 @@ func E2ETest() error {
 	envData := os.Getenv("SKIP_E2E_TEST")
 	skip := strings.ToLower(envData) == "true" || envData == "1"
 
-	if (skip) {
+	if skip {
 		return nil
 	}
 
@@ -107,7 +107,7 @@ func Build(buildCommand string) error {
 	envData := os.Getenv("SKIP_BUILD")
 	skip := strings.ToLower(envData) == "true" || envData == "1"
 
-	if (skip) {
+	if skip {
 		return nil
 	}
 
@@ -120,4 +120,82 @@ func Build(buildCommand string) error {
 	}
 
 	return nil
+}
+
+// NpmPublish publishes npm repository into a github packages
+func NpmPublish() error {
+	tokenName := "GITHUB_TOKEN"
+	tokenValue := os.Getenv(tokenName)
+	privateEnv := os.Getenv("PRIVATE")
+	isPrivate := strings.ToLower(privateEnv) == "true" || privateEnv == "1"
+	githubTagname := os.Getenv("GITHUB_TAGNAME")
+	newVersion := strings.TrimPrefix(githubTagname, "v")
+
+	env := map[string]string{}
+
+	if tokenValue != "" && IsNpmrcConfiguredForPrivateRepo() {
+		env[tokenName] = tokenValue
+	}
+
+	access := "public"
+
+	if isPrivate {
+		access = "restricted"
+	}
+
+	if newVersion == "" {
+		return errors.New("no new package version set. Set GITHUB_TAGNAME env variable")
+	}
+
+	if !core.FileExists(".npmrc") {
+		return errors.New(".npmrc file missing")
+	}
+
+	if !IsNpmrcConfiguredForPrivateRepo() {
+		return errors.New(".npmrc has no auth configuration")
+	}
+
+	if err := sh.RunV("npm", "run", "version", newVersion); err != nil {
+		return fmt.Errorf("bumping version failed: %w", err)
+	}
+
+	if err := sh.RunWithV(env, "npm", "publish", "--access", access); err != nil {
+		return fmt.Errorf("bumping version failed: %w", err)
+	}
+
+	return nil
+}
+
+// IsNpmrcConfiguredForPrivateRepo checks if the project is setup for private
+// repositories
+func IsNpmrcConfiguredForPrivateRepo() bool {
+	directory := "."
+
+	registryURL := "npm.pkg.github.com"
+	scope := "@coopnorge"
+	tokenIndicator := "_authToken="
+
+	npmrcContent, err := os.ReadFile(fmt.Sprintf("%s/.npmrc", directory))
+
+	if err != nil {
+		return false
+	}
+
+	contentStr := string(npmrcContent)
+
+	if !strings.Contains(contentStr, registryURL) && !strings.Contains(contentStr, scope) && !strings.Contains(contentStr, tokenIndicator) {
+		return false
+	}
+
+	return true
+}
+
+// HasBiomeConfig checks if project has biome setup
+func HasBiomeConfig() bool {
+	return core.FileExists("biome.json")
+}
+
+// HasPackageConfig checks if project has package.json file
+func HasPackageConfig() bool {
+	return core.FileExists("package.json")
 }

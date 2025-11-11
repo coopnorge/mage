@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/magefile/mage/mg"
-	"github.com/magefile/mage/sh"
 )
 
 // BuildAndPublish creates deployable artifacts from the source code in the repository,
@@ -14,7 +13,6 @@ func BuildAndPublish(ctx context.Context) error {
 	mg.SerialCtxDeps(ctx, Install, Lint, Format, UnitTest, E2ETest, JavaScript.BuildAndPushDockerImage)
 	return nil
 }
-
 
 // Install fetches all Node.js dependencies.
 func Install(ctx context.Context) error {
@@ -45,4 +43,3 @@ func E2ETest(ctx context.Context) error {
 	mg.CtxDeps(ctx, JavaScript.E2ETest)
 	return nil
 }
-

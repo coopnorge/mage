@@ -4,16 +4,14 @@ import (
 	"context"
 
 	"github.com/magefile/mage/mg"
-	"github.com/magefile/mage/sh"
 )
 
 // BuildAndPublish checks for linting and formatting issue runs for unit test
 // if not skipped and builds the project and publish it to the npm repository
 func BuildAndPublish(ctx context.Context) error {
-	mg.SerialCtxDeps(ctx, Lint, Format, UnitTest, JavaScript.Build, JavaScript.Publish)
+	mg.SerialCtxDeps(ctx, Lint, Format, UnitTest, JavaScript.Build, JavaScript.NpmPublish)
 	return nil
 }
-
 
 // Install fetches all Node.js dependencies.
 func Install(ctx context.Context) error {
@@ -35,7 +33,6 @@ func Format(ctx context.Context) error {
 
 // UnitTest unit tests using the package.json script.
 func UnitTest(ctx context.Context) error {
-
 	mg.CtxDeps(ctx, JavaScript.UnitTest)
 	return nil
 }

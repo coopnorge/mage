@@ -2,8 +2,8 @@ package git
 
 import (
 	"fmt"
-	"path"
 	"os"
+	"path"
 	"strings"
 
 	"github.com/magefile/mage/sh"

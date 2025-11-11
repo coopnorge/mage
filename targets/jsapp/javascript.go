@@ -7,10 +7,10 @@ import (
 	"os"
 	"path"
 
-	"github.com/coopnorge/mage/internal/targets/javascript"
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/docker"
 	"github.com/coopnorge/mage/internal/git"
+	"github.com/coopnorge/mage/internal/targets/javascript"
 	"github.com/magefile/mage/mg"
 )
 
@@ -72,7 +72,6 @@ func (JavaScript) BuildAndPushDockerImage(ctx context.Context) error {
 	return writeImageMetadata()
 }
 
-
 // Install fetches all Node.js dependencies.
 func (JavaScript) Install(ctx context.Context) error {
 	mg.CtxDeps(ctx, javascript.Install)
@@ -102,7 +101,6 @@ func (JavaScript) E2ETest(ctx context.Context) error {
 	mg.CtxDeps(ctx, javascript.E2ETest)
 	return nil
 }
-
 
 func buildAndPush(shouldPush bool) error {
 	env := os.Getenv("DEPLOY_ENV")
