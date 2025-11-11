@@ -58,7 +58,7 @@ jobs:
         run: go tool mage -v buildandpublish
         env:
           BUILD_COMMAND: ${{ github.build-command }}
-          SKIP_BUILD: ${{ gibhub.skip-build }}
+          SKIP_BUILD: ${{ github.skip-build }}
           SKIP_UNIT_TEST: ${{ github.skip-unit-tests }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PRIVATE: ${{ inputs.is-npm-package-private }}
