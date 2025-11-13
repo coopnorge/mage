@@ -12,7 +12,7 @@ go get github.com/coopnorge/mage
 go get -tool github.com/magefile/mage
 ```
 
-If the repo is using Go 1.23 or lower set the Go toolchain to 1.24.0
+If the repo is using Go 1.23 or lower set the Go `toolchain` to 1.24.0
 
 ```gomod title="go.mod"
 module github.com/example/example
@@ -114,7 +114,7 @@ go tool mage -l
 
 ## Build Go binaries
 
-Builds binaries for all commands in the cmd directory.
+Builds binaries for all commands in the `cmd` directory.
 
 ```console
 go tool mage go:build
@@ -124,7 +124,7 @@ go tool mage go:build
 
 Add this job to your GitHub actions workflow
 
-### When using goapp as target
+### When using `goapp` as target
 
 ```yaml
 go-app:
@@ -143,7 +143,7 @@ go-app:
     service-account: ${{ vars.PALLET_SERVICE_ACCOUNT }}
 ```
 
-If you did not create a system through inventory you have to hardcode the
+If you did not create a system through inventory you have to hard-code the
 inputs.
 
 ```yaml
@@ -153,7 +153,7 @@ workload-identity-provider: projects/889992792607/locations/global/workloadIdent
 service-account: gh-ap-helloworld@helloworld-shared-0918.iam.gserviceaccount.com
 ```
 
-### When using golib as target
+### When using `golib` as target
 
 ```yaml
 mage:
