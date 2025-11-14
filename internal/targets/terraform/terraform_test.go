@@ -111,6 +111,12 @@ func TestTargets(t *testing.T) {
 			wantErr:     false,
 		},
 		{
+			name:        "Terraform DocsValidate target should succeed for module with submodules",
+			testProject: "testdata/module-with-submodule-success",
+			targets:     []string{"terraformmodule:terraform:docsvalidate"},
+			wantErr:     false,
+		},
+		{
 			name:        "Terraform DocsValidate target should fail",
 			testProject: "testdata/fail-module-docs",
 			targets:     []string{"terraformmodule:terraform:docsvalidate"},

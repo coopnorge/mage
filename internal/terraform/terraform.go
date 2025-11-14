@@ -186,11 +186,23 @@ func Security(directory string) error {
 // Docs validate if the README of a module are up to date with the
 // content of the module
 func Docs(directory string) error {
+	cfg := filepath.Join(directory, "terraform-docs.yml")
+	if _, err := os.Stat(cfg); err != nil {
+		// Missing config, nothing to validate
+		return nil
+	}
+
 	return DevtoolTerraformDocs(nil, directory, ".", "-c", "terraform-docs.yml", "--output-check")
 }
 
 // DocsFix updates the README to the configuration of the module
 func DocsFix(directory string) error {
+	cfg := filepath.Join(directory, "terraform-docs.yml")
+	if _, err := os.Stat(cfg); err != nil {
+		// Missing config, nothing to fix
+		return nil
+	}
+
 	return DevtoolTerraformDocs(nil, directory, ".", "-c", "terraform-docs.yml")
 }
 
