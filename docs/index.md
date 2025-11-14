@@ -12,7 +12,7 @@ go get github.com/coopnorge/mage
 go get -tool github.com/magefile/mage
 ```
 
-If the repo is using Go 1.23 or lower set the Go toolchain to 1.24.0
+If the repo is using Go 1.23 or lower set the Go `toolchain` to 1.24.0
 
 ```gomod title="go.mod"
 module github.com/example/example
@@ -30,8 +30,9 @@ tool github.com/magefile/mage
 
 ### Go app
 
-Ensure the following project structure is used. See [helloworld repo](https://github.com/coopnorge/helloworld)
-for reference and [Organizing a Go module: Multiple commands](https://go.dev/doc/modules/layout#multiple-commands)
+Ensure the following project structure is used. See
+[helloworld repo](https://github.com/coopnorge/helloworld) for reference and
+[Organizing a Go module: Multiple commands](https://go.dev/doc/modules/layout#multiple-commands)
 for more information on the topic.
 
 ```title="project structure"
@@ -53,8 +54,8 @@ go.sum
 
 #### Create `magefiles/magefile.go`
 
-Create a `magefiles/magefile.go` file and import the shared
-mage module and other relevant targets for the tech stack.
+Create a `magefiles/magefile.go` file and import the shared mage module and
+other relevant targets for the tech stack.
 
 ```go title="magefiles/magefile.go"
 package main
@@ -68,13 +69,13 @@ import (
 #### Targets for Go apps
 
 - [ ] Go run
-- [X] Go build
-- [X] Go tests
-- [X] Go linting
+- [x] Go build
+- [x] Go tests
+- [x] Go linting
 - [ ] Go mock generation
-- [X] Docker image build
-- [X] Docker image push
-- [X] Terraform CI
+- [x] Docker image build
+- [x] Docker image push
+- [x] Terraform CI
 - [ ] Techdocs CI
 - [ ] Kubernetes CI
 - [ ] Security Scanning
@@ -92,9 +93,9 @@ import (
 
 #### Targets for Go modules
 
-- [X] Go tests
-- [X] Go linting
-- [X] Go code generation
+- [x] Go tests
+- [x] Go linting
+- [x] Go code generation
 - [ ] Go mock generation
 - [ ] Techdocs CI
 - [ ] Security Scanning
@@ -113,8 +114,7 @@ go tool mage -l
 
 ## Build Go binaries
 
-Builds binaries for all commands
-in the cmd directory.
+Builds binaries for all commands in the `cmd` directory.
 
 ```console
 go tool mage go:build
@@ -124,54 +124,53 @@ go tool mage go:build
 
 Add this job to your GitHub actions workflow
 
-### When using goapp as target
+### When using `goapp` as target
 
 ```yaml
-  go-app:
-    uses: coopnorge/mage/.github/workflows/goapp.yaml@main
-    permissions:
-      contents: read
-      id-token: write
-      packages: write
-      pull-requests: write
-      checks: read
-    secrets: inherit
-    with:
-      oci-image-base: ${{ vars.PALLET_REGISTRY_URL }}
-      push-oci-image: ${{ github.ref == 'refs/heads/main' }}
-      workload-identity-provider: ${{ vars.PALLET_WORKLOAD_IDENTITY_PROVIDER }}
-      service-account: ${{ vars.PALLET_SERVICE_ACCOUNT }}
+go-app:
+  uses: coopnorge/mage/.github/workflows/goapp.yaml@main
+  permissions:
+    contents: read
+    id-token: write
+    packages: write
+    pull-requests: write
+    checks: read
+  secrets: inherit
+  with:
+    oci-image-base: ${{ vars.PALLET_REGISTRY_URL }}
+    push-oci-image: ${{ github.ref == 'refs/heads/main' }}
+    workload-identity-provider: ${{ vars.PALLET_WORKLOAD_IDENTITY_PROVIDER }}
+    service-account: ${{ vars.PALLET_SERVICE_ACCOUNT }}
 ```
 
-If you did not create a system through inventory you have to hardcode the
+If you did not create a system through inventory you have to hard-code the
 inputs.
 
 ```yaml
-      oci-image-base: europe-docker.pkg.dev/helloworld-shared-0918
-      push-oci-image: ${{ github.ref == 'refs/heads/main' }}
-      workload-identity-provider: projects/889992792607/locations/global/workloadIdentityPools/github-actions/providers/github-actions-provider
-      service-account: gh-ap-helloworld@helloworld-shared-0918.iam.gserviceaccount.com
+oci-image-base: europe-docker.pkg.dev/helloworld-shared-0918
+push-oci-image: ${{ github.ref == 'refs/heads/main' }}
+workload-identity-provider: projects/889992792607/locations/global/workloadIdentityPools/github-actions/providers/github-actions-provider
+service-account: gh-ap-helloworld@helloworld-shared-0918.iam.gserviceaccount.com
 ```
 
-### When using golib as target
+### When using `golib` as target
 
 ```yaml
-  mage:
-    uses: coopnorge/mage/.github/workflows/mage.yaml@main
-    permissions:
-      contents: read
-      id-token: write
-      packages: read
-    secrets: inherit
+mage:
+  uses: coopnorge/mage/.github/workflows/mage.yaml@main
+  permissions:
+    contents: read
+    id-token: write
+    packages: read
+  secrets: inherit
 ```
 
 ## Troubleshooting
 
-- During build the command ``` git status --porcelain ```
-  returns the error message
-  ``` fatal: detected dubious ownership in repository at '/src' ```
+- During build the command `git status --porcelain` returns the error message
+  `fatal: detected dubious ownership in repository at '/src'`
 
-  Solution: Add this lines to ``` .gitconfig ```
+  Solution: Add this lines to `.gitconfig`
 
 ```shell
   [safe]
@@ -186,7 +185,7 @@ inputs.
   and try again. Learn more at https://docs.docker.com/go/build-exporters/
 ```
 
-  Solution:
+Solution:
 
 ```shell
   DOCKER_BUILDKIT=1 docker buildx create --use --driver docker-container
