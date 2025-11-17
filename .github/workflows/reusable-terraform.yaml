@@ -51,6 +51,34 @@ jobs:
       contents: read
       pull-requests: read
 
+  check-for-spacelift-proposed:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
+      PALLET_FILE_PATH: .pallet/gitconfig.yaml
+      REQUIRED_CHECK: spacelift/proposed
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: check if spacelift/proposed exists as a required check in branch protection
+        run: |
+          set -euo pipefail
+
+          if [ ! -f "$PALLET_FILE_PATH" ]; then
+            echo "'$PALLET_FILE_PATH' not found. Not a pallet project."
+            exit 0
+          fi
+
+          if yq -e ".spec.branches.protection[].requiredStatusChecks.checks[] | select(. == \"$REQUIRED_CHECK\")" "$PALLET_FILE_PATH" >/dev/null; then
+            echo "found '$REQUIRED_CHECK' as a required check"
+            exit 0
+          else
+            echo '$REQUIRED_CHECK' not found as a required check. Please add it in '.spec.branches.protection[].requiredStatusChecks.checks' in '$PALLET_FILE_PATH'."
+            exit 1
+          fi
+
   spacelift:
     name: Spacelift CI
     permissions:
