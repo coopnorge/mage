@@ -1,5 +1,5 @@
 concurrency:
-  group: reusable-terraform-${{ github.workflow }}-${{ github.ref }}
+  group: reusable-terraform-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 on:
   workflow_call:
