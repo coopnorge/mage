@@ -183,14 +183,29 @@ func Security(directory string) error {
 	return DevtoolTrivy(nil, directory, "config", "--exit-code", "1", "--misconfig-scanners=terraform", "./")
 }
 
+// HasTerraformDocsConfig checks whether the given directory
+// contains a terraform-docs.yml configuration file.
+func HasTerraformDocsConfig(dir string) bool {
+	_, err := os.Stat(filepath.Join(dir, "terraform-docs.yml"))
+	return err == nil
+}
+
 // Docs validate if the README of a module are up to date with the
 // content of the module
 func Docs(directory string) error {
+	if !HasTerraformDocsConfig(directory) {
+		return nil
+	}
+
 	return DevtoolTerraformDocs(nil, directory, ".", "-c", "terraform-docs.yml", "--output-check")
 }
 
 // DocsFix updates the README to the configuration of the module
 func DocsFix(directory string) error {
+	if !HasTerraformDocsConfig(directory) {
+		return nil
+	}
+
 	return DevtoolTerraformDocs(nil, directory, ".", "-c", "terraform-docs.yml")
 }
 

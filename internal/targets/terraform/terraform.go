@@ -196,6 +196,10 @@ func security(_ context.Context, directory string) error {
 func DocsValidate(ctx context.Context) error {
 	mg.CtxDeps(ctx, mg.F(devtool.Build, "terraform-docs", TerraformToolsDockerfile))
 
+	if err := checkTerraformDocsConfig("."); err != nil {
+		return err
+	}
+
 	directories, err := terraform.FindTerraformProjects(".")
 	if err != nil {
 		return err
@@ -217,6 +221,10 @@ func terraformDocs(_ context.Context, directory string) error {
 func DocsValidateFix(ctx context.Context) error {
 	mg.CtxDeps(ctx, mg.F(devtool.Build, "terraform-docs", TerraformToolsDockerfile))
 
+	if err := checkTerraformDocsConfig("."); err != nil {
+		return err
+	}
+
 	directories, err := terraform.FindTerraformProjects(".")
 	if err != nil {
 		return err
@@ -232,6 +240,13 @@ func DocsValidateFix(ctx context.Context) error {
 
 func terraformDocsFix(_ context.Context, directory string) error {
 	return terraform.DocsFix(directory)
+}
+
+func checkTerraformDocsConfig(directory string) error {
+	if !terraform.HasTerraformDocsConfig(directory) {
+		return fmt.Errorf("terraform-docs.yml config not found in module root")
+	}
+	return nil
 }
 
 // Changes implements a target that check if the current branch has changes
