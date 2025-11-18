@@ -122,7 +122,7 @@ func waitForReady(url string, timeout time.Duration) error {
 }
 
 // -----------------------------------------------------------------------------
-// validation logic (your code, adapted)
+// validation, using the api/validate endpoint
 // -----------------------------------------------------------------------------
 
 func validate(ctx context.Context, baseURL string) error {
@@ -132,6 +132,11 @@ func validate(ctx context.Context, baseURL string) error {
 	configPath, err := getConfigPath()
 	if err != nil {
 		return err
+	}
+
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		log.Printf("Config file does not exist: %s, skipping validation", configPath)
+		return nil
 	}
 
 	data, err := os.ReadFile(configPath)
@@ -186,7 +191,7 @@ func validate(ctx context.Context, baseURL string) error {
 }
 
 // -----------------------------------------------------------------------------
-// reads config path from env or default locations
+// reads config path from default location
 // -----------------------------------------------------------------------------
 
 func getConfigPath() (string, error) {
