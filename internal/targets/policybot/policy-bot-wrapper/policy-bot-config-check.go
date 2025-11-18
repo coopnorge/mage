@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -48,14 +49,14 @@ func run() error {
 	// --------------------------------------------------------------------------
 
 	// Start mock-server
-	log.Println("Starting mock-server...")
-	mock := exec.Command("/usr/local/bin/mock-server")
-	mock.Stdout = os.Stdout
-	mock.Stderr = os.Stderr
-	if err := mock.Start(); err != nil {
-		return fmt.Errorf("failed to start mock-server: %w", err)
-	}
-	log.Printf("mock-server started (pid %d)", mock.Process.Pid)
+	log.Println("Starting embedded mock-server...")
+	mockSrv := startMockServer()
+	defer func(mockSrv *http.Server, ctx context.Context) {
+		err := mockSrv.Shutdown(ctx)
+		if err != nil {
+			log.Printf("Error shutting down mock server: %v", err)
+		}
+	}(mockSrv, context.Background())
 
 	// Discover local policy-bot path based on WORKDIR
 	wd, err := os.Getwd()
@@ -200,4 +201,24 @@ func getConfigPath() (string, error) {
 		return path, nil
 	}
 	return "", fmt.Errorf("validation config not found at %s", path)
+}
+
+func startMockServer() *http.Server {
+	srv := &http.Server{
+		Addr: ":9090",
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			if _, err := w.Write([]byte(`{}`)); err != nil {
+				log.Printf("mock-server write error: %v", err)
+			}
+		}),
+	}
+
+	go func() {
+		log.Println("mock-server listening on :9090")
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Printf("mock-server failed: %v", err)
+		}
+	}()
+
+	return srv
 }
