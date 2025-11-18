@@ -1,4 +1,4 @@
 module main
 
-go 1.25.2
+go 1.25.4
 
