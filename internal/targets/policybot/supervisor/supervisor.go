@@ -104,13 +104,17 @@ func waitForReady(url string, timeout time.Duration) error {
 
 		resp, err := http.Get(url)
 		if err == nil && resp.StatusCode == http.StatusOK {
-			_ = resp.Body.Close()
+			if err := resp.Body.Close(); err != nil {
+				log.Printf("warning: failed to close response body: %v", err)
+			}
 			log.Println("policy-bot is ready")
 			return nil
 		}
 
 		if resp != nil {
-			_ = resp.Body.Close()
+			if err := resp.Body.Close(); err != nil {
+				log.Printf("warning: failed to close response body: %v", err)
+			}
 		}
 
 		time.Sleep(500 * time.Millisecond)
@@ -149,7 +153,11 @@ func validate(ctx context.Context, baseURL string) error {
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			log.Printf("warning: failed to close response body: %v", cerr)
+		}
+	}()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -159,7 +167,9 @@ func validate(ctx context.Context, baseURL string) error {
 	var result struct {
 		Message string `json:"message"`
 	}
-	_ = json.Unmarshal(body, &result)
+	if err := json.Unmarshal(body, &result); err != nil {
+		return fmt.Errorf("failed to parse JSON response: %w", err)
+	}
 
 	msg := result.Message
 	if msg == "" {
