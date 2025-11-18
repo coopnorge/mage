@@ -21,7 +21,11 @@ func Validate(ctx context.Context) error {
 
 	baseURL := os.Getenv("POLICY_BOT_BASE_URL")
 	if baseURL == "" {
-		return fmt.Errorf("POLICY_BOT_BASE_URL not set")
+		if os.Getenv("CI") == "true" {
+			return fmt.Errorf("POLICY_BOT_BASE_URL not set while running on GitHub actions")
+		}
+		// ignoring policy-bot validation when run locally
+		return nil
 	}
 	if !strings.HasSuffix(baseURL, "/") {
 		baseURL += "/"
