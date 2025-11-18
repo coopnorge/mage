@@ -11,6 +11,6 @@ FROM docker.io/palantirtechnologies/policy-bot:1.39.3@sha256:a96dbd467736b37b3fe
 
 COPY --from=policy-bot-wrapper /app/policy-bot-config-check /usr/local/bin/policy-bot-config-check
 
-ADD policy-bot.yml /secrets/
+ADD policy-bot-wrapper/policy-bot.yml /secrets/
 
 ENTRYPOINT ["/usr/local/bin/policy-bot-config-check"]
