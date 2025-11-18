@@ -54,7 +54,7 @@ func Build(ctx context.Context) error {
 //
 // For details see [Terraform.Validate]
 func Validate(ctx context.Context) error {
-	mg.CtxDeps(ctx, Terraform.Validate)
+	mg.CtxDeps(ctx, Terraform.Validate, PolicyBotConfig.Validate)
 	return nil
 }
 
