@@ -1,0 +1,83 @@
+# Options for the http server
+server:
+  # The listen address and port
+  address: "0.0.0.0"
+  port: 8080
+  # The public URL, used for URL generation when the server is behind a proxy
+  # Can also be set by the POLICYBOT_PUBLIC_URL environment variable.
+  public_url: http://127.0.0.1:8080
+  # Uncomment the "tls_config" block to enable HTTPS support in the server.
+  # The cert and key files must be usable by net/http.ListenAndServeTLS().
+  # tls_config:
+  #   cert_file: /path/to/server.pem
+  #   key_file: /path/to/server.key
+
+# Options for logging output
+logging:
+  # If true, logs are printed in human-readable form. We recommend using
+  # "false" to output JSON-formatted logs in production
+  # Can also be set by the POLICYBOT_LOG_TEXT environment variable.
+  text: true
+  # Set a minimum logging level threshold
+  # Choose from: debug, info, warn, error
+  # Can also be set by the POLICYBOT_LOG_LEVEL environment variable.
+  level: debug
+
+# Options for user sessions
+sessions:
+  # A random string used to sign session cookies. Can also be set by the
+  # POLICYBOT_SESSIONS_KEY environment variable.
+  key: "secretsessionkey"
+
+
+# Options for connecting to GitHub
+github:
+  # The URL of the GitHub homepage. Can also be set by the GITHUB_WEB_URL
+  # environment variable.
+  web_url: "http://localhost:9090"
+  # The base URL for v3 (REST) API requests. Can also be set by the
+  # GITHUB_V3_API_URL environment variable.
+  v3_api_url: "http://localhost:9090/api"
+  # The base URL for v4 (GraphQL) API requests. Can also be set by the
+  # GITHUB_V4_API_URL environment variable.
+  v4_api_url: "http://localhost:9090/graphql"
+  app:
+    # The integration ID of the GitHub app. Can also be set by the
+    # GITHUB_APP_INTEGRATION_ID environment variable.
+    integration_id: 1
+    # A random string used to validate webhooks. Can also be set by the
+    # GITHUB_APP_WEBHOOK_SECRET environment variable.
+    webhook_secret: "app_secret"
+    # The private key of the GitHub app. Can also be set by the
+    # GITHUB_APP_PRIVATE_KEY environment variable.
+    # This is private key that is generated for starting the policy-bot server.
+    # This key is not used anywhere.
+    # trivy:ignore=SECRET-RSA-PRIVATE-KEY
+    private_key: |
+      -----BEGIN RSA PRIVATE KEY-----
+      MIIEowIBAAKCAQEAmycb5cUAisk/JhYkj/LA69NNInWDsW62+PlYEbkDbG6CXzqv
+      t7pj0uvikOx1ELHbNZvF3ukWXoHZDNQuibm0O5awXhVaKJCvYuFMgOH+jQedbb+v
+      h+vwFMR+xBrowu4VaNtWk/KZWCxRqHPnQipwR+izIYNUtLv0iV90pykeOG0IagRU
+      1QENs3EYDE7oh24Ja4fKHRWM6Oop2KhcQiJY1PPeN1O1FJtYpZPJP4q3ZvY4dBNG
+      ze4ZsIeFdU/Nx+IWckUany2SxSeyzulRA4o/7XHZJxNUXsM3wZbjXdC/vFgTJkFv
+      KmDbk6epA0SrCiouF2W71iKsh4h60whvpk3VlQIDAQABAoIBABtPdwmq8716TzNV
+      EnqEMJFSUHGQXe4NnweUXHxCJOghS7GXkva0SH4IJ4l7FeAqbnuxP9NNFDLuiFZJ
+      wydbGO6kR8dH2ubpEPZG0kCdh0Er5fo7k5pJXalKLUY3tmEZp4sdkM/aFEQBCR6t
+      yDdNYRZHT8DGbVKjAxhrRQ1nn3ou8O/Btgg9RFgJJS3X4RDN4AxXhPVK5NbfHXQy
+      7/l050Wt9Fvmc0cQPYHVFaqgtEYLmzEQV8z0jZ3zmYFN8l6EOLudOnLjd1oY426a
+      2fm3hrAhLBU5NsOyKxhINq4IdUtf6IibemW9L5qpZyMxXlOa8dlX9fFuqvLn0cU+
+      kSwZIgECgYEAyuMfeoT5cTixobFBfC5OTgCZ5fovmnme+0pV1+f51GNACREyc/YA
+      tyhLZ/AqY6GizvIbUnrq2FMdilvmZnobh6XAOaq6UDmuFsYmNHSwRNwgIprrE5A4
+      Y88noYN17owtncbcMpazNzCegVOm5qEZv9y7Q6wUESEqYWZNNWQK4H0CgYEAw8T4
+      m5nPO24FeK+fYMsfW63ePVPmbqrbPcAFuxyfzVonAVAkd9q1g54++2ndVWV2LklB
+      9zmHdYDkqr8PfcBQhCaSl3RRqCWRGTR5EXMfkGEIp34xN/+ynyp2BsYipLhk9QGR
+      6GZqxZaszIKwjUPulCAscCT73njE9rGbISr0LPkCgYBQ3U+pnKBzQR6DjMvF/ArX
+      yiOM5zfcAQedrtYiNOJ9hYV7V7BdSbqlRdkwNygeB8mFZDgBmt5JlG8cu15Mj/Sz
+      Dxxbn7Gc0jCSAS4vECdFetsQD+EMLhpbpbBtDqGNj6+KyDzxqOELaURz1WybVbCW
+      qRq2cTqaTTbAFW9GjXZMXQKBgQCymu6xjzb4olzNiXSfq1FVpB/A1d3Ck5BoGttf
+      pTLJ9/jkAsjyrA+0H9iYKTJsKaAThHRxaAQEmO6GNL+eW6lZl5NgKBgjjvp9A1l9
+      KQngABcUMFYZH+hHvEZn0bZjj3NT7/W9EEtTLy9Bee43Q4XTkDLasXM0ufwAkXLV
+      ZMnWiQKBgCS52upA5CvlQzaTVZj2Nf/G/Eh84O+uU0MhTSFnG0LMRufqBLc+LMHU
+      zWhUqwXk+OqNeqTzWeyJOlO4sXImzKL7uEmeky/RgopkRn9u+TgZ9rGAzSEPPApw
+      p+1cG2vTzvBI0hJgAGElDJal5khrUdPFCWE7sVvw8POjW6GC9PDq
+      -----END RSA PRIVATE KEY-----
