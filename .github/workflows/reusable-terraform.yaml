@@ -75,7 +75,7 @@ jobs:
             echo "found '$REQUIRED_CHECK' as a required check"
             exit 0
           else
-            echo '$REQUIRED_CHECK' not found as a required check. Please add it in '.spec.branches.protection[].requiredStatusChecks.checks' in '$PALLET_FILE_PATH'."
+            echo "'$REQUIRED_CHECK' not found as a required check. Please add it in '.spec.branches.protection[].requiredStatusChecks.checks' in '$PALLET_FILE_PATH'."
             exit 1
           fi
 
