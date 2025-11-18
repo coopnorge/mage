@@ -50,9 +50,6 @@ github:
     webhook_secret: "app_secret"
     # The private key of the GitHub app. Can also be set by the
     # GITHUB_APP_PRIVATE_KEY environment variable.
-    # This is private key that is generated for starting the policy-bot server.
-    # This key is not used anywhere.
-    # trivy:ignore=SECRET-RSA-PRIVATE-KEY
     private_key: |
       -----BEGIN RSA PRIVATE KEY-----
       MIIEowIBAAKCAQEAmycb5cUAisk/JhYkj/LA69NNInWDsW62+PlYEbkDbG6CXzqv
