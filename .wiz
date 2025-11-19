@@ -1,4 +1,4 @@
 ignore:
   global_paths:
-    internal/targets/policybot/policy-bot-wrapper/policy-bot.yml:
+    internal/targets/policybot/policy-bot-config-check/policy-bot.yml:
       reason: BY_DESIGN
