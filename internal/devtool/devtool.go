@@ -1,8 +1,10 @@
 package devtool
 
 import (
+	"embed"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"runtime/debug"
 	"slices"
@@ -51,43 +53,73 @@ func RunWith(env map[string]string, tool string, dockerRunArgs []string, cmd str
 
 // Build allow a mage target to depend on a Docker image. This will
 // pull the image from a Docker registry.
-func Build(tool, dockerfile string) error {
+func Build(tool string, dockerfile any) error {
 	// This is a bit hacky to use the local go binary instead of the container.
-	// We dont need to build a depenency here
+	// We don't need to build a dependency here
 	// this is used for running the integration tests on targets.
 	if os.Getenv("GO_RUNTIME") == "local" && tool == "golang" {
 		return nil
 	}
 
-	file, cleanup, err := core.WriteTempFile(core.OutputDir, fmt.Sprintf("%s.Dockerfile", tool), dockerfile)
-	if err != nil {
-		return err
+	var (
+		cleanup            func()
+		err                error
+		dockerfileContents string
+		dockerFilePath     string
+		dockerFileDir      string
+	)
+
+	switch v := dockerfile.(type) {
+	case string:
+		dockerFilePath, cleanup, err = core.WriteTempFile(core.OutputDir, fmt.Sprintf("%s.Dockerfile", tool), v)
+		if err != nil {
+			return err
+		}
+		defer cleanup()
+
+		path, cleanup, err := core.MkdirTemp()
+		if err != nil {
+			return nil
+		}
+		defer cleanup()
+		dockerFileDir = path
+
+		dockerfileContents = v
+	case embed.FS:
+		dockerFileDir, cleanup, err = core.WriteTempFiles(core.OutputDir, fmt.Sprintf("%s-docker", tool), v)
+		if err != nil {
+			return err
+		}
+		defer cleanup()
+
+		dockerFilePath = filepath.Join(dockerFileDir, "tools.Dockerfile")
+		// Read Dockerfile contents from embedded FS
+		data, err := v.ReadFile("tools.Dockerfile")
+		if err != nil {
+			return fmt.Errorf("embedded FS: could not read tools.Dockerfile: %w", err)
+		}
+		dockerfileContents = string(data)
+	default:
+		return fmt.Errorf("unsupported dockerfile type: %T", v)
 	}
-	defer cleanup()
 
 	imageName, err := GetImageName(tool)
 	if err != nil {
 		return err
 	}
 
-	path, cleanup, err := core.MkdirTemp()
-	if err != nil {
-		return nil
-	}
-	defer cleanup()
-
-	selectedTool, err := archSelector(tool, dockerfile)
+	selectedTool, err := archSelector(tool, dockerfileContents)
 	if err != nil {
 		return err
 	}
 
 	return sh.RunV(
 		"docker", "buildx", "build",
-		"-f", file,
+		"-f", dockerFilePath,
 		"--target", selectedTool,
 		"-t", imageName,
 		"--load",
-		path,
+		dockerFileDir,
 	)
 }
 
