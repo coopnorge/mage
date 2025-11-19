@@ -101,7 +101,7 @@ jobs:
     name: Terraform
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.terraform == 'true'  }}
-    uses: coopnorge/mage/.github/workflows/reusable-terraform.yaml@main
+    uses: coopnorge/mage/.github/workflows/reusable-terraform.yaml@temp-disable-spacelift-check-check
     permissions:
       contents: read
       pull-requests: write
