@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"time"
 )
 
@@ -26,9 +27,21 @@ func startPolicyBotServer() error {
 		}
 	}(mockSrv, context.Background())
 
-	// Start local policy-bot
-	policyBotPath := filepath.Join("bin", "linux-amd64", "policy-bot")
+	// Locate policy-bot binary
+	policyBotPath := filepath.Join("bin", fmt.Sprintf("linux-%s", runtime.GOARCH))
 
+	info, err := os.Stat(policyBotPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("policy-bot binary not found at %s for %s", policyBotPath, runtime.GOARCH)
+		}
+		return err
+	}
+	if info.IsDir() {
+		return fmt.Errorf("expected policy-bot binary file but found directory at %s", policyBotPath)
+	}
+
+	// Start local policy-bot
 	log.Println("Starting local policy-bot...")
 	bot := exec.Command(policyBotPath, "server", "--config", "/secrets/policy-bot.yml")
 	bot.Stdout = os.Stdout
