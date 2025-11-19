@@ -1,3 +1,0 @@
-scan:
-  skip-files:
-    - "internal/targets/policybot/policy-bot-config-check/policy-bot.yml"

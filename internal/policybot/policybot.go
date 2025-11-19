@@ -1,89 +1,57 @@
 package policybot
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
-	"strings"
+	"path/filepath"
 
 	"github.com/coopnorge/mage/internal/core"
+	"github.com/coopnorge/mage/internal/devtool"
 	"github.com/coopnorge/mage/internal/git"
 )
 
-// Validate submits policy file to policy-bot server to validate it
-func Validate(ctx context.Context) error {
-	log.Println("Starting policy validation")
-
-	baseURL := os.Getenv("POLICY_BOT_BASE_URL")
-	if baseURL == "" {
-		if os.Getenv("CI") == "true" {
-			return fmt.Errorf("POLICY_BOT_BASE_URL not set while running on GitHub actions")
-		}
-		// ignoring policy-bot validation when run locally
-		return nil
-	}
-	if !strings.HasSuffix(baseURL, "/") {
-		baseURL += "/"
-	}
-	validateURL := baseURL + "api/validate"
-	log.Printf("Validation endpoint: %s\n", validateURL)
-
-	configPath := getConfigPath()
-
-	data, err := os.ReadFile(configPath)
+// Validate submits policy file to policy-bot docker app to validate it
+func Validate(args ...string) error {
+	cwd, err := os.Getwd()
 	if err != nil {
+		return err
+	}
+
+	// Check for config file
+	configPath := getConfigPath()
+	if _, err := os.Stat(filepath.Join(cwd, configPath)); err != nil {
 		if os.IsNotExist(err) {
-			log.Println("Config file not found, skipping validation")
+			// No config file → do nothing
 			return nil
 		}
-		return fmt.Errorf("failed to read config file: %w", err)
+		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, validateURL, bytes.NewReader(data))
+	absConfigPath, err := filepath.Abs(filepath.Join(cwd, configPath))
 	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
+		return err
 	}
 
-	log.Println("Sending request to policy bot...")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("request failed: %w", err)
-	}
-	defer func() {
-		if cerr := resp.Body.Close(); cerr != nil {
-			log.Printf("warning: failed to close response body: %v", cerr)
-		}
-	}()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("failed to read response: %w", err)
+	dockerArgs := []string{
+		"--volume", fmt.Sprintf("%s:/.policy.yml", absConfigPath),
 	}
 
-	var result struct {
-		Message string `json:"message"`
-	}
-	if err := json.Unmarshal(body, &result); err != nil {
-		return fmt.Errorf("failed to parse JSON response: %w", err)
+	policyBotBaseURL := os.Getenv("POLICY_BOT_BASE_URL")
+
+	if policyBotBaseURL != "" {
+		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", "POLICY_BOT_BASE_URL", policyBotBaseURL))
 	}
 
-	msg := result.Message
-	if msg == "" {
-		msg = string(body)
-	}
+	// policy-bot needs an RSA key to start
+	rsaPEMKey := generateRSAPrivateKeyPEM(4096)
+	dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", "GITHUB_APP_PRIVATE_KEY", rsaPEMKey))
 
-	if resp.StatusCode != http.StatusOK {
-		log.Printf("Policy bot returned error: %s\n", msg)
-		return fmt.Errorf("%s", msg)
-	}
-
-	log.Printf("Policy validation successful: %s\n\n", msg)
-	return nil
+	return devtool.Run("policy-bot-config-check", dockerArgs, "", args...)
 }
 
 // HasChanges checks if the current branch has policy bot config file changes
@@ -105,4 +73,20 @@ func getConfigPath() string {
 	}
 	log.Printf("Using config: %s\n", configPath)
 	return configPath
+}
+
+func generateRSAPrivateKeyPEM(bits int) string {
+	key, err := rsa.GenerateKey(rand.Reader, bits)
+	if err != nil {
+		log.Fatalf("failed to generate RSA key: %v", err)
+	}
+
+	der := x509.MarshalPKCS1PrivateKey(key)
+
+	block := &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: der,
+	}
+
+	return string(pem.EncodeToMemory(block))
 }
