@@ -41,10 +41,10 @@ func Validate(args ...string) error {
 		"--volume", fmt.Sprintf("%s:/.policy.yml", absConfigPath),
 	}
 
-	policyBotBaseUrl := os.Getenv("POLICY_BOT_BASE_URL")
+	policyBotBaseURL := os.Getenv("POLICY_BOT_BASE_URL")
 
-	if policyBotBaseUrl != "" {
-		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", "POLICY_BOT_BASE_URL", policyBotBaseUrl))
+	if policyBotBaseURL != "" {
+		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", "POLICY_BOT_BASE_URL", policyBotBaseURL))
 	}
 
 	// policy-bot needs an RSA key to start
