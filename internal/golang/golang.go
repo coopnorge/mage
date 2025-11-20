@@ -167,7 +167,22 @@ func Test(directory string) error {
 
 	output := path.Join(relativeRootPath, core.OutputDir, directory, coverageReport)
 
-	return DevtoolGo(nil, "go", "-C", directory, "test", "--cover", fmt.Sprintf("-coverprofile=%s", output), "-covermode=atomic", "-race", "-tags='datadog.no_waf'", "./...")
+	// Get filtered packages
+	pkgs, err := listPackagesWithoutVar(directory)
+	if err != nil {
+		return err
+	}
+
+	args := append([]string{
+		"-C", directory, "test",
+		"--cover",
+		fmt.Sprintf("-coverprofile=%s", output),
+		"-covermode=atomic",
+		"-race",
+		"-tags=datadog.no_waf",
+	}, pkgs...)
+
+	return DevtoolGo(nil, "go", args...)
 }
 
 // Lint runs the linters
@@ -291,4 +306,29 @@ func isInsideOutputDir(dir string) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
+
+func listPackagesWithoutVar(dir string) ([]string, error) {
+	out, err := sh.Output("go", "-C", dir, "list", "./...")
+	if err != nil {
+		return nil, err
+	}
+
+	lines := strings.Split(strings.TrimSpace(out), "\n")
+	if len(lines) == 0 {
+		return lines, nil
+	}
+
+	root := lines[0]        // root module import path
+	prefix := root + "/var" // packages to skip
+	var result []string
+
+	for _, p := range lines {
+		if strings.HasPrefix(p, prefix) {
+			continue
+		}
+		result = append(result, p)
+	}
+
+	return result, nil
 }
