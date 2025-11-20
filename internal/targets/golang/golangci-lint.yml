@@ -33,7 +33,6 @@ linters:
       - third_party$
       - builtin$
       - examples$
-      - "^/app/var/.*"
 formatters:
   enable:
     - gofmt
@@ -44,4 +43,3 @@ formatters:
       - third_party$
       - builtin$
       - examples$
-      - "^/app/var/.*"
