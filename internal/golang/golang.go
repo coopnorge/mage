@@ -41,6 +41,16 @@ func FindGoModules(base string) ([]string, error) {
 		if core.IsDotDirectory(workDir, d) {
 			return filepath.SkipDir
 		}
+
+		// Skip output directory
+		insideOutputDir, err := isInsideOutputDir(workDir)
+		if err != nil {
+			return err
+		}
+		if insideOutputDir {
+			return filepath.SkipDir
+		}
+
 		if !IsGoModule(workDir, d) {
 			return nil
 		}
@@ -85,6 +95,15 @@ func FindGoSourceCodeFolders(base string) ([]string, error) {
 			return err
 		}
 		if core.IsDotDirectory(workDir, d) {
+			return filepath.SkipDir
+		}
+
+		// Skip output directory
+		insideOutputDir, err := isInsideOutputDir(workDir)
+		if err != nil {
+			return err
+		}
+		if insideOutputDir {
 			return filepath.SkipDir
 		}
 
@@ -253,4 +272,19 @@ func DevtoolGolangCILint(env map[string]string, cmd string, args ...string) erro
 	}
 
 	return devtool.Run("golangci-lint", dockerArgs, cmd, args...)
+}
+
+func isInsideOutputDir(dir string) (bool, error) {
+	workDirAbs, err := filepath.Abs(dir)
+	if err != nil {
+		return false, err
+	}
+	outDirAbs, err := filepath.Abs(core.OutputDir)
+	if err != nil {
+		return false, err
+	}
+	if strings.HasPrefix(workDirAbs+string(filepath.Separator), outDirAbs+string(filepath.Separator)) {
+		return true, nil
+	}
+	return false, nil
 }
