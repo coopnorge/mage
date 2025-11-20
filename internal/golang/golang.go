@@ -325,8 +325,10 @@ func listPackagesWithoutVar(dir string) ([]string, error) {
 
 	for _, p := range lines {
 		if strings.HasPrefix(p, prefix) {
+			log.Println("Skipping package:", p)
 			continue
 		}
+		log.Println("Found package", p)
 		result = append(result, p)
 	}
 
