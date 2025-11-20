@@ -198,13 +198,7 @@ func Lint(directory, golangCILintCfg string) error {
 		return err
 	}
 
-	// Get filtered packages
-	pkgs, err := listPackagesWithoutVar(directory)
-	if err != nil {
-		return err
-	}
-
-	return DevtoolGolangCILint(nil, "bash", "-c", fmt.Sprintf("cd %s && golangci-lint run --verbose --timeout 10m --config %s %s", directory, lintCfgPath, strings.Join(pkgs, " ")))
+	return DevtoolGolangCILint(nil, "bash", "-c", fmt.Sprintf("cd %s && golangci-lint run --verbose --timeout 10m --config %s ./...", directory, lintCfgPath))
 }
 
 // LintFix fixes found issues (if it's supported by the linters)
