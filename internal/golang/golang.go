@@ -48,6 +48,7 @@ func FindGoModules(base string) ([]string, error) {
 			return err
 		}
 		if insideOutputDir {
+			log.Printf("Skipping potential module %s", workDir)
 			return filepath.SkipDir
 		}
 
@@ -55,6 +56,7 @@ func FindGoModules(base string) ([]string, error) {
 			return nil
 		}
 
+		log.Printf("Found module %s\n", workDir)
 		directories = append(directories, workDir)
 
 		return nil
@@ -104,6 +106,7 @@ func FindGoSourceCodeFolders(base string) ([]string, error) {
 			return err
 		}
 		if insideOutputDir {
+			log.Printf("Skipping potential source code folder %s", workDir)
 			return filepath.SkipDir
 		}
 
@@ -115,6 +118,7 @@ func FindGoSourceCodeFolders(base string) ([]string, error) {
 			return nil
 		}
 
+		log.Printf("Found source code folder %s\n", workDir)
 		directories = append(directories, workDir)
 
 		return nil
