@@ -46,11 +46,7 @@ func RunWith(env map[string]string, tool string, dockerRunArgs []string, cmd str
 	}
 
 	call = append(call, dockerRunArgs...)
-	if cmd == "" {
-		call = append(call, image)
-	} else {
-		call = append(call, image, cmd)
-	}
+	call = append(call, image, cmd)
 	call = append(call, args...)
 	return sh.RunWithV(env, "docker", call...)
 }
