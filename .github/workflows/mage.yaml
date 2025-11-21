@@ -29,6 +29,9 @@ on:
       oci-images:
         value: ${{ jobs.mage.outputs.oci-images }}
         description: OCI image references.
+      oci-image-pushed:
+        value: ${{ jobs.mage.outputs.oci-image-pushed }}
+        description: Whether an OCI image was pushed.
 jobs:
   mage:
     runs-on: ubuntu-24.04
@@ -38,6 +41,7 @@ jobs:
       packages: read
     outputs:
       oci-images: ${{ steps.oci-images.outputs.images }}
+      oci-image-pushed: ${{ steps.oci-images.outputs.oci-image-pushed }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -109,8 +113,10 @@ jobs:
         run: |
           if [ -f ./var/oci-images.json ]; then
             echo "images=$(cat ./var/oci-images.json)" >> $GITHUB_OUTPUT
+            echo "oci-image-pushed=true" >> $GITHUB_OUTPUT
           else
             echo "images={}" >> $GITHUB_OUTPUT
+            echo "oci-image-pushed=false" >> $GITHUB_OUTPUT
           fi
       - name: Show output
         if: always()
