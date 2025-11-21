@@ -8,7 +8,7 @@ on:
       oci-image-base:
         type: string
         required: false
-        default: ""
+        default: ''
       push-oci-image:
         type: boolean
         required: false
@@ -19,11 +19,11 @@ on:
         type: string
       artifact-registry-location:
         type: string
-        default: "europe"
+        default: 'europe'
         description: Artifact registry region name (e.g. "europe", "europe-north1").
       go-runtime:
         type: string
-        default: "docker"
+        default: 'docker'
         description: Run mage go related tasks in "docker" (default) or local
     outputs:
       oci-images:
@@ -74,7 +74,7 @@ jobs:
           password: ${{ steps.gcp-auth.outputs.access_token }}
       - name: Safe Git Workspace
         run: git config --global --add safe.directory /app
-      - name: "Setup spacelift credentials"
+      - name: 'Setup spacelift credentials'
         run: |
           set -x
           mkdir -p $HOME/.terraform.d
@@ -95,11 +95,11 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-          cache-dependency-path: "**/go.sum"
+          cache-dependency-path: '**/go.sum'
       - name: Install go Tools
         run: go install tool
       - name: Build
-        run: "go tool mage -v build"
+        run: 'go tool mage -v build'
         env:
           OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
           PUSH_IMAGE: ${{ inputs.push-oci-image }}
