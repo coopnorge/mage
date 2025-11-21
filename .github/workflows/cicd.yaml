@@ -45,16 +45,6 @@ jobs:
       contents: read
       pull-requests: read
 
-  policy-bot:
-    name: Validate policy-bot configuration
-    needs: setup
-    if: needs.setup.outputs.validate-policy-bot-config == 'true'
-    uses: coopnorge/github-workflow-policy-bot-config-validation/.github/workflows/policy-bot-config-validation.yaml@v0
-    permissions:
-      contents: read
-    secrets:
-      policy-bot-server-url: ${{ secrets.POLICY_BOT_BASE_URL }}
-
   kubernetes-ci:
     name: "Kubernetes CI"
     concurrency:
@@ -97,7 +87,6 @@ jobs:
       - kubernetes-ci
       - mage
       - techdocs
-      - policy-bot
     if: always()
     runs-on: ubuntu-latest
     permissions: {}

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"embed"
 	"fmt"
 	"io/fs"
 	"os"
@@ -52,6 +53,63 @@ func WriteTempFile(directory, suffix, content string) (string, func(), error) {
 		return "", func() {}, err
 	}
 	return file.Name(), cleanup, nil
+}
+
+// WriteTempFiles writes the content to a temp directory with a
+// random prefix and the provided suffix. Returns a cleanup function that the
+// caller is expected to call. If cleanup errors it will panic.
+func WriteTempFiles(directory string, suffix string, fsys embed.FS) (string, func(), error) {
+	// Create directory dir if needed
+	if err := os.MkdirAll(directory, 0o700); err != nil {
+		return "", func() {}, err
+	}
+
+	// Create a temp directory inside parent
+	dir, err := os.MkdirTemp(directory, fmt.Sprintf("*-%s", suffix))
+	if err != nil {
+		return "", func() {}, err
+	}
+
+	cleanup := func() {
+		err = os.RemoveAll(dir)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	// Walk embedded FS and recreate structure
+	err = fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if path == "." {
+			return nil
+		}
+
+		dest := filepath.Join(dir, path)
+
+		if d.IsDir() {
+			return os.MkdirAll(dest, 0o755)
+		}
+
+		data, err := fsys.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
+			return err
+		}
+
+		return os.WriteFile(dest, data, 0o644)
+	})
+
+	if err != nil {
+		defer cleanup()
+		return "", func() {}, err
+	}
+
+	return dir, cleanup, nil
 }
 
 // MkdirTemp creates a new temporary directory in the default directory for
