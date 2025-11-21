@@ -37,6 +37,9 @@ on:
       oci-images:
         value: ${{ jobs.goapp.outputs.oci-images }}
         description: OCI image references.
+      oci-image-pushed:
+        value: ${{ jobs.goapp.outputs.oci-image-pushed }}
+        description: Whether an OCI image was pushed.
 jobs:
   detect-changes:
     name: Detect Changes
