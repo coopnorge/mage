@@ -1,0 +1,4 @@
+ignore:
+  global_paths:
+    internal/targets/terraform/testdata/**:
+      reason: BY_DESIGN
