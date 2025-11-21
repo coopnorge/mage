@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: "Setup Spacelift Credentials"
         run: |
@@ -62,7 +62,7 @@ jobs:
       GIT_REV: ${{ github.event.pull_request.head.sha }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: check if spacelift/proposed exists as a required check in branch protection
         shell: bash
         run: |
@@ -127,7 +127,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs: ['validate-terraform']
     steps:
-      #- uses: actions/checkout@v5
+      #- uses: actions/checkout@v6
       - name: Waiting for checks suites to populate
         run: sleep 10
 
