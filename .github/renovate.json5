@@ -4,5 +4,18 @@
     "labels": ["dependencies", "renovate"],
     "automerge": true,
     "automergeStrategy": "squash",
-    "enabledManagers": ["tflint-plugin"]
+    "enabledManagers": ["tflint-plugin", "custom.regex"],
+    "customManagers": [
+        // policy-bot version in Dockerfile
+        {
+            "customType": "regex",
+            "managerFilePatterns": ["/^internal/targets/policybot/tools.Dockerfile$/"],
+            "matchStrings": [
+                "ENV\\s+POLICYBOT_VERSION\\s*=\\s*(?<currentValue>[0-9.]+)"
+            ],
+            "datasourceTemplate": "github-releases",
+            "depNameTemplate": "palantir/policy-bot",
+            "versioningTemplate": "semver",
+        },
+    ]
 }
