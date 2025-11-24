@@ -1,0 +1,30 @@
+# nonk8s
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: example-system
+  title: Example system
+  description: Example system
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+    github.com/project-slug: coopnorge/mage
+spec:
+  owner: engineering
+  domain: demo
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: example-component
+  title: Example component
+  description: Example component
+  annotations:
+    github.com/project-slug: coopnorge/mage
+spec:
+  type: service
+  lifecycle: experimental
+  owner: engineering
+  system: demo
+  dependsOn:
+    - component:techdocs
+    - component:vale-coop

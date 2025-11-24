@@ -4,5 +4,18 @@
     "labels": ["dependencies", "renovate"],
     "automerge": true,
     "automergeStrategy": "squash",
-    "enabledManagers": ["tflint-plugin"]
+    "enabledManagers": ["tflint-plugin", "custom.regex"],
+    "customManagers": [
+        // backstage entity validator version in Dockerfile
+        {
+            "customType": "regex",
+            "managerFilePatterns": ["/^internal/targets/cataloginfo/tools.Dockerfile$/"],
+            "matchStrings": [
+                "ENV\\s+BACKSTAGE_ENTITY_VALIDATOR_VERSION\\s*=\\s*(?<currentValue>[0-9.]+)"
+            ],
+            "datasourceTemplate": "npm",
+            "depNameTemplate": "@roadiehq/backstage-entity-validator",
+            "versioningTemplate": "semver",
+        },
+    ]
 }
