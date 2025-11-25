@@ -43,5 +43,5 @@ func DevtoolCatalogInfo(args ...string) error {
 
 func getCatalogInfoPaths() []string {
 	// This is configured here: https://github.com/coopnorge/backstage/blob/54a68fc5202c1b3e3bd492d4f54f2254aef553a9/backstage/app-config.yaml#L94
-	return []string{"./catalog-info*.yaml"}
+	return []string{"catalog-info*.yaml"}
 }
