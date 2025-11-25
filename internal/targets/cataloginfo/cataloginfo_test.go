@@ -81,21 +81,6 @@ func TestCatalogInfoTargets(t *testing.T) {
 			args := []string{"tool", "mage"}
 			args = append(args, tt.targets...)
 
-			// Debug: list directory contents
-			entries, err := os.ReadDir(".")
-			if err != nil {
-				t.Fatalf("failed to read dir: %v", err)
-			}
-
-			t.Log("dir contents:")
-			for _, e := range entries {
-				info := "file"
-				if e.IsDir() {
-					info = "dir"
-				}
-				t.Logf(" - %s (%s)", e.Name(), info)
-			}
-
 			gotErr := sh.RunV("go", args...)
 			if tt.wantErr {
 				assert.Error(t, gotErr)
