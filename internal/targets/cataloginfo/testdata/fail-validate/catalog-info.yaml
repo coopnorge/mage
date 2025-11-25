@@ -1,0 +1,12 @@
+# nonk8s
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  # missing required "name"
+  description: "This file is broken"
+spec:
+  type: service
+  lifecycle: production
+  # "owner" is required but missing
+  dependsOn:
+    - resource:default/db
