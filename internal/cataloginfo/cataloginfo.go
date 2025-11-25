@@ -38,7 +38,7 @@ func DevtoolCatalogInfo(args ...string) error {
 		"--workdir", "/src",
 	}
 
-	return devtool.Run("backstage-entity-validator", dockerArgs, "", args...)
+	return devtool.Run("backstage-entity-validator", dockerArgs, "validate-entity", args...)
 }
 
 func getCatalogInfoPaths() []string {
