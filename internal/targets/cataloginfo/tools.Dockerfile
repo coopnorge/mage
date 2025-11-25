@@ -1,4 +1,4 @@
-FROM node:25-alpine@sha256:26ded7f450a0ad37241d2ae97ea521a59cb551a1785c8a950f74b0a291ad3aea AS backstage-entity-validator
+FROM node:24-slim@sha256:0afb7822fac7bf9d7c1bf3b6e6c496dee6b2b64d8dfa365501a3c68e8eba94b2 AS backstage-entity-validator
 
 ENV BACKSTAGE_ENTITY_VALIDATOR_VERSION=0.5.0
 
