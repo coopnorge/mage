@@ -27,7 +27,7 @@ func (Go) Generate(ctx context.Context) error {
 func (Go) Validate(ctx context.Context) error {
 	mg.CtxDeps(ctx, Go.DownloadDevTools)
 	mg.CtxDeps(ctx, Go.DownloadModules)
-	mg.CtxDeps(ctx, Go.Test, Go.Lint)
+	mg.CtxDeps(ctx, Go.Test, Go.Lint, CatalogInfo.Validate)
 	return nil
 }
 

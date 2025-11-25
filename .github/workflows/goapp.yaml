@@ -47,6 +47,7 @@ jobs:
     outputs:
       golang: ${{ steps.go.outputs.golang == 'true' || github.event_name == 'workflow_dispatch' }}
       terraform: ${{ steps.terraform.outputs.terraform == 'true' && github.event_name == 'pull_request' }}
+      catalog-info: ${{ steps.catalog-info.outputs.catalog_info == 'true' && github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -80,6 +81,11 @@ jobs:
         env:
           ADDITIONAL_GLOBS_TERRAFORM: ${{ inputs.additional-globs-terraform }}
           CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
+      - name: Check for Catalog-info changes
+        id: catalog-info
+        run: echo "catalog_info=$(go tool mage catalogInfo:changes)" >> $GITHUB_OUTPUT
+        env:
+          CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
 
   goapp:
     name: Go application
@@ -108,4 +114,14 @@ jobs:
       id-token: write
       packages: read
       checks: read
+    secrets: inherit
+
+  catalog-info:
+    name: Policy Bot
+    needs: [ "detect-changes" ]
+    if: ${{  needs.detect-changes.outputs.catalog-info == 'true'  }}
+    uses: ./.github/workflows/reusable-catalog-info.yaml
+    permissions:
+      contents: read
+      pull-requests: read
     secrets: inherit
