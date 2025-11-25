@@ -28,4 +28,4 @@ jobs:
 
       - name: Code Validation
         id: validate
-        run: go tool mage cataloginfo:validate
+        run: go tool mage catalogInfo:validate
