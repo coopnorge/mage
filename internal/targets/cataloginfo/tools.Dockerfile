@@ -5,7 +5,3 @@ ENV BACKSTAGE_ENTITY_VALIDATOR_VERSION=0.5.0
 RUN npm install -g npm && npm install --global @roadiehq/backstage-entity-validator@$BACKSTAGE_ENTITY_VALIDATOR_VERSION
 
 ENTRYPOINT ["validate-entity"]
-
-CMD ["validate-entity"]
-
-WORKDIR /src
