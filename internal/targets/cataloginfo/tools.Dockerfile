@@ -10,4 +10,6 @@ USER tooluser
 
 ENTRYPOINT ["validate-entity"]
 
+WORKDIR /src
+
 FROM backstage-entity-validator-arm64 AS backstage-entity-validator-amd64
