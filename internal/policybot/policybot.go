@@ -1,10 +1,6 @@
 package policybot
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
 	"fmt"
 	"log"
 	"os"
@@ -16,7 +12,7 @@ import (
 )
 
 // Validate submits policy file to policy-bot docker app to validate it
-func Validate(args ...string) error {
+func Validate() error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -38,7 +34,7 @@ func Validate(args ...string) error {
 	}
 
 	dockerArgs := []string{
-		"--volume", fmt.Sprintf("%s:/.policy.yml", absConfigPath),
+		"--volume", fmt.Sprintf("%s:/policy-bot-1.39.3/.policy.yml", absConfigPath),
 	}
 
 	policyBotBaseURL := os.Getenv("POLICY_BOT_BASE_URL")
@@ -47,11 +43,7 @@ func Validate(args ...string) error {
 		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", "POLICY_BOT_BASE_URL", policyBotBaseURL))
 	}
 
-	// policy-bot needs an RSA key to start
-	rsaPEMKey := generateRSAPrivateKeyPEM(4096)
-	dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", "GITHUB_APP_PRIVATE_KEY", rsaPEMKey))
-
-	return devtool.Run("policy-bot-config-check", dockerArgs, "", args...)
+	return devtool.Run("policy-bot", dockerArgs, "validate", "/.policy.yml")
 }
 
 // HasChanges checks if the current branch has policy bot config file changes
@@ -73,20 +65,4 @@ func getConfigPath() string {
 	}
 	log.Printf("Using config: %s\n", configPath)
 	return configPath
-}
-
-func generateRSAPrivateKeyPEM(bits int) string {
-	key, err := rsa.GenerateKey(rand.Reader, bits)
-	if err != nil {
-		log.Fatalf("failed to generate RSA key: %v", err)
-	}
-
-	der := x509.MarshalPKCS1PrivateKey(key)
-
-	block := &pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: der,
-	}
-
-	return string(pem.EncodeToMemory(block))
 }

@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	//go:embed tools.Dockerfile policy-bot-config-check/*
+	//go:embed tools.Dockerfile policy-bot.yml
 	// PolicyBotConfigCheckDocker the content of tools.Dockerfile
 	PolicyBotConfigCheckDocker embed.FS
 )
@@ -20,7 +20,7 @@ var (
 func Validate(ctx context.Context) error {
 	mg.CtxDeps(ctx, runPolicyBotConfigCheck)
 
-	err := policybot.Validate("")
+	err := policybot.Validate()
 	if err != nil {
 		return err
 	}
@@ -44,5 +44,5 @@ func Changes(_ context.Context) error {
 }
 
 func runPolicyBotConfigCheck(_ context.Context) error {
-	return devtool.Build("policy-bot-config-check", PolicyBotConfigCheckDocker)
+	return devtool.Build("policy-bot", PolicyBotConfigCheckDocker)
 }
