@@ -15,7 +15,7 @@ jobs:
       pull-requests: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -26,6 +26,6 @@ jobs:
       - name: Install go Tools
         run: go install tool
 
-      - name: Code Validation
+      - name: Catalog Info Validation
         id: validate
         run: go tool mage catalogInfo:validate

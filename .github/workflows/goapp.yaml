@@ -127,7 +127,7 @@ jobs:
     uses: ./.github/workflows/reusable-policy-bot.yaml
 
   catalog-info:
-    name: Policy Bot
+    name: Catalog Info
     needs: [ "detect-changes" ]
     if: ${{  needs.detect-changes.outputs.catalog-info == 'true'  }}
     uses: ./.github/workflows/reusable-catalog-info.yaml
