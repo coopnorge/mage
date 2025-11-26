@@ -23,7 +23,8 @@ func HasChanges() (bool, error) {
 	}
 	// always trigger on go.mod/sum and workflows because of changes in ci.
 	additionalGlobs := []string{"go.mod", "go.sum", ".github/workflows/*"}
-	return core.CompareChangesToPaths(changedFiles, getCatalogInfoPaths(), additionalGlobs)
+	additionalGlobs = append(additionalGlobs, getCatalogInfoPaths()...)
+	return core.CompareChangesToPaths(changedFiles, []string{}, additionalGlobs)
 }
 
 // DevtoolCatalogInfo runs the devtool for backstage-entity-validator
