@@ -25,6 +25,6 @@ jobs:
       - name: Install go Tools
         run: go install tool
 
-      - name: Code Validation
+      - name: Policy-bot config validation
         id: validate
         run: go tool mage policyBotConfig:validate
