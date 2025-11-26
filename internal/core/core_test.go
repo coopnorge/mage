@@ -100,6 +100,14 @@ func TestCompareChangesToPaths(t *testing.T) {
 		wantErr         bool
 	}{
 		{
+			name:            "file in root match",
+			changes:         []string{"file.ext"},
+			paths:           []string{"file.ext"},
+			additionalGlobs: []string{},
+			want:            true,
+			wantErr:         false,
+		},
+		{
 			name:            "simple match",
 			changes:         []string{"a/b.txt"},
 			paths:           []string{"a"},

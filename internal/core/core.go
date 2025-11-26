@@ -97,6 +97,10 @@ func IsDotDirectory(path string, d fs.DirEntry) bool {
 func CompareChangesToPaths(changes []string, paths []string, additionalGlobs []string) (bool, error) {
 	for _, change := range changes {
 		for _, p := range paths {
+			if change == p {
+				return true, nil
+			}
+
 			match, err := path.Match(fmt.Sprintf("%s/*", p), change)
 			if err != nil {
 				return false, err
