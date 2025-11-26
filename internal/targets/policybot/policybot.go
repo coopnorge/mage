@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	//go:embed tools.Dockerfile policy-bot.yml
+	//go:embed tools.Dockerfile
 	// PolicyBotConfigCheckDocker the content of tools.Dockerfile
 	PolicyBotConfigCheckDocker embed.FS
 )

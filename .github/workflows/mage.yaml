@@ -104,7 +104,6 @@ jobs:
           OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
           PUSH_IMAGE: ${{ inputs.push-oci-image }}
           GO_RUNTIME: ${{ inputs.go-runtime }}
-          POLICY_BOT_BASE_URL: ${{ secrets.POLICY_BOT_BASE_URL }}
       - id: oci-images
         name: Output OCI images references
         run: |

@@ -34,13 +34,8 @@ func Validate() error {
 	}
 
 	dockerArgs := []string{
-		"--volume", fmt.Sprintf("%s:/policy-bot-1.39.3/.policy.yml", absConfigPath),
-	}
-
-	policyBotBaseURL := os.Getenv("POLICY_BOT_BASE_URL")
-
-	if policyBotBaseURL != "" {
-		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", "POLICY_BOT_BASE_URL", policyBotBaseURL))
+		"--volume", fmt.Sprintf("%s:/src/.policy.yml", absConfigPath),
+		"--workdir", "/src",
 	}
 
 	return devtool.Run("policy-bot", dockerArgs, "validate", "/.policy.yml")
