@@ -26,6 +26,6 @@ jobs:
       - name: Install go Tools
         run: go install tool
 
-      - name: Code Validation
+      - name: Catalog Info Validation
         id: validate
         run: go tool mage catalogInfo:validate
