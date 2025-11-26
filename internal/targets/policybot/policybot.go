@@ -2,7 +2,7 @@ package policybot
 
 import (
 	"context"
-	"embed"
+	_ "embed"
 	"fmt"
 
 	"github.com/coopnorge/mage/internal/devtool"
@@ -13,7 +13,7 @@ import (
 var (
 	//go:embed tools.Dockerfile
 	// PolicyBotConfigCheckDocker the content of tools.Dockerfile
-	PolicyBotConfigCheckDocker embed.FS
+	PolicyBotConfigCheckDocker string
 )
 
 // Validate validates policybot config file
