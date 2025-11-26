@@ -121,7 +121,7 @@ jobs:
     secrets: inherit
 
   policy-bot:
-    name: Policy Bot
+    name: Policy-bot
     needs: [ "detect-changes" ]
     if: ${{  needs.detect-changes.outputs.policy-bot == 'true'  }}
     uses: ./.github/workflows/reusable-policy-bot.yaml
