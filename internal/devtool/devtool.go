@@ -53,7 +53,7 @@ func RunWith(env map[string]string, tool string, dockerRunArgs []string, cmd str
 // pull the image from a Docker registry.
 func Build(tool, dockerfile string) error {
 	// This is a bit hacky to use the local go binary instead of the container.
-	// We dont need to build a depenency here
+	// We don't need to build a dependency here
 	// this is used for running the integration tests on targets.
 	if os.Getenv("GO_RUNTIME") == "local" && tool == "golang" {
 		return nil
