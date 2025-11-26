@@ -85,6 +85,8 @@ jobs:
       - name: Check for PolicyBot changes
         id: policy-bot
         run: echo "policy_bot=$(go tool mage policyBotConfig:changes)" >> $GITHUB_OUTPUT
+        env:
+          CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
       - name: Check for Catalog-info changes
         id: catalog-info
         run: echo "catalog_info=$(go tool mage catalogInfo:changes)" >> $GITHUB_OUTPUT
