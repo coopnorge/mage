@@ -24,7 +24,11 @@ func SHA256() (string, error) {
 
 // NormalizeGitURL parses git or https git URLs and returns an https URL.
 func NormalizeGitURL(url string) (string, error) {
+	// "https://<redacted>:x-oauth-basic@github.com/coopnorge/helloworld"
+
 	if strings.HasPrefix(url, "https://") {
+		parts := strings.Split(url, "github.com/")
+		url = fmt.Sprintf("https://%s/%s", "github.com", parts[1])
 		return strings.TrimSuffix(url, ".git"), nil
 	} else if strings.HasPrefix(url, "git@") {
 		url = strings.TrimPrefix(url, "git@")
