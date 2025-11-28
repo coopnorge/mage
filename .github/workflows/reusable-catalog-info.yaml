@@ -7,7 +7,7 @@ on:
     secrets: {}
 
 jobs:
-  validate-policy-bot-config:
+  validate-catalog-info:
     name: Catalog info validator
     runs-on: ubuntu-latest
     permissions:
