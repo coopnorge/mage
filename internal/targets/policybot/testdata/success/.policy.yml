@@ -23,7 +23,7 @@ approval_rules:
       teams:
         - "coopnorge/cloud-platform"
       users:
-        - "CoopNorgeReviewBot"
+        - "coop-norge-review-bot"
     options:
       invalidate_on_push: true
       request_review:
