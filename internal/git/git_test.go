@@ -35,6 +35,21 @@ func TestNormalizeGitURL(t *testing.T) {
 			want: "https://github.com/coopnorge/mage",
 		},
 		{
+			name: "https url with basic auth, without git suffix",
+			url:  "https://gpg_dfdfl:x-basic-auth@github.com/coopnorge/mage",
+			want: "https://github.com/coopnorge/mage",
+		},
+		{
+			name: "https url with user",
+			url:  "https://myuser@github.com/coopnorge/mage.git",
+			want: "https://github.com/coopnorge/mage",
+		},
+		{
+			name: "https url with user, without git suffix",
+			url:  "https://myuser@github.com/coopnorge/mage",
+			want: "https://github.com/coopnorge/mage",
+		},
+		{
 			name:    "error url",
 			url:     "github.com/coopnorge",
 			want:    "",
