@@ -22,6 +22,11 @@ func SHA256() (string, error) {
 	return sh.Output("git", "rev-parse", "HEAD")
 }
 
+// LatestTag returns the
+func LatestTag() (string, error) {
+	return sh.Output("git", "describe", "--tags", "--abbrev=0")
+}
+
 // NormalizeGitURL parses git or https git URLs and returns an https URL.
 func NormalizeGitURL(url string) (string, error) {
 	// "https://<redacted>:x-oauth-basic@github.com/coopnorge/helloworld"
