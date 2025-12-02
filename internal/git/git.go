@@ -2,6 +2,7 @@ package git
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 
@@ -23,20 +24,30 @@ func SHA256() (string, error) {
 }
 
 // NormalizeGitURL parses git or https git URLs and returns an https URL.
-func NormalizeGitURL(url string) (string, error) {
+func NormalizeGitURL(rawURL string) (string, error) {
 	// "https://<redacted>:x-oauth-basic@github.com/coopnorge/helloworld"
 
-	if strings.HasPrefix(url, "https://") {
-		parts := strings.Split(url, "github.com/")
-		url = fmt.Sprintf("https://%s/%s", "github.com", parts[1])
-		return strings.TrimSuffix(url, ".git"), nil
-	} else if strings.HasPrefix(url, "git@") {
-		url = strings.TrimPrefix(url, "git@")
-		parts := strings.Split(url, ":")
-		url = fmt.Sprintf("https://%s/%s", parts[0], parts[1])
-		return strings.TrimSuffix(url, ".git"), nil
+	if strings.HasPrefix(rawURL, "https://") {
+		rawURL = strings.TrimSuffix(rawURL, ".git")
+		parsedURL, err := url.Parse(rawURL)
+		if err != nil {
+			return "", fmt.Errorf("unable to parse remote https url: %w", err)
+		}
+		parsedURL.User = nil // This removes any user info (username:password) from URL, if present
+		return parsedURL.Redacted(), nil
+	} else if strings.HasPrefix(rawURL, "git@") {
+		rawURL = strings.TrimPrefix(rawURL, "git@")
+		rawURL = strings.TrimSuffix(rawURL, ".git")
+		parts := strings.Split(rawURL, ":")
+		rawURL = fmt.Sprintf("https://%s/%s", parts[0], parts[1])
+		parsedURL, err := url.Parse(rawURL)
+		if err != nil {
+			return "", fmt.Errorf("unable to parse remote https url: %w", err)
+		}
+		parsedURL.User = nil // This removes any user info (username:password) from URL, if present
+		return parsedURL.Redacted(), nil
 	}
-	return "", fmt.Errorf("unable to parse remote url: %s", url)
+	return "", fmt.Errorf("unable to parse remote url: %s", rawURL)
 }
 
 // DiffToMain returns a list of files that have been changed
