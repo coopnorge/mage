@@ -1,2 +1,2 @@
 FROM docker.io/library/golang:1.25.5@sha256:20b91eda7a9627c127c0225b0d4e8ec927b476fa4130c6760928b849d769c149 AS golang
-FROM golangci/golangci-lint:v2.6.2@sha256:d9469fcf8fdb1cd3790c5d0de2bb95640c4cd00c6670f541c3cb49edb744de49 AS golangci-lint
+FROM golangci/golangci-lint:v2.7.0@sha256:ebaf6daaaf1f830308a925ada8af7ddb7968df1b2115b980193540a352d24857 AS golangci-lint
