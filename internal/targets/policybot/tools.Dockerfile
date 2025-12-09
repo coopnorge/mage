@@ -1,6 +1,6 @@
 FROM alpine AS download
 
-ENV POLICY_BOT_VERSION=1.40.0
+ENV POLICY_BOT_VERSION=1.40.1
 
 RUN apk add --no-cache curl \
   && curl -L "https://github.com/palantir/policy-bot/releases/download/v$POLICY_BOT_VERSION/policy-bot-$POLICY_BOT_VERSION.tgz" -o "/tmp/policy-bot.tgz" \
