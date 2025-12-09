@@ -15,3 +15,5 @@ require (
 )
 
 tool github.com/magefile/mage
+
+retract [v0.1.0, v0.16.3] // Retracted due to critical bug in earlier versions
