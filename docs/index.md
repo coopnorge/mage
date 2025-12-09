@@ -21,9 +21,12 @@ go 1.23.0
 
 toolchain go1.24.0
 
-require github.com/coopnorge/mage v0.0.1
+require github.com/coopnorge/mage v0.16.7
 
-require github.com/magefile/mage v1.15.0 // indirect
+require (
+ github.com/bmatcuk/doublestar/v4 v4.9.1 // indirect
+ github.com/magefile/mage v1.15.0 // indirect
+)
 
 tool github.com/magefile/mage
 ```
