@@ -1,13 +1,18 @@
-# When validate is available in the official release, we can remove the build stage
-FROM golang:1.25.5@sha256:20b91eda7a9627c127c0225b0d4e8ec927b476fa4130c6760928b849d769c149 AS build
+FROM alpine AS download
+
+ENV POLICY_BOT_VERSION=1.40.0
+
+RUN apk add --no-cache curl \
+  && curl -L "https://github.com/palantir/policy-bot/releases/download/v$POLICY_BOT_VERSION/policy-bot-$POLICY_BOT_VERSION.tgz" -o "/tmp/policy-bot.tgz" \
+  && mkdir "/app" \
+  && tar xzvf "/tmp/policy-bot.tgz" --strip-components=1 -C /app
+
+FROM scratch AS policy-bot
+
+ARG TARGETARCH
 
 WORKDIR /app
 
-RUN git clone -b add-validate https://github.com/AtzeDeVries/policy-bot.git .
+COPY --from=download /app/ /app
 
-RUN CGO_ENABLED=0 go build -o policy-bot .
-
-FROM palantirtechnologies/policy-bot:1.40.0@sha256:5663e52393d080ab26f9059d81d2fad3eeb4da876719ed00d496acc5b55a510f AS policy-bot
-
-COPY --from=build /app/policy-bot bin/linux-arm64/policy-bot
-COPY --from=build /app/policy-bot bin/linux-amd64/policy-bot
+ENTRYPOINT ["bin/linux-$TARGETARCH/policy-bot"]

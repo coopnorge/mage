@@ -17,5 +17,16 @@
             "depNameTemplate": "@roadiehq/backstage-entity-validator",
             "versioningTemplate": "semver",
         },
+        // policy-bot version in Dockerfile
+        {
+            "customType": "regex",
+            "managerFilePatterns": ["/^internal/targets/policybot/tools.Dockerfile$/"],
+            "matchStrings": [
+                "ENV\\s+POLICY_BOT_VERSION\\s*=\\s*(?<currentValue>[0-9.]+)"
+            ],
+            "datasourceTemplate": "github-releases",
+            "depNameTemplate": "palantir/policy-bot",
+            "versioningTemplate": "semver",
+        }
     ]
 }
