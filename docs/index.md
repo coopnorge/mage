@@ -79,6 +79,8 @@ import (
 - [x] Docker image build
 - [x] Docker image push
 - [x] Terraform CI
+- [x] Policy-bot config validation
+- [x] Catalog-info validation
 - [ ] Techdocs CI
 - [ ] Kubernetes CI
 - [ ] Security Scanning
@@ -100,6 +102,8 @@ import (
 - [x] Go linting
 - [x] Go code generation
 - [ ] Go mock generation
+- [x] Policy-bot config validation
+- [x] Catalog-info validation
 - [ ] Techdocs CI
 - [ ] Security Scanning
 
