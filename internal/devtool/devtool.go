@@ -41,6 +41,7 @@ func RunWith(env map[string]string, tool string, dockerRunArgs []string, cmd str
 	call := []string{
 		"run",
 		"--rm",
+		"--platform", fmt.Sprintf("linux/%s", runtime.GOARCH),
 	}
 
 	call = append(call, dockerRunArgs...)
@@ -83,6 +84,7 @@ func Build(tool, dockerfile string) error {
 
 	return sh.RunV(
 		"docker", "buildx", "build",
+		"--platform", fmt.Sprintf("linux/%s", runtime.GOARCH),
 		"-f", file,
 		"--target", selectedTool,
 		"-t", imageName,

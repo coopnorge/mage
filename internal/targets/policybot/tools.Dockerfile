@@ -9,14 +9,10 @@ RUN apk add --no-cache curl \
 
 FROM scratch AS policy-bot
 
+ARG TARGETARCH
+
 WORKDIR /app
 
 COPY --from=download /app/ /app
 
-FROM policy-bot AS policy-bot-amd64
-
-ENTRYPOINT ["bin/linux-amd64/policy-bot"]
-
-FROM policy-bot AS policy-bot-arm64
-
-ENTRYPOINT ["bin/linux-arm64/policy-bot"]
+ENTRYPOINT ["bin/linux-$TARGETARCH/policy-bot"]
