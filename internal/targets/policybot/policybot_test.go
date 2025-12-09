@@ -14,8 +14,11 @@ import (
 
 var goModTemplateString = `module dummy
 go 1.25.0
-require github.com/coopnorge/mage v0.7.0
-require github.com/magefile/mage v1.15.0 // indirect
+require github.com/coopnorge/mage v0.16.7
+require (
+	github.com/bmatcuk/doublestar/v4 v4.9.1 // indirect
+	github.com/magefile/mage v1.15.0 // indirect
+)
 tool github.com/magefile/mage
 replace github.com/coopnorge/mage => {{ . }}
 `
