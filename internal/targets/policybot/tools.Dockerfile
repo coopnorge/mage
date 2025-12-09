@@ -7,7 +7,7 @@ RUN git clone -b add-validate https://github.com/AtzeDeVries/policy-bot.git .
 
 RUN CGO_ENABLED=0 go build -o policy-bot .
 
-FROM palantirtechnologies/policy-bot:1.39.3@sha256:a96dbd467736b37b3fef99819b7571655c5bbdcd3641aa0bf34afd0ea49d161a AS policy-bot
+FROM palantirtechnologies/policy-bot:1.40.0@sha256:5663e52393d080ab26f9059d81d2fad3eeb4da876719ed00d496acc5b55a510f AS policy-bot
 
 COPY --from=build /app/policy-bot bin/linux-arm64/policy-bot
 COPY --from=build /app/policy-bot bin/linux-amd64/policy-bot
