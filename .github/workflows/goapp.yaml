@@ -99,7 +99,7 @@ jobs:
     if: ${{  needs.detect-changes.outputs.golang == 'true'  }}
     uses: ./.github/workflows/reusable-goapp.yaml
     permissions:
-      contents: write
+      contents: read
       id-token: write
       packages: read
     secrets: inherit

@@ -36,7 +36,7 @@ jobs:
     name: Go application CI
     runs-on: ubuntu-24.04
     permissions:
-      contents: write
+      contents: read
       id-token: write
       packages: read
     outputs:
@@ -133,6 +133,10 @@ jobs:
       - id: oci-tag-repo
         if: ${{ github.ref == 'refs/heads/main' }}
         name: Tag the repo with oci build tag
+        env:
+          # TODO: we should update this to a differnt user
+          # or a github app.
+          GH_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
         run: |
           OCI_TAG=$(cat ./var/oci-images.json | yq -P | grep tag: | head -1 | yq .tag)
           if [[ -z "$OCI_TAG" ]]; then
