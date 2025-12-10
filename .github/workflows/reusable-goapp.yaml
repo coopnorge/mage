@@ -144,6 +144,7 @@ jobs:
           git config user.email "mage@coop.no"
           git config user.name "Mage CI OCI tagger"
           git tag -a ${GIT_TAG} main -m "mage oci build ${OCI_TAG}"
+          git push origin ${GIT_TAG}
 
       - name: Show output
         if: always()
