@@ -124,7 +124,7 @@ func onMainBranch() (bool, error) {
 	if ok {
 		return githubRef == "refs/heads/main", nil
 	}
-	branch, err := sh.Output("git", "ref-parse", "--abbrev-ref", "HEAD")
+	branch, err := sh.Output("git", "rev-parse", "--abbrev-ref", "HEAD")
 	if err != nil {
 		return false, err
 	}
