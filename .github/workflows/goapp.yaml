@@ -124,13 +124,13 @@ jobs:
 
   policy-bot:
     name: Policy-bot
-    needs: [ "detect-changes" ]
+    needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.policy-bot == 'true'  }}
     uses: ./.github/workflows/reusable-policy-bot.yaml
 
   catalog-info:
     name: Catalog Info
-    needs: [ "detect-changes" ]
+    needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.catalog-info == 'true'  }}
     uses: ./.github/workflows/reusable-catalog-info.yaml
     permissions:

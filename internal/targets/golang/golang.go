@@ -124,13 +124,13 @@ func downloadModules(_ context.Context, directory string) error {
 
 // Changes implements a target that check if the current branch has changes
 // related to main branch
-func Changes(_ context.Context) error {
+func Changes(_ context.Context, pattern string) error {
 	directories, err := golang.FindGoSourceCodeFolders(".")
 	if err != nil {
 		return err
 	}
 
-	changes, err := golang.HasChanges(directories)
+	changes, err := golang.HasChanges(directories, pattern)
 	if err != nil {
 		return err
 	}

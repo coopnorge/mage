@@ -80,6 +80,56 @@ func DiffToMain() ([]string, error) {
 	return changedFiles, nil
 }
 
+// DiffToTagPattern returns a list of files that have been changed
+// compared to the most recent tags of a certain pattern.
+func DiffToTagPattern(target string) ([]string, error) {
+	// git diff
+	// --name-only # only list file names
+	// --no-renames # rename of file is shown as delete and add
+
+	changedFiles := []string{}
+	ref := "origin/main"
+	onMain, err := onMainBranch()
+	if err != nil {
+		return changedFiles, err
+	}
+
+	if onMain {
+		ref, err = latestTag(target)
+		if err != nil {
+			return changedFiles, err
+		}
+	}
+
+	gitDiff, err := sh.Output("git", "diff", "--name-only", "--no-renames", ref)
+	if err != nil {
+		return changedFiles, err
+	}
+	changedFiles = append(changedFiles, strings.Split(gitDiff, "\n")...)
+	return changedFiles, nil
+}
+
+// LatestTag finds the latest tag based on a tag pattern. If tag is not found
+// it will return an error
+func latestTag(pattern string) (string, error) {
+	// add exlucde on "*-*" removes all alpha/beta/rc etc from the list
+	return sh.Output("git", "describe", "--tags", "--abbrev=0", "--match", pattern, "--exclude", "*-*")
+}
+
+// OnMainBranch returns true the current branch is the main branch
+func onMainBranch() (bool, error) {
+	// in gitub use github env var to get branch
+	githubRef, ok := os.LookupEnv("GITHUB_HEAD_REF")
+	if ok {
+		return githubRef == "refs/heads/main", nil
+	}
+	branch, err := sh.Output("git", "ref-parse", "--abbrev-ref", "HEAD")
+	if err != nil {
+		return false, err
+	}
+	return branch == "main", nil
+}
+
 func checkBranch(branch string) error {
 	return sh.Run("git", "rev-parse", "--verify", branch)
 }

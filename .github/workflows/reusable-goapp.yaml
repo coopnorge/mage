@@ -1,5 +1,6 @@
 concurrency:
   group: reusable-goapp-${{ github.workflow }}-${{ github.ref }}
+  # we might thing about disabling cancel on the main branch
   cancel-in-progress: true
 on:
   workflow_call:
@@ -129,6 +130,19 @@ jobs:
           else
             echo "images={}" >> $GITHUB_OUTPUT
           fi
+      - id: oci-tag-repo
+        if: ${{ github.ref == 'refs/heads/main' }}
+        name: Tag the repo with oci build tag
+        run: |
+          OCI_TAG=$(cat ./var/oci-images.json | yq -P | grep tag: | head -1 | yq .tag)
+          if [[ -z "$OCI_TAG" ]]; then
+            echo cannot get an OCI TAG, bailing
+            exit 1
+          fi
+          GIT_TAG="mage/oci/${OCI_TAG}"
+          echo "tagging repo with tag ${$GIT_TAG}"
+          git tag -a ${GIT_TAG} main -m "mage oci build ${OCI_TAG}"
+
       - name: Show output
         if: always()
         run: tree var/
