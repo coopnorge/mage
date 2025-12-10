@@ -140,7 +140,7 @@ jobs:
             exit 1
           fi
           GIT_TAG="mage/oci/${OCI_TAG}"
-          echo "tagging repo with tag ${$GIT_TAG}"
+          echo "tagging repo with tag ${GIT_TAG}"
           git tag -a ${GIT_TAG} main -m "mage oci build ${OCI_TAG}"
 
       - name: Show output
