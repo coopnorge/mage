@@ -119,10 +119,10 @@ func latestTag(pattern string) (string, error) {
 // OnMainBranch returns true the current branch is the main branch
 func onMainBranch() (bool, error) {
 	// in gitub use github env var to get branch
-	githubRef, ok := os.LookupEnv("GITHUB_HEAD_REF")
-	if ok {
-		return githubRef == "refs/heads/main", nil
-	}
+	//githubRef, ok := os.LookupEnv("GITHUB_HEAD_REF")
+	//if ok {
+	//	return githubRef == "refs/heads/main", nil
+	//}
 	branch, err := sh.Output("git", "rev-parse", "--abbrev-ref", "HEAD")
 	if err != nil {
 		return false, err
