@@ -141,6 +141,8 @@ jobs:
           fi
           GIT_TAG="mage/oci/${OCI_TAG}"
           echo "tagging repo with tag ${GIT_TAG}"
+          git config user.email "mage@coop.no"
+          git config user.name "Mage CI OCI tagger"
           git tag -a ${GIT_TAG} main -m "mage oci build ${OCI_TAG}"
 
       - name: Show output
