@@ -157,7 +157,7 @@ jobs:
         name: Tag the repo with oci build tag
         working-directory: ./set-tag
         run: |
-          OCI_TAG=$(cat ./var/oci-images.json | yq -P | grep tag: | head -1 | yq .tag)
+          OCI_TAG=$(cat ../var/oci-images.json | yq -P | grep tag: | head -1 | yq .tag)
           if [[ -z "$OCI_TAG" ]]; then
             echo cannot get an OCI TAG, bailing
             exit 1
@@ -166,7 +166,7 @@ jobs:
           echo "tagging repo with tag ${GIT_TAG}"
           git config user.email "${{ steps.generate_token.outputs.app-slug }}[bot] <${{ steps.get-user-id.outputs.user-id }}+${{ steps.generate_token.outputs.app-slug }}[bot]@users.noreply.github.com>"
           git config user.name  "${{ steps.generate_token.outputs.app-slug }}[bot] <${{ steps.get-user-id.outputs.user-id }}+${{ steps.generate_token.outputs.app-slug }}[bot]@users.noreply.github.com>"
-          git tag -a ${GIT_TAG} main -m "mage oci build ${OCI_TAG}"
+          git tag -s -a ${GIT_TAG} main -m "mage oci build ${OCI_TAG}"
           AUTH_URL="https://${{ steps.generate_token.outputs.token }}@github.com/${GITHUB_REPOSITORY}.git"
           git push ${AUTH_URL} tag ${GIT_TAG}
 
