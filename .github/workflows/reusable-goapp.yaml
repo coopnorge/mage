@@ -130,6 +130,21 @@ jobs:
           else
             echo "images={}" >> $GITHUB_OUTPUT
           fi
+      - name: Generate token for writeback to pr
+        id: generate_token
+        # v1.5.1
+        uses: actions/create-github-app-token@v2.2.1
+        with:
+          app-id: 172868
+          private-key: ${{ secrets.WRITEBACK_APP_PRIVATE_KEY_PEM }}
+          owner: coopnorge
+
+      - name: Get GitHub App User ID for the writeback to pr bot
+        id: get-user-id
+        run: echo "user-id=$(gh api "/users/${{ steps.generate_token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+
       - id: oci-tag-repo
         if: ${{ github.ref == 'refs/heads/main' }}
         name: Tag the repo with oci build tag
@@ -141,10 +156,10 @@ jobs:
           fi
           GIT_TAG="mage/oci/${OCI_TAG}"
           echo "tagging repo with tag ${GIT_TAG}"
-          git config user.email "mage@coop.no"
-          git config user.name "Mage CI OCI tagger"
+          git config user.email "${{ steps.generate_token.outputs.app-slug }}[bot] <${{ steps.get-user-id.outputs.user-id }}+${{ steps.generate_token.outputs.app-slug }}[bot]@users.noreply.github.com>"
+          git config user.name  "${{ steps.generate_token.outputs.app-slug }}[bot] <${{ steps.get-user-id.outputs.user-id }}+${{ steps.generate_token.outputs.app-slug }}[bot]@users.noreply.github.com>"
           git tag -a ${GIT_TAG} main -m "mage oci build ${OCI_TAG}"
-          AUTH_URL="https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
+          AUTH_URL="https://${{ steps.generate_token.outputs.token }}@github.com/${GITHUB_REPOSITORY}.git"
           git push ${AUTH_URL} tag ${GIT_TAG}
 
       - name: Show output
