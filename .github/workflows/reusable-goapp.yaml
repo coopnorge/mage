@@ -151,6 +151,7 @@ jobs:
         with:
           github_token: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
           push_only_tags: true
+          tags: true
 
       - name: Show output
         if: always()
