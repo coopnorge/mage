@@ -144,14 +144,8 @@ jobs:
           git config user.email "mage@coop.no"
           git config user.name "Mage CI OCI tagger"
           git tag -a ${GIT_TAG} main -m "mage oci build ${OCI_TAG}"
-      # using this action now, should move this into mage
-      - id: push-tag
-        name: push tag
-        uses: ad-m/github-push-action@77c5b412c50b723d2a4fbc6d71fb5723bcd439aa
-        with:
-          github_token: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
-          push_only_tags: true
-          tags: true
+          AUTH_URL="https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
+          git push ${AUTH_URL} tag ${GIT_TAG}
 
       - name: Show output
         if: always()
