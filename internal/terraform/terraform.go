@@ -145,6 +145,32 @@ func InitUpgrade(directory string) error {
 	return nil
 }
 
+// CheckLock checks that the lockfile exists
+func CheckLock(directory string) error {
+	log.Printf("Checking for terraform lockfile in %q", directory)
+
+	lockfile := ".terraform.lock.hcl"
+	lockfilePath := filepath.Join(directory, lockfile)
+	hasLockFile := false
+	if _, err := os.Stat(lockfilePath); err == nil {
+		hasLockFile = true
+	}
+
+	if HasTerraformDocsConfig(directory) {
+		if hasLockFile {
+			return fmt.Errorf("lockfile %q found in directory %q, but it looks like a module (has terraform-docs.yml)", lockfile, directory)
+		}
+		return nil
+	}
+
+	if !hasLockFile {
+		return fmt.Errorf("lockfile %q not found in directory %q as expected", lockfile, directory)
+	}
+
+	log.Printf("Lockfile %q found in %q", lockfile, directory)
+	return nil
+}
+
 // ProviderLock updates the provider lock file locking poviders for a list of
 // os architecures
 func ProviderLock(directory string) error {
