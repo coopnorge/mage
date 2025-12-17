@@ -81,7 +81,7 @@ func Build(ctx context.Context) error {
 //
 // For details see [Go.Validate], [Terraform.Validate] and [Docker.Validate].
 func Validate(ctx context.Context) error {
-	mg.CtxDeps(ctx, Go.Validate, Docker.Validate, Terraform.Validate, CatalogInfo.Validate, PolicyBotConfig.Validate)
+	mg.CtxDeps(ctx, Go.Validate, Docker.Validate, Terraform.Validate, CatalogInfo.Validate, PolicyBotConfig.Validate, Pallets.Validate)
 	return nil
 }
 
