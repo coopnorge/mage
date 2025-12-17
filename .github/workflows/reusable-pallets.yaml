@@ -1,0 +1,30 @@
+concurrency:
+  group: reusable-policy-bot-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+on:
+  workflow_call:
+    inputs: {}
+    secrets: {}
+
+jobs:
+  validate-policy-bot-config:
+    name: Pallets config check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: "**/go.sum"
+      - name: Install go Tools
+        run: go install tool
+
+      - name: Policy-bot config validation
+        id: validate
+        run: go tool mage pallets:validate
