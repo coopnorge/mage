@@ -7,7 +7,6 @@ import (
 
 	"github.com/coopnorge/mage/internal/devtool"
 	"github.com/coopnorge/mage/internal/pallets"
-	"github.com/magefile/mage/mg"
 )
 
 // KubeConformDocker the content of tools.Dockerfile
@@ -16,8 +15,7 @@ import (
 var KubeConformDocker string
 
 // Validate validates policybot config file
-func Validate(ctx context.Context) error {
-	mg.CtxDeps(ctx, buildKubeConform)
+func Validate(_ context.Context) error {
 	err := pallets.Validate()
 	if err != nil {
 		return err
@@ -41,6 +39,7 @@ func Changes(_ context.Context) error {
 	return nil
 }
 
-func buildKubeConform(_ context.Context) error {
-	return devtool.Build("kubeconform", KubeConformDocker)
+// DownloadDevTool downloads devtools related to pallet validation
+func DownloadDevTool(_ context.Context, tool string) error {
+	return devtool.Build(tool, KubeConformDocker)
 }
