@@ -44,7 +44,7 @@ func Validate(dockerfileContent string) error {
 func BuildAndPush(dockerfileContent, platforms, image, dockerContext, imagePath, metadatafile, app, binary string, shouldPush bool) error {
 	versionTag := getVersionTag()
 	versionTaggedImage := fmt.Sprintf("%s:%s", image, versionTag)
-	OCITaggedImage := fmt.Sprintf("%s:%s/%s", image, "mage/oci", versionTag)
+	OCITaggedImage := fmt.Sprintf("%s:%s-%s", image, "mage_oci", versionTag)
 	latestImage := fmt.Sprintf("%s:latest", image)
 
 	repoURL, err := git.RepoURL()
