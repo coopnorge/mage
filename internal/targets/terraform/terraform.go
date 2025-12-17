@@ -21,18 +21,21 @@ var (
 
 // Test runs terraform validate
 func Test(ctx context.Context) error {
-	mg.CtxDeps(ctx, Init)
 	directories, err := terraform.FindTerraformProjects(".")
 	fmt.Println("found test dirs", directories)
 	if err != nil {
 		return err
 	}
 
-	testDirs := []any{}
+	var testDirs []any
+	var checkLocks []any
 	for _, workDir := range directories {
 		testDirs = append(testDirs, mg.F(test, workDir))
+		checkLocks = append(checkLocks, mg.F(checkLock, workDir))
 	}
 
+	mg.CtxDeps(ctx, checkLocks...)
+	mg.CtxDeps(ctx, Init)
 	mg.CtxDeps(ctx, testDirs...)
 	return nil
 }
@@ -40,6 +43,10 @@ func Test(ctx context.Context) error {
 func test(ctx context.Context, workingDirectory string) error {
 	mg.CtxDeps(ctx, mg.F(devtool.Build, "terraform", TerraformToolsDockerfile))
 	return terraform.Test(workingDirectory)
+}
+
+func checkLock(_ context.Context, workingDirectory string) error {
+	return terraform.CheckLock(workingDirectory)
 }
 
 // Lint runs the linters

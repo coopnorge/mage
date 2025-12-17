@@ -137,6 +137,24 @@ func TestTargets(t *testing.T) {
 			targets:     []string{"terraformmodule:terraform:docsvalidatefix", "terraformmodule:terraform:docsvalidate"},
 			wantErr:     false,
 		},
+		{
+			name:        "Terraform validate should succeed when lock file exists",
+			testProject: "testdata/project-success",
+			targets:     []string{"goapp:terraform:validate"},
+			wantErr:     false,
+		},
+		{
+			name:        "Terraform validate should fail when lock file doesn't exists",
+			testProject: "testdata/fail-project-lockfile-missing",
+			targets:     []string{"goapp:terraform:validate"},
+			wantErr:     true,
+		},
+		{
+			name:        "Terraform validate should fail for module with lockfile",
+			testProject: "testdata/fail-module-with-lockfile",
+			targets:     []string{"terraformmodule:terraform:validate"},
+			wantErr:     true,
+		},
 	}
 
 	goModMage, err := sh.Output("go", "env", "GOMOD")
