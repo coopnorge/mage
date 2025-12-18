@@ -162,7 +162,7 @@ jobs:
             echo cannot get an OCI TAG, bailing
             exit 0
           fi
-          GIT_TAG="mage_oci-${OCI_TAG}"
+          GIT_TAG="mage/oci/${OCI_TAG}"
           echo "tagging repo with tag ${GIT_TAG}"
           git config user.email "${{ steps.generate_token.outputs.app-slug }}[bot] <${{ steps.get-user-id.outputs.user-id }}+${{ steps.generate_token.outputs.app-slug }}[bot]@users.noreply.github.com>"
           git config user.name  "${{ steps.generate_token.outputs.app-slug }}[bot] <${{ steps.get-user-id.outputs.user-id }}+${{ steps.generate_token.outputs.app-slug }}[bot]@users.noreply.github.com>"
