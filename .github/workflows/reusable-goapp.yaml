@@ -152,23 +152,14 @@ jobs:
           path: set-tag
           fetch-tags: true
 
-      - id: oci-tag-repo
-        if: ${{ github.ref == 'refs/heads/main' }}
-        name: Tag the repo with oci build tag
-        working-directory: ./set-tag
-        run: |
-          OCI_TAG=$(cat ../var/oci-images.json | yq -P | grep tag: | head -1 | yq .tag)
-          if [[ -z "$OCI_TAG" ]]; then
-            echo cannot get an OCI TAG, bailing
-            exit 0
-          fi
-          GIT_TAG="mage/oci/${OCI_TAG}"
-          echo "tagging repo with tag ${GIT_TAG}"
-          git config user.email "${{ steps.generate_token.outputs.app-slug }}[bot] <${{ steps.get-user-id.outputs.user-id }}+${{ steps.generate_token.outputs.app-slug }}[bot]@users.noreply.github.com>"
-          git config user.name  "${{ steps.generate_token.outputs.app-slug }}[bot] <${{ steps.get-user-id.outputs.user-id }}+${{ steps.generate_token.outputs.app-slug }}[bot]@users.noreply.github.com>"
-          git tag -a ${GIT_TAG} main -m "mage oci build ${OCI_TAG}"
-          AUTH_URL="https://${{ steps.generate_token.outputs.token }}@github.com/${GITHUB_REPOSITORY}.git"
-          git push ${AUTH_URL} tag ${GIT_TAG}
+      - uses: release-drafter/release-drafter@b1476f6e6eb133afa41ed8589daba6dc69b4d3f5 # pin@v6.1.0
+        id: make-release
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+        with:
+          commitish: main
+          config-name: "release-drafter.yml"
+          publish: true
 
       - name: Show output
         if: always()
