@@ -82,7 +82,6 @@ func BuildAndPush(dockerfileContent, platforms, image, dockerContext, imagePath,
 		"--output", fmt.Sprintf("type=image,push=%v", shouldPush),
 		"--output", fmt.Sprintf("type=oci,dest=%s", imagePath),
 		"-t", versionTaggedImage,
-		"-t", OCITaggedImage,
 	}
 
 	if !shouldPush {
