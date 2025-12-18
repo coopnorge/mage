@@ -1,6 +1,5 @@
 concurrency:
   group: reusable-goapp-${{ github.workflow }}-${{ github.ref }}
-  # we might thing about disabling cancel on the main branch
   cancel-in-progress: true
 on:
   workflow_call:

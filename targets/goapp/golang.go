@@ -250,7 +250,7 @@ func binaryOutputBasePath(app string) string {
 // Changes returns the string true or false depending on the fact that
 // the current branch contains changes compared to the main branch.
 func (Go) Changes(ctx context.Context) error {
-	mg.CtxDeps(ctx, mg.F(golangTargets.Changes, "mage/oci/*"))
+	mg.CtxDeps(ctx, mg.F(golangTargets.Changes, "v*"))
 	return nil
 }
 
