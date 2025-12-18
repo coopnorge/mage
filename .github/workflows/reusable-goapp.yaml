@@ -147,8 +147,7 @@ jobs:
 
       - id: oci-tag
         if: ${{ github.ref == 'refs/heads/main' }}
-        name: Tag the repo with oci build tag
-        working-directory: ./set-tag
+        name: Fetch the oci tag
         run: |
           OCI_TAG=$(cat ../var/oci-images.json | yq -P | grep tag: | head -1 | yq .tag)
           if [[ -z "$OCI_TAG" ]]; then
