@@ -44,7 +44,6 @@ func Validate(dockerfileContent string) error {
 func BuildAndPush(dockerfileContent, platforms, image, dockerContext, imagePath, metadatafile, app, binary string, shouldPush bool) error {
 	versionTag := getVersionTag()
 	versionTaggedImage := fmt.Sprintf("%s:%s", image, versionTag)
-	OCITaggedImage := fmt.Sprintf("%s:%s/%s", image, "mage/oci", versionTag)
 	latestImage := fmt.Sprintf("%s:latest", image)
 
 	repoURL, err := git.RepoURL()
@@ -165,10 +164,8 @@ func ParseMetadata(filepath string) (Metadata, error) {
 	}, nil
 }
 
-type (
-	binaryImage  = map[string]string
-	binaryImages = map[string]binaryImage
-)
+type binaryImage = map[string]string
+type binaryImages = map[string]binaryImage
 
 // AppImages ...
 type AppImages = map[string]binaryImages
@@ -229,7 +226,7 @@ func getTag(imageName string) string {
 
 func createDirForOutput(file string) error {
 	dir := path.Dir(file)
-	return os.MkdirAll(dir, 0o700)
+	return os.MkdirAll(dir, 0700)
 }
 
 func getVersionTag() string {
