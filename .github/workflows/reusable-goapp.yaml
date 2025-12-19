@@ -76,6 +76,14 @@ jobs:
           password: ${{ steps.gcp-auth.outputs.access_token }}
       - name: Safe Git Workspace
         run: git config --global --add safe.directory /app
+      - name: Cache golangci-lint
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/golangci-lint
+          key: golangci-lint-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            golangci-lint-
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
