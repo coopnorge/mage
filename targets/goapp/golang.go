@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/golang"
@@ -126,14 +127,20 @@ func (Go) BuildBinaries(ctx context.Context) error {
 	}
 
 	bins := []any{}
-	for _, command := range cmds {
-		relativeRootPath, err := core.GetRelativeRootPath(rootPath, command.goModule)
+	for _, cmd := range cmds {
+		relativeRootPath, err := core.GetRelativeRootPath(rootPath, cmd.goModule)
 		if err != nil {
 			return err
 		}
+		input := strings.Join(cmd.pkgs, " ")
+
 		for _, osArch := range OsArchMatrix {
-			output := path.Join(relativeRootPath, binaryOutputPath(command.goModule, osArch["GOOS"], osArch["GOARCH"], command.binary))
-			bins = append(bins, mg.F(Go.build, command.goModule, command.pkg, output, osArch["GOOS"], osArch["GOARCH"]))
+			output := path.Join(relativeRootPath, binaryOutputPathMulti(cmd.goModule, osArch["GOOS"], osArch["GOARCH"]))
+			err := os.MkdirAll(path.Join(cmd.goModule, output), os.ModePerm)
+			if err != nil {
+				return err
+			}
+			bins = append(bins, mg.F(Go.build, cmd.goModule, input, output, osArch["GOOS"], osArch["GOARCH"]))
 		}
 	}
 
@@ -150,8 +157,8 @@ func (Go) DownloadModules(ctx context.Context) error {
 
 type cmd struct {
 	goModule string
-	pkg      string
-	binary   string
+	pkgs     []string
+	binaries []string
 }
 
 func findCommands(goModules []string) ([]cmd, error) {
@@ -164,17 +171,25 @@ func findCommands(goModules []string) ([]cmd, error) {
 		if err != nil {
 			return nil, err
 		}
+		pkgs := []string{}
+		bins := []string{}
 		for _, entry := range entries {
 			if !entry.IsDir() {
 				continue
 			}
-			cmd := cmd{
-				goModule: goModule,
-				pkg:      fmt.Sprintf("./%s", path.Join(cmdDir, entry.Name())),
-				binary:   entry.Name(),
-			}
-			result = append(result, cmd)
+			pkg := fmt.Sprintf("./%s", path.Join(cmdDir, entry.Name()))
+			pkgs = append(pkgs, pkg)
+			bins = append(bins, entry.Name())
 		}
+		if len(pkgs) == 0 {
+			continue
+		}
+		cmd := cmd{
+			goModule: goModule,
+			pkgs:     pkgs,
+			binaries: bins,
+		}
+		result = append(result, cmd)
 	}
 	return result, nil
 }
@@ -182,16 +197,23 @@ func findCommands(goModules []string) ([]cmd, error) {
 func (Go) build(_ context.Context, workingDirectory, input, output, goos, goarch string) error {
 	environmentalVariables := map[string]string{"GOOS": goos, "GOARCH": goarch, "CGO_ENABLED": "0"}
 
-	return golang.DevtoolGo(
-		environmentalVariables,
-		"go",
+	inputs := strings.Split(input, " ")
+
+	args := []string{
 		"-C",
 		workingDirectory,
 		"build",
 		"-v",
 		"-tags='datadog.no_waf'",
 		"-o", output,
-		input)
+	}
+	arguments := append(args, inputs...)
+
+	return golang.DevtoolGo(
+		environmentalVariables,
+		"go",
+		arguments...,
+	)
 }
 
 // Validate runs validation check on the Go source code in the repository.
@@ -239,8 +261,8 @@ func (Go) LintFix(ctx context.Context) error {
 	return nil
 }
 
-func binaryOutputPath(app, os, arch, binary string) string {
-	return path.Join(binaryOutputBasePath(app), os, arch, binary)
+func binaryOutputPathMulti(app, os, arch string) string {
+	return path.Join(binaryOutputBasePath(app), os, arch)
 }
 
 func binaryOutputBasePath(app string) string {

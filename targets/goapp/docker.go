@@ -131,7 +131,9 @@ func (Docker) BuildImages(ctx context.Context) error {
 
 	deps := []any{}
 	for _, cmd := range cmds {
-		deps = append(deps, mg.F(buildAndPush, cmd.goModule, cmd.binary, shouldPush))
+		for _, binary := range cmd.binaries {
+			deps = append(deps, mg.F(buildAndPush, cmd.goModule, binary, shouldPush))
+		}
 	}
 	mg.CtxDeps(ctx, deps...)
 
