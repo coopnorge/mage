@@ -203,7 +203,6 @@ func (Go) build(_ context.Context, workingDirectory, input, output, goos, goarch
 		"-C",
 		workingDirectory,
 		"build",
-		"-v",
 		"-tags='datadog.no_waf'",
 		"-o", output,
 	}
