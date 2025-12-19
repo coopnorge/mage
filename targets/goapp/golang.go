@@ -24,15 +24,15 @@ const (
 
 // OsArchMatrix defines the CPU architectures to build binaries for
 var OsArchMatrix = []map[string]string{
-	{
-		"GOOS": "darwin", "GOARCH": "arm64",
-	},
+	//{
+	//		"GOOS": "darwin", "GOARCH": "arm64",
+	//	},
 	{
 		"GOOS": "linux", "GOARCH": "amd64",
 	},
-	{
-		"GOOS": "linux", "GOARCH": "arm64",
-	},
+	//	{
+	//		"GOOS": "linux", "GOARCH": "arm64",
+	//	},
 }
 
 // Generate runs commands described by directives within existing files with
