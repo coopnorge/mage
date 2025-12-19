@@ -144,7 +144,20 @@ func Test(directory string) error {
 
 	output := path.Join(relativeRootPath, core.OutputDir, directory, coverageReport)
 
-	return DevtoolGo(nil, "go", "-C", directory, "test", "--cover", fmt.Sprintf("-coverprofile=%s", output), "-covermode=atomic", "-race", "-tags='datadog.no_waf'", "./...")
+	return DevtoolGo(
+		nil,
+		"go",
+		"-C",
+		directory,
+		"test",
+		"-vet=off",
+		"--cover",
+		fmt.Sprintf("-coverprofile=%s", output),
+		"-covermode=atomic",
+		"-race",
+		"-tags='datadog.no_waf'",
+		"./...",
+	)
 }
 
 // Lint runs the linters
