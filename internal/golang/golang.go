@@ -18,6 +18,8 @@ import (
 
 const coverageReport = "coverage.out"
 
+var toolGo devtool.Go
+
 // IsGoModule returns true if a directory contains a go module.
 func IsGoModule(p string, d fs.DirEntry) bool {
 	if !d.IsDir() {
@@ -122,7 +124,7 @@ func HasChanges(goSourceCodeFolders []string) (bool, error) {
 // the intent to generate Go code. Those commands can run any process but the
 // intent is to create or update Go source files
 func Generate(directory string) error {
-	return DevtoolGo(nil, "go", "-C", directory, "generate", "./...")
+	return toolGo.Run(nil, "-C", directory, "generate", "./...")
 }
 
 // Test automates testing the packages named by the import paths, see also: go
@@ -144,9 +146,8 @@ func Test(directory string) error {
 
 	output := path.Join(relativeRootPath, core.OutputDir, directory, coverageReport)
 
-	return DevtoolGo(
+	return toolGo.Run(
 		nil,
-		"go",
 		"-C",
 		directory,
 		"test",
@@ -156,8 +157,7 @@ func Test(directory string) error {
 		"-covermode=atomic",
 		"-race",
 		"-tags='datadog.no_waf'",
-		"./...",
-	)
+		"./...")
 }
 
 // Lint runs the linters

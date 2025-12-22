@@ -3,6 +3,7 @@ package devtool
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"runtime"
 	"runtime/debug"
 	"slices"
@@ -114,4 +115,13 @@ func archSelector(tool, dockerfile string) (string, error) {
 	default:
 		return "", fmt.Errorf("unable to find devtool for tool \"%s\" for the host architecture %s or universal", tool, runtime.GOARCH)
 	}
+}
+
+// isCommandAvailable checks if the named application binary is in the system's PATH.
+func isCommandAvailable(name string) bool {
+	// LookPath searches for an executable file in the directories named by the PATH environment variable.
+	// If it finds the file, it returns the path to the executable.
+	// If it does not find the file, it returns an error.
+	_, err := exec.LookPath(name)
+	return err == nil
 }
