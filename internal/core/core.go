@@ -30,7 +30,7 @@ func GetRelativeRootPath(absRootPath, workDirRel string) (string, error) {
 // random prefix and the provided suffix. Returns a cleanup function that the
 // caller is expected to call. If cleanup errors it will panic.
 func WriteTempFile(directory, suffix, content string) (string, func(), error) {
-	err := os.MkdirAll(directory, 0700)
+	err := os.MkdirAll(directory, 0o700)
 	if err != nil {
 		return "", func() {}, err
 	}
@@ -123,4 +123,11 @@ func CompareChangesToPaths(changes []string, paths []string, additionalGlobs []s
 		}
 	}
 	return false, nil
+}
+
+// Verbose returns true if the magefile is running in verbose mode.
+func Verbose() bool {
+	// Check for the MAGEFILE_VERBOSE environment variable
+	v := os.Getenv("MAGEFILE_VERBOSE")
+	return v == "1" || strings.EqualFold(v, "true")
 }

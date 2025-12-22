@@ -6,6 +6,7 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/coopnorge/mage/internal/core"
 	"github.com/magefile/mage/sh"
 )
 
@@ -37,6 +38,9 @@ func (g Go) runNative(env map[string]string, args ...string) error {
 	if err != nil {
 		fmt.Println(out)
 		return err
+	}
+	if core.Verbose() {
+		fmt.Println(out)
 	}
 	return nil
 }
