@@ -33,7 +33,12 @@ func (g Go) versionOK() bool {
 }
 
 func (g Go) runNative(env map[string]string, args ...string) error {
-	return sh.RunWith(env, "go", args...)
+	out, err := sh.OutputWith(env, "go", args...)
+	if err != nil {
+		fmt.Println(out)
+		return err
+	}
+	return nil
 }
 
 // DevtoolGo runs the devtool for Go
