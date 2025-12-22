@@ -25,6 +25,11 @@ on:
         type: string
         default: "docker"
         description: Run mage go related tasks in "docker" (default) or local
+      publish-release:
+        type: boolean
+        default: false
+        required: false
+        description: If true it will create a github release based on the tag of the OCI
     outputs:
       oci-images:
         value: ${{ jobs.goapp.outputs.oci-images }}
@@ -129,8 +134,10 @@ jobs:
           else
             echo "images={}" >> $GITHUB_OUTPUT
           fi
-      - name: Generate token for writeback to pr
+
+      - name: Generate token for release
         id: generate_token
+        if: ${{ github.ref == 'refs/heads/main' && inputs.publish-release }}
         # v1.5.1
         uses: actions/create-github-app-token@v2.2.1
         with:
@@ -138,15 +145,9 @@ jobs:
           private-key: ${{ secrets.WRITEBACK_APP_PRIVATE_KEY_PEM }}
           owner: coopnorge
 
-      - name: Get GitHub App User ID for the writeback to pr bot
-        id: get-user-id
-        run: echo "user-id=$(gh api "/users/${{ steps.generate_token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
-        env:
-          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
-
-      - id: oci-tag
-        if: ${{ github.ref == 'refs/heads/main' }}
-        name: Fetch the oci tag
+      - name: Get tag of the build OCI
+        id: oci-tag
+        if: ${{ github.ref == 'refs/heads/main' && inputs.publish-release }}
         run: |
           OCI_TAG=$(cat var/oci-images.json | yq -P | grep tag: | head -1 | yq .tag)
           if [[ -z "$OCI_TAG" ]]; then
@@ -156,8 +157,9 @@ jobs:
           echo "tag=$(echo $OCI_TAG)" >> $GITHUB_OUTPUT
 
       - uses: release-drafter/release-drafter@b1476f6e6eb133afa41ed8589daba6dc69b4d3f5 # pin@v6.1.0
+        name: Create release
         id: make-release
-        if: ${{ github.ref == 'refs/heads/main' }}
+        if: ${{ github.ref == 'refs/heads/main' && inputs.publish-release }}
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
         with:

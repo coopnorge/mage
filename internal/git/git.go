@@ -88,6 +88,13 @@ func DiffToTagPattern(target string) ([]string, error) {
 	// --no-renames # rename of file is shown as delete and add
 
 	changedFiles := []string{}
+
+	changedFilesFromEnv, ok := os.LookupEnv("CHANGED_FILES")
+	if ok {
+		changedFiles = strings.Split(changedFilesFromEnv, ",")
+		return changedFiles, nil
+	}
+
 	ref := "origin/main"
 	onMain, err := onMainBranch()
 	if err != nil {
