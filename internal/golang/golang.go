@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/magefile/mage/sh"
@@ -266,4 +267,56 @@ func DevtoolGolangCILint(env map[string]string, cmd string, args ...string) erro
 	}
 
 	return devtool.Run("golangci-lint", dockerArgs, cmd, args...)
+}
+
+// OSArch returns a list of os/arch combinations for which to build binaries
+// for
+func OSArch() []map[string]string {
+	if runtime.GOOS == "darwin" {
+		return []map[string]string{
+			{
+				"GOOS": "darwin", "GOARCH": "arm64",
+			},
+			{
+				"GOOS": "linux", "GOARCH": "amd64",
+			},
+			{
+				"GOOS": "linux", "GOARCH": "arm64",
+			},
+		}
+	}
+	if runtime.GOOS == "linux" {
+		return []map[string]string{
+			{"GOOS": runtime.GOOS, "GOARCH": runtime.GOARCH},
+		}
+	}
+	if runtime.GOOS == "windows" {
+		return []map[string]string{
+			{"GOOS": runtime.GOOS, "GOARCH": runtime.GOARCH},
+		}
+	}
+	return []map[string]string{
+		{
+			"GOOS": "darwin", "GOARCH": "arm64",
+		},
+		{
+			"GOOS": "linux", "GOARCH": "amd64",
+		},
+		{
+			"GOOS": "linux", "GOARCH": "arm64",
+		},
+	}
+}
+
+// DockerPlatforms returns the docker platforms to build based on the Golang
+// archs that have been build
+func DockerPlatforms() string {
+	platforms := []string{}
+	for _, osarch := range OSArch() {
+		if osarch["GOOS"] == "darwin" {
+			continue
+		}
+		platforms = append(platforms, fmt.Sprintf("%s/%s", osarch["GOOS"], osarch["GOARCH"]))
+	}
+	return strings.Join(platforms, ",")
 }
