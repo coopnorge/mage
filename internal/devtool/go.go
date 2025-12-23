@@ -44,7 +44,7 @@ func (g Go) versionOK() error {
 		return err
 	}
 	// set constraint that minor version should be minimum
-	constraintString := fmt.Sprintf(">= %s.%s", strconv.Itoa(devtool.Segments()[0]), strconv.Itoa(devtool.Segments()[1]))
+	constraintString := fmt.Sprintf(">= %s.%s", strconv.Itoa(devtool.Segments()[0]), strconv.Itoa(devtool.Segments()[1]+1))
 	constraint, err := version.NewConstraint(constraintString)
 	if err != nil {
 		return err
