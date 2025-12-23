@@ -22,19 +22,6 @@ const (
 	binDir = "bin"
 )
 
-// OsArchMatrix defines the CPU architectures to build binaries for
-var OsArchMatrix = []map[string]string{
-	{
-		"GOOS": "darwin", "GOARCH": "arm64",
-	},
-	{
-		"GOOS": "linux", "GOARCH": "amd64",
-	},
-	{
-		"GOOS": "linux", "GOARCH": "arm64",
-	},
-}
-
 // Generate runs commands described by directives within existing files with
 // the intent to generate Go code. Those commands can run any process but the
 // intent is to create or update Go source files
@@ -134,7 +121,7 @@ func (Go) BuildBinaries(ctx context.Context) error {
 		}
 		input := strings.Join(cmd.pkgs, " ")
 
-		for _, osArch := range OsArchMatrix {
+		for _, osArch := range golang.OSArch() {
 			output := path.Join(relativeRootPath, binaryOutputPathMulti(cmd.goModule, osArch["GOOS"], osArch["GOARCH"]))
 			err := os.MkdirAll(path.Join(cmd.goModule, output), os.ModePerm)
 			if err != nil {

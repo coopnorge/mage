@@ -15,10 +15,6 @@ import (
 	"github.com/magefile/mage/mg"
 )
 
-const (
-	platforms = "linux/amd64,linux/arm64"
-)
-
 //go:embed app.Dockerfile
 var dockerfile string
 
@@ -145,7 +141,7 @@ func buildAndPush(_ context.Context, app, binary string, shouldPush bool) error 
 	imagePath := imagePath(app, binary)
 	metadataPath := metadataPath(app, binary)
 
-	return docker.BuildAndPush(dockerfile, platforms, imageName, ".", imagePath, metadataPath, app, binary, shouldPush)
+	return docker.BuildAndPush(dockerfile, golang.DockerPlatforms(), imageName, ".", imagePath, metadataPath, app, binary, shouldPush)
 }
 
 func writeImageMetadata() error {
