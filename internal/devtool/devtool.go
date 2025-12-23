@@ -144,7 +144,7 @@ func getTool(dockerfile string, tool string) (*dockerDevTool, error) {
 	// FROM docker.io/library/golang:1.25.5@sha256:36b4f45d2874905b9e8573b783292629bcb346d0a70d8d7150b6df545234818f AS golang
 	devtool := dockerDevTool{}
 	for line := range strings.SplitSeq(dockerfile, "\n") {
-		parts := strings.Split(line, " ")
+		parts := strings.Fields(line)
 		if strings.ToUpper(parts[0]) != "FROM" {
 			continue
 		}
@@ -155,8 +155,8 @@ func getTool(dockerfile string, tool string) (*dockerDevTool, error) {
 			devtool.registry = image[0]
 			devtool.version = strings.Split(image[1], "@")[0]
 			devtool.sha = fmt.Sprintf("sha256:%s", image[len(image)-1])
+			return &devtool, nil
 		}
-		return &devtool, nil
 	}
 	return &devtool, fmt.Errorf("unable to find devtool %s", tool)
 }

@@ -33,6 +33,13 @@ on:
         type: string
         default: ""
         description: A comma separated list of Globs which triggers terraform ci
+      tag-based-diff:
+        type: boolean
+        default: false
+        description: |
+          When set to true use git tags to calucate when certain build steps are required. When
+          set to false, the github event data will be used. This event might get lost when runs are
+          canceled etc.
     outputs:
       oci-images:
         value: ${{ jobs.goapp.outputs.oci-images }}
@@ -48,7 +55,6 @@ jobs:
       golang: ${{ steps.go.outputs.golang == 'true' || github.event_name == 'workflow_dispatch' }}
       terraform: ${{ steps.terraform.outputs.terraform == 'true' && github.event_name == 'pull_request' }}
       policy-bot: ${{ steps.policy-bot.outputs.policy_bot == 'true' && github.event_name == 'pull_request' }}
-      pallets: ${{ steps.policy-bot.outputs.pallets == 'true' && github.event_name == 'pull_request' }}
       catalog-info: ${{ steps.catalog-info.outputs.catalog_info == 'true' && github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v6
@@ -71,12 +77,21 @@ jobs:
       - name: List changes
         id: list
         run: go tool mage git:listChanges
-      - name: Check for Go changes
+      - name: Check for Go changes (pr event based)
         id: go
-        run: echo "golang=$(go tool mage go:changes)" >> $GITHUB_OUTPUT
+        run: |
+          if [[ "$TAG_BASED" == "true" ]]  ; then
+            echo "Running with tag based diff"
+            echo "golang=$(go tool mage go:changes)" >> $GITHUB_OUTPUT
+          else
+            echo "Running with pr event based diff"
+            export CHANGED_FILES="$CHANGES"
+            echo "golang=$(go tool mage go:changes)" >> $GITHUB_OUTPUT
+          fi
         env:
           ADDITIONAL_GLOBS_GO: ${{ inputs.additional-globs-go }}
-          CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
+          CHANGES: ${{ steps.filter.outputs.changed_files }}
+          TAG_BASED: ${{ inputs.tag-based-diff }}
       - name: Check for Terraform changes
         id: terraform
         run: echo "terraform=$(go tool mage terraform:changes)" >> $GITHUB_OUTPUT
@@ -86,11 +101,6 @@ jobs:
       - name: Check for PolicyBot changes
         id: policy-bot
         run: echo "policy_bot=$(go tool mage policyBotConfig:changes)" >> $GITHUB_OUTPUT
-        env:
-          CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
-      - name: Check for Pallet changes
-        id: pallets
-        run: echo "policy_bot=$(go tool mage pallets:changes)" >> $GITHUB_OUTPUT
         env:
           CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
       - name: Check for Catalog-info changes
@@ -105,7 +115,7 @@ jobs:
     if: ${{  needs.detect-changes.outputs.golang == 'true'  }}
     uses: ./.github/workflows/reusable-goapp.yaml
     permissions:
-      contents: read
+      contents: write
       id-token: write
       packages: read
     secrets: inherit
@@ -114,6 +124,7 @@ jobs:
       push-oci-image: ${{ inputs.push-oci-image }}
       workload-identity-provider: ${{ inputs.workload-identity-provider }}
       service-account: ${{ inputs.service-account }}
+      publish-release: ${{ inputs.tag-based-diff }}
 
   terraform:
     name: Terraform
@@ -133,12 +144,6 @@ jobs:
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.policy-bot == 'true'  }}
     uses: ./.github/workflows/reusable-policy-bot.yaml
-
-  pallets:
-    name: Pallets
-    needs: ["detect-changes"]
-    if: ${{  needs.detect-changes.outputs.pallets == 'true'  }}
-    uses: ./.github/workflows/reusable-pallets.yaml
 
   catalog-info:
     name: Catalog Info

@@ -50,7 +50,7 @@ func (g Go) versionOK() error {
 		return err
 	}
 	if !constraint.Check(current) {
-		return fmt.Errorf("version does not match constrant %s", constraintString)
+		return fmt.Errorf("version found %s does not match constrant %s", current.Original(), constraint.String())
 	}
 	return nil
 }
@@ -83,16 +83,18 @@ func (g Go) runInDocker(env map[string]string, args ...string) error {
 	if err != nil {
 		goModCache = "$HOME/go/pkg/mod"
 	}
-
+	// TODO: we should probably remove the go/pkg/mod mount to the host system
+	// anv moved it into a docker volume. MacOS and Linux have a difference in
+	// case sensitivity requirement on the filesystem.
 	dockerArgs := []string{
 		"--volume", fmt.Sprintf("%s:/go/pkg/mod", goModCache), // Mount downloaded go modules
+		"--env", "GOMODCACHE=/go/pkg/mod", // Ensure that the GOMODCACHE env is set correctly
 		"--volume", "/var/run/docker.sock:/var/run/docker.sock", // Mount Docker socket for docker-in-docker
 		"--volume", "$HOME/.cache:/root/.cache", // Mount caches, such as linter cache, Go build cache, etc.
 		"--volume", "$HOME/.gitconfig:/root/.gitconfig", // Mount Git config, for access to private repos
 		"--volume", "$HOME/.ssh:/root/.ssh", // Mount SSH config, for access to private repos
 		"--volume", fmt.Sprintf("%s:/app", path), // Mount the source code
 		"--env", "TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal", // For testcontainers to work when running with docker-in-docker
-		"--env", "GOMODCACHE=/go/pkg/mod", // Ensure that the GOMODCACHE env is set correctly
 		"--add-host", "host.docker.internal:host-gateway", // For testcontainers to work when running with docker-in-docker
 		"--workdir", "/app",
 	}
