@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
+	"github.com/coopnorge/mage/internal/devtool"
 	"github.com/coopnorge/mage/internal/golang"
 	golangTargets "github.com/coopnorge/mage/internal/targets/golang"
 
@@ -34,6 +35,8 @@ var OsArchMatrix = []map[string]string{
 		"GOOS": "linux", "GOARCH": "arm64",
 	},
 }
+
+var toolGo devtool.Go
 
 // Generate runs commands described by directives within existing files with
 // the intent to generate Go code. Those commands can run any process but the
@@ -208,9 +211,8 @@ func (Go) build(_ context.Context, workingDirectory, input, output, goos, goarch
 	}
 	arguments := append(args, inputs...)
 
-	return golang.DevtoolGo(
+	return toolGo.Run(
 		environmentalVariables,
-		"go",
 		arguments...,
 	)
 }
