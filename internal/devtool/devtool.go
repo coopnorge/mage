@@ -1,6 +1,7 @@
 package devtool
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 	"os/exec"
@@ -12,6 +13,11 @@ import (
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/magefile/mage/sh"
 )
+
+// ToolsDockerfile the content of tools.Dockerfile
+//
+//go:embed tools.Dockerfile
+var ToolsDockerfile string
 
 // GetImageName returns the name of a devtools OCI image
 func GetImageName(target string) (string, error) {
@@ -124,4 +130,33 @@ func isCommandAvailable(name string) bool {
 	// If it does not find the file, it returns an error.
 	_, err := exec.LookPath(name)
 	return err == nil
+}
+
+type dockerDevTool struct {
+	registry string
+	image    string
+	version  string
+	sha      string
+	alias    string
+}
+
+func getTool(dockerfile string, tool string) (*dockerDevTool, error) {
+	// FROM docker.io/library/golang:1.25.5@sha256:36b4f45d2874905b9e8573b783292629bcb346d0a70d8d7150b6df545234818f AS golang
+	devtool := dockerDevTool{}
+	for line := range strings.SplitSeq(dockerfile, "\n") {
+		parts := strings.Split(line, " ")
+		if strings.ToUpper(parts[0]) != "FROM" {
+			continue
+		}
+		if parts[len(parts)-1] == tool {
+			image := strings.Split(parts[1], ":")
+			devtool.alias = tool
+			devtool.image = parts[1]
+			devtool.registry = image[0]
+			devtool.version = strings.Split(image[1], "@")[0]
+			devtool.sha = fmt.Sprintf("sha256:%s", image[len(image)-1])
+		}
+		return &devtool, nil
+	}
+	return &devtool, fmt.Errorf("unable to find devtool %s", tool)
 }

@@ -2,53 +2,77 @@ package devtool
 
 import (
 	"fmt"
-	"go/version"
 	"os"
 	"runtime"
+	"strconv"
+	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
+	"github.com/hashicorp/go-version"
 	"github.com/magefile/mage/sh"
 )
 
 type Go struct{}
 
-const (
-	minGoVersion = "go1.25"
-)
-
 func (g Go) Run(env map[string]string, args ...string) error {
-	if isCommandAvailable("go") {
-		if g.versionOK() {
-			fmt.Println("Using native go")
-			return g.runNative(env, args...)
-		}
-		fmt.Printf("Go found but is older than %s. Falliong back to running the docker version\n", minGoVersion)
-		return g.runInDocker(env, "go", args...)
+	if !isCommandAvailable("go") {
+		fmt.Println("Go binary not found. Use 'brew install go' to install. Falling back to running the docker version")
+		return g.runInDocker(env, args...)
 	}
-	fmt.Println("Go binary not found. Use 'brew install go' to install. Falling back to running the docker version")
-	return g.runInDocker(env, "go", args...)
+
+	err := g.versionOK()
+	if err != nil {
+		fmt.Printf("Go does not meet version constraints. Falling back to docker verion\n error: %s\n", err)
+		return g.runInDocker(env, args...)
+	}
+
+	fmt.Println("Using native go")
+	return g.runNative(env, args...)
 }
 
-func (g Go) versionOK() bool {
-	return version.Compare(runtime.Version(), minGoVersion) != -1
+func (g Go) versionOK() error {
+	devtoolData, err := getTool(ToolsDockerfile, "golang")
+	if err != nil {
+		return err
+	}
+	current, err := version.NewVersion(strings.TrimPrefix(runtime.Version(), "go"))
+	if err != nil {
+		return err
+	}
+	devtool, err := version.NewVersion(devtoolData.version)
+	if err != nil {
+		return err
+	}
+	// set constraint that minor version should be minimum
+	constraintString := fmt.Sprintf(">= %s.%s", strconv.Itoa(devtool.Segments()[0]), strconv.Itoa(devtool.Segments()[1]))
+	constraint, err := version.NewConstraint(constraintString)
+	if err != nil {
+		return err
+	}
+	if !constraint.Check(current) {
+		return fmt.Errorf("version does not match constrant %s", constraintString)
+	}
+	return nil
 }
 
 func (g Go) runNative(env map[string]string, args ...string) error {
+	if core.Verbose() {
+		return sh.RunWith(env, "go", args...)
+	}
 	out, err := sh.OutputWith(env, "go", args...)
 	if err != nil {
 		fmt.Println(out)
 		return err
 	}
-	if core.Verbose() {
-		fmt.Println(out)
-	}
-	return nil
+	return err
 }
 
 // DevtoolGo runs the devtool for Go
-func (g Go) runInDocker(env map[string]string, cmd string, args ...string) error {
-	// This is a bit hacky to use the local go binary instead of the container
-	// this is used for running the integration tests on targets.
+func (g Go) runInDocker(env map[string]string, args ...string) error {
+	devtool, err := getTool(ToolsDockerfile, "golang")
+	if err != nil {
+		return err
+	}
 
 	path, err := os.Getwd()
 	if err != nil {
@@ -80,5 +104,22 @@ func (g Go) runInDocker(env map[string]string, cmd string, args ...string) error
 		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", k, v))
 	}
 
-	return Run("golang", dockerArgs, cmd, args...)
+	runArgs := []string{
+		"run",
+		"--rm",
+	}
+	runArgs = append(runArgs, dockerArgs...)
+	runArgs = append(runArgs, devtool.image)
+	runArgs = append(runArgs, "go")
+	runArgs = append(runArgs, args...)
+
+	if core.Verbose() {
+		return sh.RunWith(env, "docker", runArgs...)
+	}
+	out, err := sh.OutputWith(env, "docker", runArgs...)
+	if err != nil {
+		fmt.Println(out)
+		return err
+	}
+	return err
 }
