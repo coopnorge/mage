@@ -91,9 +91,6 @@ jobs:
       - name: Check if coop mage has download devtool command
         id: has-downloaddevtools
         run: echo "outcome=$(go tool mage -l | grep go:downloadDevTools | wc -l)" >> $GITHUB_OUTPUT
-      - name: Download Go Devtools
-        if: ${{ steps.has-downloaddevtools.outputs.outcome == '1' }}
-        run: "go tool mage -v go:downloadDevTools"
       - name: Check if coop mage has separeate build commands
         id: has-multiple-cmds
         run: echo "outcome=$(go tool mage -l | grep go:buildBinaries | wc -l)" >> $GITHUB_OUTPUT

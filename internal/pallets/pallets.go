@@ -2,7 +2,6 @@
 package pallets
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -10,6 +9,8 @@ import (
 	"github.com/coopnorge/mage/internal/devtool"
 	"github.com/coopnorge/mage/internal/git"
 )
+
+var kubeconform devtool.KubeConform
 
 // Validate submits policy file to policy-bot docker app to validate it
 func Validate() error {
@@ -21,21 +22,21 @@ func Validate() error {
 		return nil
 	}
 
-	palletMountPath := "./.pallet"
-	dockerArgs := []string{
-		"--volume", fmt.Sprintf("%s:%s", palletMountPath, "/.pallet"),
-		"--workdir", "/",
-	}
-	//  kubeconform --strict -verbose  -schema-location "https://raw.githubusercontent.com/coopnorge/kubernetes-schemas/main/pallets/{{ .ResourceKind }}{{ .KindSuffix }}.json" .pallet/gitconfig.yaml
-
-	cmd := "--strict"
+	// palletMountPath := "./.pallet"
+	// dockerArgs := []string{
+	// 	"--volume", fmt.Sprintf("%s:%s", palletMountPath, "/.pallet"),
+	// 	"--workdir", "/",
+	// }
+	// //  kubeconform --strict -verbose  -schema-location "https://raw.githubusercontent.com/coopnorge/kubernetes-schemas/main/pallets/{{ .ResourceKind }}{{ .KindSuffix }}.json" .pallet/gitconfig.yaml
+	//
+	// cmd := "--strict"
 	args := []string{
-		"--verbose",
 		"--schema-location",
 		"https://raw.githubusercontent.com/coopnorge/kubernetes-schemas/main/pallets/{{ .ResourceKind }}{{ .KindSuffix }}.json",
 	}
 	args = append(args, palletList...)
-	return devtool.Run("kubeconform", dockerArgs, cmd, args...)
+	return kubeconform.Run(nil, args...)
+	// return devtool.Run("kubeconform", dockerArgs, cmd, args...)
 }
 
 // HasChanges checks if the current branch has policy bot config file changes

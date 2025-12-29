@@ -5,14 +5,8 @@ import (
 	_ "embed"
 	"fmt"
 
-	"github.com/coopnorge/mage/internal/devtool"
 	"github.com/coopnorge/mage/internal/pallets"
 )
-
-// KubeConformDocker the content of tools.Dockerfile
-//
-//go:embed tools.Dockerfile
-var KubeConformDocker string
 
 // Validate validates policybot config file
 func Validate(_ context.Context) error {
@@ -37,9 +31,4 @@ func Changes(_ context.Context) error {
 	}
 	fmt.Println("false")
 	return nil
-}
-
-// DownloadDevTool downloads devtools related to pallet validation
-func DownloadDevTool(_ context.Context, tool string) error {
-	return devtool.Build(tool, KubeConformDocker)
 }

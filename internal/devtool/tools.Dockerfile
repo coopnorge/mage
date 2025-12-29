@@ -1,2 +1,3 @@
 FROM docker.io/library/golang:1.25.5@sha256:36b4f45d2874905b9e8573b783292629bcb346d0a70d8d7150b6df545234818f AS golang
 FROM golangci/golangci-lint:v2.7.2@sha256:5d6d5c70a61f1356adfd9dd6316ce286799fefc9d743421356ff1b00842368ba AS golangci-lint
+FROM ghcr.io/yannh/kubeconform:v0.7.0@sha256:85dbef6b4b312b99133decc9c6fc9495e9fc5f92293d4ff3b7e1b30f5611823c AS kubeconform
