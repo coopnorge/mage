@@ -6,18 +6,12 @@ import (
 	_ "embed"
 	"fmt"
 
-	"github.com/coopnorge/mage/internal/devtool"
 	"github.com/coopnorge/mage/internal/golang"
 	"github.com/magefile/mage/mg"
 )
 
-var (
-	//go:embed golangci-lint.yml
-	golangCILintCfg string
-	//go:embed tools.Dockerfile
-	// GolangToolsDockerfile the content of tools.Dockerfile
-	GolangToolsDockerfile string
-)
+//go:embed golangci-lint.yml
+var golangCILintCfg string
 
 // Generate runs commands described by directives within existing files with
 // the intent to generate Go code. Those commands can run any process but the
@@ -141,9 +135,4 @@ func Changes(_ context.Context) error {
 	}
 	fmt.Println("false")
 	return nil
-}
-
-// DownloadDevTool ensure a devool is available on a local system
-func DownloadDevTool(_ context.Context, tool string) error {
-	return devtool.Build(tool, GolangToolsDockerfile)
 }

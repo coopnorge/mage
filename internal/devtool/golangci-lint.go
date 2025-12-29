@@ -116,10 +116,6 @@ func (gl GoLangCILint) runInDocker(env map[string]string, workdir string, args .
 		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", k, v))
 	}
 
-	// return devtool.Run("golangci-lint", dockerArgs, cmd, args...)
-
-	// return DevtoolGolangCILint(nil, "bash", "-c", fmt.Sprintf("cd %s && golangci-lint run --verbose --timeout 10m --fix --config %s ./...", directory, lintCfgPath))
-
 	runArgs := []string{
 		"run",
 		"--rm",
