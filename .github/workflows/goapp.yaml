@@ -48,7 +48,7 @@ jobs:
       golang: ${{ steps.go.outputs.golang == 'true' || github.event_name == 'workflow_dispatch' }}
       terraform: ${{ steps.terraform.outputs.terraform == 'true' && github.event_name == 'pull_request' }}
       policy-bot: ${{ steps.policy-bot.outputs.policy_bot == 'true' && github.event_name == 'pull_request' }}
-      pallets: ${{ steps.policy-bot.outputs.pallets == 'true' && github.event_name == 'pull_request' }}
+      pallets: ${{ steps.pallets.outputs.pallets == 'true' && github.event_name == 'pull_request' }}
       catalog-info: ${{ steps.catalog-info.outputs.catalog_info == 'true' && github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v6
@@ -90,7 +90,7 @@ jobs:
           CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
       - name: Check for Pallet changes
         id: pallets
-        run: echo "policy_bot=$(go tool mage pallets:changes)" >> $GITHUB_OUTPUT
+        run: echo "pallets=$(go tool mage pallets:changes)" >> $GITHUB_OUTPUT
         env:
           CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
       - name: Check for Catalog-info changes
