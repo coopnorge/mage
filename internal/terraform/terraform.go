@@ -265,6 +265,16 @@ func DevtoolTFLint(env map[string]string, directory string, cmd string, args ...
 		return err
 	}
 
+	if env == nil {
+		env = make(map[string]string)
+	}
+
+	if _, exists := env["GITHUB_TOKEN"]; !exists {
+		if token, ok := os.LookupEnv("GITHUB_TOKEN"); ok {
+			env["GITHUB_TOKEN"] = token
+		}
+	}
+
 	dockerArgs := []string{
 		"--volume", "$HOME/.tflint.d:/root/.tflint.d",
 		"--volume", fmt.Sprintf("%s:/src", cwd),
