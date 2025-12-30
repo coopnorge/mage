@@ -12,8 +12,10 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
+// Go holds the devtool for Go
 type Go struct{}
 
+// Run runs the Go devtool
 func (g Go) Run(env map[string]string, args ...string) error {
 	if !isCommandAvailable("go") {
 		fmt.Println("Go binary not found. Use 'brew install go' to install. Falling back to running the docker version")

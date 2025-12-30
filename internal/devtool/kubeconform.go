@@ -10,8 +10,10 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
+// KubeConform holds the devtool for kubeconform
 type KubeConform struct{}
 
+// Run runs the kubeconform devtool
 func (kf KubeConform) Run(env map[string]string, args ...string) error {
 	if !isCommandAvailable("kubeconform") {
 		fmt.Println("kubeconform binary not found. Use 'brew install kubeconform' to install. Falling back to running the docker version")

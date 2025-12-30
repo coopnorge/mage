@@ -12,8 +12,10 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
+// GoLangCILint holds the devtool for golnagci lint
 type GoLangCILint struct{}
 
+// Run runs the Go devtool
 func (gl GoLangCILint) Run(env map[string]string, workdir string, args ...string) error {
 	if !isCommandAvailable("golangci-lint") {
 		fmt.Println("Golangci-lint binary not found. Use 'brew install golangci-lint' to install. Falling back to running the docker version")
