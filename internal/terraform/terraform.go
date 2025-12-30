@@ -156,9 +156,11 @@ func CheckLock(directory string) error {
 		hasLockFile = true
 	}
 
-	if HasTerraformDocsConfig(directory) {
+	isModule := HasTerraformDocsConfig(directory) || IsTerraformSubmodule(directory)
+
+	if isModule {
 		if hasLockFile {
-			return fmt.Errorf("lockfile %q found in directory %q, but it looks like a module (has terraform-docs.yml)", lockfile, directory)
+			return fmt.Errorf("lockfile %q found in directory %q, but it looks like a module (has terraform-docs.yml or is a submodule)", lockfile, directory)
 		}
 		return nil
 	}
@@ -214,6 +216,49 @@ func Security(directory string) error {
 func HasTerraformDocsConfig(dir string) bool {
 	_, err := os.Stat(filepath.Join(dir, "terraform-docs.yml"))
 	return err == nil
+}
+
+// IsTerraformSubmodule returns true if the directory is a subdirectory
+// of another terraform project.
+func IsTerraformSubmodule(dir string) bool {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return false
+	}
+	absCwd, err := filepath.Abs(cwd)
+	if err != nil {
+		return false
+	}
+	absCwd, err = filepath.EvalSymlinks(absCwd)
+	if err != nil {
+		return false
+	}
+
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		return false
+	}
+
+	absDir, err = filepath.EvalSymlinks(absDir)
+	if err != nil {
+		return false
+	}
+
+	parent := filepath.Dir(absDir)
+	for parent != absDir && strings.HasPrefix(parent, absCwd) {
+		files, err := filepath.Glob(filepath.Join(parent, "*.tf"))
+		if err != nil {
+			return false
+		}
+		if len(files) > 0 {
+			return true
+		}
+
+		absDir = parent
+		parent = filepath.Dir(absDir)
+	}
+
+	return false
 }
 
 // Docs validate if the README of a module are up to date with the
