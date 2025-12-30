@@ -155,6 +155,12 @@ func TestTargets(t *testing.T) {
 			targets:     []string{"terraformmodule:terraform:validate"},
 			wantErr:     true,
 		},
+		{
+			name:        "Terraform validate should succeed for project with module without lockfile",
+			testProject: "testdata/project-with-submodule-success",
+			targets:     []string{"goapp:terraform:validate"},
+			wantErr:     false,
+		},
 	}
 
 	goModMage, err := sh.Output("go", "env", "GOMOD")
