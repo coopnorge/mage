@@ -2,24 +2,13 @@ package policybot
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
 
-	"github.com/coopnorge/mage/internal/devtool"
 	"github.com/coopnorge/mage/internal/policybot"
-	"github.com/magefile/mage/mg"
-)
-
-var (
-	//go:embed tools.Dockerfile
-	// PolicyBotConfigCheckDocker the content of tools.Dockerfile
-	PolicyBotConfigCheckDocker string
 )
 
 // Validate validates policybot config file
 func Validate(ctx context.Context) error {
-	mg.CtxDeps(ctx, runPolicyBotConfigCheck)
-
 	err := policybot.Validate()
 	if err != nil {
 		return err
@@ -41,8 +30,4 @@ func Changes(_ context.Context) error {
 	}
 	fmt.Println("false")
 	return nil
-}
-
-func runPolicyBotConfigCheck(_ context.Context) error {
-	return devtool.Build("policy-bot", PolicyBotConfigCheckDocker)
 }
