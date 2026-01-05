@@ -89,6 +89,10 @@ func (pb PolicyBot) buildImage() (string, error) {
 	}
 	// use upstream if amd64
 	if runtime.GOARCH == "amd64" {
+		err := sh.Run("docker", "pull", devtool.image)
+		if err != nil {
+			return "", err
+		}
 		return devtool.image, nil
 	}
 
