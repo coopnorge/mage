@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -40,7 +41,15 @@ func WriteTempFile(directory, suffix, content string) (string, func(), error) {
 	}
 
 	cleanup := func() {
-		err := os.Remove(file.Name())
+		// check if file exist if not skip deletion
+		_, err := os.Stat(file.Name())
+		if errors.Is(err, os.ErrNotExist) {
+			return
+		}
+		if err != nil {
+			panic(err)
+		}
+		err = os.Remove(file.Name())
 		if err != nil {
 			panic(err)
 		}
