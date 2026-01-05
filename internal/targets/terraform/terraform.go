@@ -5,19 +5,14 @@ import (
 	_ "embed"
 	"fmt"
 
-	"github.com/coopnorge/mage/internal/targets/devtool"
 	"github.com/coopnorge/mage/internal/terraform"
 	"github.com/magefile/mage/mg"
 )
 
-var (
-	//go:embed tools.Dockerfile
-	// TerraformToolsDockerfile the content of tools.Dockerfile
-	TerraformToolsDockerfile string
-	//go:embed .tflint.hcl
-	// TFlintCfg is the config for tflint
-	TFlintCfg string
-)
+// TFlintCfg is the config for tflint
+//
+//go:embed .tflint.hcl
+var TFlintCfg string
 
 // Test runs terraform validate
 func Test(ctx context.Context) error {
@@ -41,7 +36,6 @@ func Test(ctx context.Context) error {
 }
 
 func test(ctx context.Context, workingDirectory string) error {
-	mg.CtxDeps(ctx, mg.F(devtool.Build, "terraform", TerraformToolsDockerfile))
 	return terraform.Test(workingDirectory)
 }
 
@@ -67,7 +61,6 @@ func Lint(ctx context.Context) error {
 }
 
 func lint(ctx context.Context, workingDirectory string) error {
-	mg.CtxDeps(ctx, mg.F(devtool.Build, "tflint", TerraformToolsDockerfile), mg.F(devtool.Build, "terraform", TerraformToolsDockerfile))
 	return terraform.Lint(workingDirectory, TFlintCfg)
 }
 
@@ -90,13 +83,11 @@ func LintFix(ctx context.Context) error {
 }
 
 func lintFix(ctx context.Context, workingDirectory string) error {
-	mg.CtxDeps(ctx, mg.F(devtool.Build, "tflint", TerraformToolsDockerfile), mg.F(devtool.Build, "terraform", TerraformToolsDockerfile))
 	return terraform.LintFix(workingDirectory, TFlintCfg)
 }
 
 // Init initializes a terraform project
 func Init(ctx context.Context) error {
-	mg.CtxDeps(ctx, mg.F(devtool.Build, "terraform", TerraformToolsDockerfile))
 	directories, err := terraform.FindTerraformProjects(".")
 	fmt.Println("found dirs", directories)
 	if err != nil {
@@ -120,7 +111,6 @@ func initTerraform(_ context.Context, directory string) error {
 // InitUpgrade initializes and upgrades the provides and modules within
 // the version constraints
 func InitUpgrade(ctx context.Context) error {
-	mg.CtxDeps(ctx, mg.F(devtool.Build, "terraform", TerraformToolsDockerfile))
 	directories, err := terraform.FindTerraformProjects(".")
 	if err != nil {
 		return err
@@ -140,7 +130,6 @@ func initUpgrade(_ context.Context, directory string) error {
 
 // LockProviders locks the providers for a certain set of host systems
 func LockProviders(ctx context.Context) error {
-	mg.CtxDeps(ctx, mg.F(devtool.Build, "terraform", TerraformToolsDockerfile))
 	directories, err := terraform.FindTerraformProjects(".")
 	if err != nil {
 		return err
@@ -180,8 +169,6 @@ func clean(_ context.Context, directory string) error {
 
 // Security implements security related targets
 func Security(ctx context.Context) error {
-	mg.CtxDeps(ctx, mg.F(devtool.Build, "trivy", TerraformToolsDockerfile))
-
 	directories, err := terraform.FindTerraformProjects(".")
 	if err != nil {
 		return err
@@ -201,8 +188,6 @@ func security(_ context.Context, directory string) error {
 
 // DocsValidate implements validation of terraform module documentation
 func DocsValidate(ctx context.Context) error {
-	mg.CtxDeps(ctx, mg.F(devtool.Build, "terraform-docs", TerraformToolsDockerfile))
-
 	if err := checkTerraformDocsConfig("."); err != nil {
 		return err
 	}
@@ -226,8 +211,6 @@ func terraformDocs(_ context.Context, directory string) error {
 
 // DocsValidateFix implements fixing of terraform module documentation
 func DocsValidateFix(ctx context.Context) error {
-	mg.CtxDeps(ctx, mg.F(devtool.Build, "terraform-docs", TerraformToolsDockerfile))
-
 	if err := checkTerraformDocsConfig("."); err != nil {
 		return err
 	}

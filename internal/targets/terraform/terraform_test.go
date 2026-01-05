@@ -192,7 +192,7 @@ func TestTargets(t *testing.T) {
 				goMod.Close()
 				cleanup()
 			})
-			args := []string{"tool", "mage"}
+			args := []string{"tool", "mage", "-v"}
 			args = append(args, tt.targets...)
 			gotErr := sh.RunV("go", args...)
 			if tt.wantErr {
