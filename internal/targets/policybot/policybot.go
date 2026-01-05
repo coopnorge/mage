@@ -8,12 +8,8 @@ import (
 )
 
 // Validate validates policybot config file
-func Validate(ctx context.Context) error {
-	err := policybot.Validate()
-	if err != nil {
-		return err
-	}
-	return nil
+func Validate(_ context.Context) error {
+	return policybot.Validate()
 }
 
 // Changes implements a target that check if the current branch has changes

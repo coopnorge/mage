@@ -2,7 +2,6 @@ package pallets
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
 
 	"github.com/coopnorge/mage/internal/pallets"

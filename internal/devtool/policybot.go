@@ -94,9 +94,9 @@ func (pb PolicyBot) buildImage() (string, error) {
 
 	imageName := fmt.Sprintf("%s:%s", devtool.registry, devtool.version)
 
-	// use cached if locally avialable
-	out, _ := sh.Output("docker", "inspect", imageName, "--format", `{{.Architecture}}`)
-	if out == runtime.GOARCH {
+	// use cached if locally available
+	out, err := sh.Output("docker", "inspect", imageName, "--format", `{{.Architecture}}`)
+	if out == runtime.GOARCH && err == nil {
 		return imageName, nil
 	}
 

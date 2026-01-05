@@ -35,7 +35,7 @@ func Test(ctx context.Context) error {
 	return nil
 }
 
-func test(ctx context.Context, workingDirectory string) error {
+func test(_ context.Context, workingDirectory string) error {
 	return terraform.Test(workingDirectory)
 }
 
@@ -60,7 +60,7 @@ func Lint(ctx context.Context) error {
 	return nil
 }
 
-func lint(ctx context.Context, workingDirectory string) error {
+func lint(_ context.Context, workingDirectory string) error {
 	return terraform.Lint(workingDirectory, TFlintCfg)
 }
 
@@ -82,7 +82,7 @@ func LintFix(ctx context.Context) error {
 	return nil
 }
 
-func lintFix(ctx context.Context, workingDirectory string) error {
+func lintFix(_ context.Context, workingDirectory string) error {
 	return terraform.LintFix(workingDirectory, TFlintCfg)
 }
 
