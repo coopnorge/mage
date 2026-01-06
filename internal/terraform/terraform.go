@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -145,31 +146,50 @@ func InitUpgrade(directory string) error {
 	return nil
 }
 
+func isGitTracked(path string) bool {
+	cmd := exec.Command("git", "ls-files", "--error-unmatch", path)
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	return cmd.Run() == nil
+}
+
 // CheckLock checks that the lockfile exists
 func CheckLock(directory string) error {
 	log.Printf("Checking for terraform lockfile in %q", directory)
 
 	lockfile := ".terraform.lock.hcl"
 	lockfilePath := filepath.Join(directory, lockfile)
+
 	hasLockFile := false
 	if _, err := os.Stat(lockfilePath); err == nil {
 		hasLockFile = true
 	}
 
+	isTracked := false
+	if hasLockFile {
+		isTracked = isGitTracked(lockfilePath)
+	}
+
 	isModule := HasTerraformDocsConfig(directory) || IsTerraformSubmodule(directory)
 
 	if isModule {
-		if hasLockFile {
-			return fmt.Errorf("lockfile %q found in directory %q, but it looks like a module (has terraform-docs.yml or is a submodule)", lockfile, directory)
+		if isTracked {
+			return fmt.Errorf(
+				"lockfile %q is tracked by git in directory %q, but it looks like a module",
+				lockfile, directory,
+			)
 		}
 		return nil
 	}
 
-	if !hasLockFile {
-		return fmt.Errorf("lockfile %q not found in directory %q as expected", lockfile, directory)
+	if !isTracked {
+		return fmt.Errorf(
+			"lockfile %q is not tracked by git in directory %q as expected",
+			lockfile, directory,
+		)
 	}
 
-	log.Printf("Lockfile %q found in %q", lockfile, directory)
+	log.Printf("Lockfile %q is tracked in %q", lockfile, directory)
 	return nil
 }
 
