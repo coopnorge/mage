@@ -83,3 +83,8 @@ func DiffToMain() ([]string, error) {
 func checkBranch(branch string) error {
 	return sh.Run("git", "rev-parse", "--verify", branch)
 }
+
+// IsTracked returns true if the file is tracked by git
+func IsTracked(path string) bool {
+	return sh.Run("git", "ls-files", "--error-unmatch", path) == nil
+}
