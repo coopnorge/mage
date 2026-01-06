@@ -5,7 +5,6 @@ import (
 	"io/fs"
 	"log"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -146,13 +145,6 @@ func InitUpgrade(directory string) error {
 	return nil
 }
 
-func isGitTracked(path string) bool {
-	cmd := exec.Command("git", "ls-files", "--error-unmatch", path)
-	cmd.Stdout = nil
-	cmd.Stderr = nil
-	return cmd.Run() == nil
-}
-
 // CheckLock checks that the lockfile exists
 func CheckLock(directory string) error {
 	log.Printf("Checking for terraform lockfile in %q", directory)
@@ -167,7 +159,7 @@ func CheckLock(directory string) error {
 
 	isTracked := false
 	if hasLockFile {
-		isTracked = isGitTracked(lockfilePath)
+		isTracked = git.IsTracked(lockfilePath)
 	}
 
 	isModule := HasTerraformDocsConfig(directory) || IsTerraformSubmodule(directory)
