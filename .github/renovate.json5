@@ -9,23 +9,12 @@
         // backstage entity validator version in Dockerfile
         {
             "customType": "regex",
-            "managerFilePatterns": ["/^internal/targets/cataloginfo/tools.Dockerfile$/"],
+            "managerFilePatterns": ["/^internal/devtool/catalog-info.go$/"],
             "matchStrings": [
-                "ENV\\s+BACKSTAGE_ENTITY_VALIDATOR_VERSION\\s*=\\s*(?<currentValue>[0-9.]+)"
+                "const\\s+validateEntityVersion\\s*=\\s*(?<currentValue>[0-9.]+)"
             ],
             "datasourceTemplate": "npm",
             "depNameTemplate": "@roadiehq/backstage-entity-validator",
-            "versioningTemplate": "semver",
-        },
-        // policy-bot version in Dockerfile
-        {
-            "customType": "regex",
-            "managerFilePatterns": ["/^internal/targets/policybot/tools.Dockerfile$/"],
-            "matchStrings": [
-                "ENV\\s+POLICY_BOT_VERSION\\s*=\\s*(?<currentValue>[0-9.]+)"
-            ],
-            "datasourceTemplate": "github-releases",
-            "depNameTemplate": "palantir/policy-bot",
             "versioningTemplate": "semver",
         }
     ]
