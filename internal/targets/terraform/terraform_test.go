@@ -188,6 +188,12 @@ func TestTargets(t *testing.T) {
 
 			t.Chdir(dir)
 
+			sh.Run("git", "init")
+			sh.Run("git", "config", "user.email", "test@example.com")
+			sh.Run("git", "config", "user.name", "Test User")
+			sh.Run("git", "add", ".")
+			sh.Run("git", "commit", "-m", "initial commit")
+
 			goMod, err := os.Create("go.mod")
 			if err != nil {
 				panic(err)
