@@ -62,7 +62,7 @@ func Lint(ctx context.Context) error {
 		lintDirs = append(lintDirs, mg.F(lint, workDir))
 	}
 
-	mg.CtxDeps(ctx, lintDirs...)
+	mg.SerialCtxDeps(ctx, lintDirs...)
 	return nil
 }
 
