@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,6 +20,12 @@ import (
 const (
 	imageBaseEnv          = "OCI_IMAGE_BASE"
 	imageNameBaseFallback = "ocreg.invalid/coopnorge"
+)
+
+const (
+	// PushEnv is the name of the environmental variable used to trigger
+	// pushing of OCI images. Set PUSH_IMAGE to true to push images.
+	PushEnv = "PUSH_IMAGE"
 )
 
 // Validate the content of a Dockerfile
@@ -88,6 +95,24 @@ func BuildAndPush(dockerfileContent, platforms, image, dockerContext, imagePath,
 			args,
 			"-t", latestImage,
 		)
+	}
+
+	githubToken := os.Getenv("GITHUB_TOKEN")
+
+	if githubToken != "" {
+		filename, cleanup, err := core.WriteTempFile(".", "github_token", githubToken)
+
+		if err != nil {
+			return err
+		}
+
+		args = append(
+			args,
+			"--secret",
+			fmt.Sprintf("id=github_token,src=%s", filename),
+		)
+
+		defer cleanup()
 	}
 
 	args = append(args,
@@ -192,12 +217,29 @@ func Images(imageDir string) (AppImages, error) {
 		result[metadata.App][metadata.Binary]["tag"] = metadata.Tag
 		result[metadata.App][metadata.Binary]["image"] = metadata.ImageName
 	}
+
 	return result, nil
 }
 
 // FullyQualifiedlImageName ...
 func FullyQualifiedlImageName(app, binary string) string {
+	if binary == "" {
+		return fmt.Sprintf("%s/%s", imageBase(), app)
+	}
 	return fmt.Sprintf("%s/%s/%s", imageBase(), app, binary)
+}
+
+// ShouldPush checks if docker image should be pushed to the repository or not
+func ShouldPush() (bool, error) {
+	val, ok := os.LookupEnv(PushEnv)
+	if !ok || val == "" {
+		return false, nil
+	}
+	boolValue, err := strconv.ParseBool(val)
+	if err != nil {
+		return false, err
+	}
+	return boolValue, nil
 }
 
 func imageBase() string {
