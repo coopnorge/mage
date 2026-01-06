@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/magefile/mage/sh"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/coopnorge/mage/internal/core"
@@ -121,11 +122,12 @@ func TestLockProviders(t *testing.T) {
 
 func TestCheckLock(t *testing.T) {
 	tests := []struct {
-		name     string
-		files    map[string]string
-		checkDir string
-		wantErr  bool
-		errMsg   string
+		name       string
+		files      map[string]string
+		notTracked []string
+		checkDir   string
+		wantErr    bool
+		errMsg     string
 	}{
 		{
 			name: "Project with lockfile should succeed",
@@ -141,17 +143,27 @@ func TestCheckLock(t *testing.T) {
 				"main.tf": "resource \"null_resource\" \"this\" {}",
 			},
 			wantErr: true,
-			errMsg:  "lockfile \".terraform.lock.hcl\" not found in directory",
+			errMsg:  "is not tracked by git in directory",
 		},
 		{
-			name: "Module with lockfile should fail",
+			name: "Project with untracked lockfile should fail",
+			files: map[string]string{
+				".terraform.lock.hcl": "lockfile content",
+				"main.tf":             "resource \"null_resource\" \"this\" {}",
+			},
+			notTracked: []string{".terraform.lock.hcl"},
+			wantErr:    true,
+			errMsg:     "is not tracked by git in directory",
+		},
+		{
+			name: "Module with lockfile should fail if tracked",
 			files: map[string]string{
 				"terraform-docs.yml":  "config",
 				".terraform.lock.hcl": "lockfile content",
 				"main.tf":             "resource \"null_resource\" \"this\" {}",
 			},
 			wantErr: true,
-			errMsg:  "but it looks like a module (has terraform-docs.yml or is a submodule)",
+			errMsg:  "but it looks like a module",
 		},
 		{
 			name: "Module without lockfile should succeed",
@@ -198,6 +210,14 @@ func TestCheckLock(t *testing.T) {
 
 			t.Chdir(projectBase)
 
+			// Initialize git and track all files by default
+			sh.Run("git", "init")
+			sh.Run("git", "add", ".")
+			for _, f := range tt.notTracked {
+				sh.Run("git", "rm", "--cached", f)
+			}
+			sh.Run("git", "commit", "-m", "initial commit")
+
 			testDir := projectBase
 			if tt.checkDir != "" {
 				testDir = filepath.Join(projectBase, tt.checkDir)
@@ -205,8 +225,7 @@ func TestCheckLock(t *testing.T) {
 
 			err = CheckLock(testDir)
 			if tt.wantErr {
-				assert.Error(t, err, tt.name)
-				if tt.errMsg != "" {
+				if assert.Error(t, err, tt.name) && tt.errMsg != "" {
 					assert.Contains(t, err.Error(), tt.errMsg)
 				}
 			} else {
