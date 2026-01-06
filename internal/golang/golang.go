@@ -203,6 +203,7 @@ func DevtoolGo(env map[string]string, cmd string, args ...string) error {
 	// This is a bit hacky to use the local go binary instead of the container
 	// this is used for running the integration tests on targets.
 	if os.Getenv("GO_RUNTIME") == "local" {
+		env["GOMAXPROCS"] = fmt.Sprintf("%d", runtime.NumCPU())
 		return sh.RunWithV(env, cmd, args...)
 	}
 
@@ -225,6 +226,7 @@ func DevtoolGo(env map[string]string, cmd string, args ...string) error {
 		"--volume", fmt.Sprintf("%s:/app", path), // Mount the source code
 		"--env", "TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal", // For testcontainers to work when running with docker-in-docker
 		"--env", "GOMODCACHE=/go/pkg/mod", // Ensure that the GOMODCACHE env is set correctly
+		"--env", fmt.Sprintf("GOMAXPROCS=%d", runtime.NumCPU()), // Set GOMAXPROCS to number of CPUs available
 		"--add-host", "host.docker.internal:host-gateway", // For testcontainers to work when running with docker-in-docker
 		"--workdir", "/app",
 	}
