@@ -3,20 +3,12 @@ package golang
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
 
 	"github.com/coopnorge/mage/internal/devtool"
+	golangcilint "github.com/coopnorge/mage/internal/devtool/golangci-lint"
 	"github.com/coopnorge/mage/internal/golang"
 	"github.com/magefile/mage/mg"
-)
-
-var (
-	//go:embed golangci-lint.yml
-	golangCILintCfg string
-	//go:embed tools.Dockerfile
-	// GolangToolsDockerfile the content of tools.Dockerfile
-	GolangToolsDockerfile string
 )
 
 // Generate runs commands described by directives within existing files with
@@ -79,7 +71,7 @@ func Lint(ctx context.Context) error {
 }
 
 func lint(_ context.Context, workingDirectory string) error {
-	return golang.Lint(workingDirectory, golangCILintCfg)
+	return golang.Lint(workingDirectory, golangcilint.Cfg())
 }
 
 // LintFix fixes found issues (if it's supported by the linters)
@@ -100,7 +92,7 @@ func LintFix(ctx context.Context) error {
 }
 
 func lintFix(_ context.Context, workingDirectory string) error {
-	return golang.LintFix(workingDirectory, golangCILintCfg)
+	return golang.LintFix(workingDirectory, golangcilint.Cfg())
 }
 
 // DownloadModules downloads Go modules locally
@@ -143,7 +135,12 @@ func Changes(_ context.Context, pattern string) error {
 	return nil
 }
 
-// DownloadDevTool ensure a devool is available on a local system
-func DownloadDevTool(_ context.Context, tool string) error {
-	return devtool.Build(tool, GolangToolsDockerfile)
+// FetchGolangCIConfig fetches and writes the golangci-lint configuration file
+// to the specified directory relative to the repository root.
+// The config file will be named .golangci-lint.yaml.
+//
+// The where parameter specifies the directory path relative to the repository root.
+// Use "." or "" to write to the repository root directory.
+func FetchGolangCIConfig(where string) error {
+	return devtool.FetchGolangCILintConfig(where)
 }

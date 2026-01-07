@@ -4,6 +4,7 @@ go 1.25.0
 
 require (
 	github.com/bmatcuk/doublestar/v4 v4.9.1
+	github.com/hashicorp/go-version v1.8.0
 	github.com/magefile/mage v1.15.0
 	github.com/stretchr/testify v1.11.1
 )
@@ -15,3 +16,5 @@ require (
 )
 
 tool github.com/magefile/mage
+
+retract [v0.1.0, v0.16.3] // Retracted due to critical bug in earlier versions

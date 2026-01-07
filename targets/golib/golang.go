@@ -25,7 +25,6 @@ func (Go) Generate(ctx context.Context) error {
 //
 // See [Go.Test] and [Go.Lint] for details.
 func (Go) Validate(ctx context.Context) error {
-	mg.CtxDeps(ctx, Go.DownloadDevTools)
 	mg.CtxDeps(ctx, Go.DownloadModules)
 	mg.CtxDeps(ctx, Go.Test, Go.Lint, CatalogInfo.Validate)
 	return nil
@@ -71,19 +70,22 @@ func (Go) Changes(ctx context.Context) error {
 	return nil
 }
 
-// DownloadDevTools download all devtools required for running the golang
-// targets
-func (Go) DownloadDevTools(ctx context.Context) error {
-	mg.CtxDeps(
-		ctx,
-		mg.F(golang.DownloadDevTool, "golang"),
-		mg.F(golang.DownloadDevTool, "golangci-lint"),
-	)
-	return nil
-}
-
 // DownloadModules download the go modules
 func (Go) DownloadModules(ctx context.Context) error {
 	mg.CtxDeps(ctx, golang.DownloadModules)
 	return nil
+}
+
+// FetchGolangCILintConfig writes the golangci-lint configuration file provided path relative
+// to root if it doesn't already exist.
+func (Go) FetchGolangCILintConfig(_ context.Context, where string) error {
+	// Leaving context unused which will be when logging package exists
+	return golang.FetchGolangCIConfig(where)
+}
+
+// FetchConfigs syncs all configuration files into the repository.
+// Currently syncs GolangCiConfig to the specified path relative to the repository root.
+func (Go) FetchConfigs(_ context.Context, where string) error {
+	// Leaving context unused which will be when logging package exists
+	return golang.FetchGolangCIConfig(where)
 }

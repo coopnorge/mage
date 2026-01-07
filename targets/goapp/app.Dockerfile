@@ -1,5 +1,5 @@
-FROM docker.io/kvij/scuttle:1.1.11@sha256:cc34a43fbc9c652ebf693cfdefaff3d425c631a944dfbbc2a7f8d9437bc73a21 AS scuttle
-FROM docker.io/library/alpine:3.22.2@sha256:4b7ce07002c69e8f3d704a9c5d6fd3053be500b7f1c69fc0d80990c2ad8dd412 AS alpine
+FROM docker.io/kvij/scuttle:1.1.13@sha256:a44b76ae59812de81a88d07a5e44570b57d8b12a6080a88ef9e73b5a984202b5 AS scuttle
+FROM docker.io/library/alpine:3.23.3@sha256:25109184c71bdad752c8312a8623239686a9a2071e8825f20acb8f2198c3f659 AS alpine
 
 FROM alpine AS runtime
 

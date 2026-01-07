@@ -13,8 +13,11 @@ import (
 
 var goModTemplateString = `module dummy
 go 1.25.0
-require github.com/coopnorge/mage v0.7.0
-require github.com/magefile/mage v1.15.0 // indirect
+require github.com/coopnorge/mage v0.16.7
+require (
+	github.com/bmatcuk/doublestar/v4 v4.9.1 // indirect
+	github.com/magefile/mage v1.15.0 // indirect
+)
 tool github.com/magefile/mage
 replace github.com/coopnorge/mage => {{ . }}
 `
@@ -134,6 +137,30 @@ func TestTargets(t *testing.T) {
 			targets:     []string{"terraformmodule:terraform:docsvalidatefix", "terraformmodule:terraform:docsvalidate"},
 			wantErr:     false,
 		},
+		{
+			name:        "Terraform validate should succeed when lock file exists",
+			testProject: "testdata/project-success",
+			targets:     []string{"goapp:terraform:validate"},
+			wantErr:     false,
+		},
+		{
+			name:        "Terraform validate should fail when lock file doesn't exists",
+			testProject: "testdata/fail-project-lockfile-missing",
+			targets:     []string{"goapp:terraform:validate"},
+			wantErr:     true,
+		},
+		{
+			name:        "Terraform validate should fail for module with lockfile",
+			testProject: "testdata/fail-module-with-lockfile",
+			targets:     []string{"terraformmodule:terraform:validate"},
+			wantErr:     true,
+		},
+		{
+			name:        "Terraform validate should succeed for project with module without lockfile",
+			testProject: "testdata/project-with-submodule-success",
+			targets:     []string{"goapp:terraform:validate"},
+			wantErr:     false,
+		},
 	}
 
 	goModMage, err := sh.Output("go", "env", "GOMOD")
@@ -161,6 +188,12 @@ func TestTargets(t *testing.T) {
 
 			t.Chdir(dir)
 
+			sh.Run("git", "init")
+			sh.Run("git", "config", "user.email", "test@example.com")
+			sh.Run("git", "config", "user.name", "Test User")
+			sh.Run("git", "add", ".")
+			sh.Run("git", "commit", "-m", "initial commit")
+
 			goMod, err := os.Create("go.mod")
 			if err != nil {
 				panic(err)
@@ -171,7 +204,7 @@ func TestTargets(t *testing.T) {
 				goMod.Close()
 				cleanup()
 			})
-			args := []string{"tool", "mage"}
+			args := []string{"tool", "mage", "-v"}
 			args = append(args, tt.targets...)
 			gotErr := sh.RunV("go", args...)
 			if tt.wantErr {

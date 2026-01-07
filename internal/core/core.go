@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"strings"
 
 	doublestar "github.com/bmatcuk/doublestar/v4"
+	"github.com/magefile/mage/sh"
 )
 
 const (
@@ -30,7 +32,7 @@ func GetRelativeRootPath(absRootPath, workDirRel string) (string, error) {
 // random prefix and the provided suffix. Returns a cleanup function that the
 // caller is expected to call. If cleanup errors it will panic.
 func WriteTempFile(directory, suffix, content string) (string, func(), error) {
-	err := os.MkdirAll(directory, 0700)
+	err := os.MkdirAll(directory, 0o700)
 	if err != nil {
 		return "", func() {}, err
 	}
@@ -40,7 +42,15 @@ func WriteTempFile(directory, suffix, content string) (string, func(), error) {
 	}
 
 	cleanup := func() {
-		err := os.Remove(file.Name())
+		// check if file exist if not skip deletion
+		_, err := os.Stat(file.Name())
+		if errors.Is(err, os.ErrNotExist) {
+			return
+		}
+		if err != nil {
+			panic(err)
+		}
+		err = os.Remove(file.Name())
 		if err != nil {
 			panic(err)
 		}
@@ -123,4 +133,43 @@ func CompareChangesToPaths(changes []string, paths []string, additionalGlobs []s
 		}
 	}
 	return false, nil
+}
+
+// Verbose returns true if the magefile is running in verbose mode.
+func Verbose() bool {
+	// Check for the MAGEFILE_VERBOSE environment variable
+	v := os.Getenv("MAGEFILE_VERBOSE")
+	return v == "1" || strings.EqualFold(v, "true")
+}
+
+// FileExists checks if a file exists at the given path.
+// Returns true if the file exists, false otherwise.
+func FileExists(filePath string) bool {
+	_, err := os.Stat(filePath)
+	return err == nil
+}
+
+// FileExistsInDirectory checks if a file with the given name exists in the specified directory.
+// Returns true if the file exists, false otherwise.
+func FileExistsInDirectory(directory, filename string) bool {
+	fullPath := filepath.Join(directory, filename)
+	return FileExists(fullPath)
+}
+
+// GetRepoRoot returns the absolute path to the repository root directory.
+// It uses git to find the top-level directory of the repository.
+// If git is not available or not in a git repository, it falls back to the current working directory.
+func GetRepoRoot() (string, error) {
+	// Try to get repo root from git
+	repoRoot, err := sh.Output("git", "rev-parse", "--show-toplevel")
+	if err == nil {
+		return strings.TrimSpace(repoRoot), nil
+	}
+
+	// Fallback to current working directory if not in a git repo
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	return cwd, nil
 }

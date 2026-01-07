@@ -1,8 +1,10 @@
 package devtool
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
+	"os/exec"
 	"runtime"
 	"runtime/debug"
 	"slices"
@@ -11,6 +13,11 @@ import (
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/magefile/mage/sh"
 )
+
+// ToolsDockerfile the content of tools.Dockerfile
+//
+//go:embed tools.Dockerfile
+var ToolsDockerfile string
 
 // GetImageName returns the name of a devtools OCI image
 func GetImageName(target string) (string, error) {
@@ -41,6 +48,7 @@ func RunWith(env map[string]string, tool string, dockerRunArgs []string, cmd str
 	call := []string{
 		"run",
 		"--rm",
+		"--platform", fmt.Sprintf("linux/%s", runtime.GOARCH),
 	}
 
 	call = append(call, dockerRunArgs...)
@@ -83,6 +91,7 @@ func Build(tool, dockerfile string) error {
 
 	return sh.RunV(
 		"docker", "buildx", "build",
+		"--platform", fmt.Sprintf("linux/%s", runtime.GOARCH),
 		"-f", file,
 		"--target", selectedTool,
 		"-t", imageName,
@@ -112,4 +121,42 @@ func archSelector(tool, dockerfile string) (string, error) {
 	default:
 		return "", fmt.Errorf("unable to find devtool for tool \"%s\" for the host architecture %s or universal", tool, runtime.GOARCH)
 	}
+}
+
+// isCommandAvailable checks if the named application binary is in the system's PATH.
+func isCommandAvailable(name string) bool {
+	// LookPath searches for an executable file in the directories named by the PATH environment variable.
+	// If it finds the file, it returns the path to the executable.
+	// If it does not find the file, it returns an error.
+	_, err := exec.LookPath(name)
+	return err == nil
+}
+
+type dockerDevTool struct {
+	registry string
+	image    string
+	version  string
+	sha      string
+	alias    string
+}
+
+func getTool(dockerfile string, tool string) (*dockerDevTool, error) {
+	// FROM docker.io/library/golang:1.25.5@sha256:36b4f45d2874905b9e8573b783292629bcb346d0a70d8d7150b6df545234818f AS golang
+	devtool := dockerDevTool{}
+	for line := range strings.SplitSeq(dockerfile, "\n") {
+		parts := strings.Fields(line)
+		if strings.ToUpper(parts[0]) != "FROM" {
+			continue
+		}
+		if parts[len(parts)-1] == tool {
+			image := strings.Split(parts[1], ":")
+			devtool.alias = tool
+			devtool.image = parts[1]
+			devtool.registry = image[0]
+			devtool.version = strings.Split(image[1], "@")[0]
+			devtool.sha = fmt.Sprintf("sha256:%s", image[len(image)-1])
+			return &devtool, nil
+		}
+	}
+	return &devtool, fmt.Errorf("unable to find devtool %s", tool)
 }

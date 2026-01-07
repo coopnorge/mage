@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
+	"github.com/coopnorge/mage/internal/devtool"
 	"github.com/coopnorge/mage/internal/golang"
 	golangTargets "github.com/coopnorge/mage/internal/targets/golang"
 
@@ -21,18 +23,7 @@ const (
 	binDir = "bin"
 )
 
-// OsArchMatrix defines the CPU architectures to build binaries for
-var OsArchMatrix = []map[string]string{
-	{
-		"GOOS": "darwin", "GOARCH": "arm64",
-	},
-	{
-		"GOOS": "linux", "GOARCH": "amd64",
-	},
-	{
-		"GOOS": "linux", "GOARCH": "arm64",
-	},
-}
+var toolGo devtool.Go
 
 // Generate runs commands described by directives within existing files with
 // the intent to generate Go code. Those commands can run any process but the
@@ -100,7 +91,6 @@ func (Go) Generate(ctx context.Context) error {
 //	                ├── dataloader
 //	                └── server
 func (Go) Build(ctx context.Context) error {
-	mg.CtxDeps(ctx, Go.DownloadDevTools)
 	mg.CtxDeps(ctx, Go.DownloadModules)
 	mg.SerialCtxDeps(ctx, Go.Validate, Go.BuildBinaries)
 
@@ -126,14 +116,20 @@ func (Go) BuildBinaries(ctx context.Context) error {
 	}
 
 	bins := []any{}
-	for _, command := range cmds {
-		relativeRootPath, err := core.GetRelativeRootPath(rootPath, command.goModule)
+	for _, cmd := range cmds {
+		relativeRootPath, err := core.GetRelativeRootPath(rootPath, cmd.goModule)
 		if err != nil {
 			return err
 		}
-		for _, osArch := range OsArchMatrix {
-			output := path.Join(relativeRootPath, binaryOutputPath(command.goModule, osArch["GOOS"], osArch["GOARCH"], command.binary))
-			bins = append(bins, mg.F(Go.build, command.goModule, command.pkg, output, osArch["GOOS"], osArch["GOARCH"]))
+		input := strings.Join(cmd.pkgs, " ")
+
+		for _, osArch := range golang.OSArch() {
+			output := path.Join(relativeRootPath, binaryOutputPathMulti(cmd.goModule, osArch["GOOS"], osArch["GOARCH"]))
+			err := os.MkdirAll(path.Join(cmd.goModule, output), os.ModePerm)
+			if err != nil {
+				return err
+			}
+			bins = append(bins, mg.F(Go.build, cmd.goModule, input, output, osArch["GOOS"], osArch["GOARCH"]))
 		}
 	}
 
@@ -150,8 +146,8 @@ func (Go) DownloadModules(ctx context.Context) error {
 
 type cmd struct {
 	goModule string
-	pkg      string
-	binary   string
+	pkgs     []string
+	binaries []string
 }
 
 func findCommands(goModules []string) ([]cmd, error) {
@@ -164,17 +160,25 @@ func findCommands(goModules []string) ([]cmd, error) {
 		if err != nil {
 			return nil, err
 		}
+		pkgs := []string{}
+		bins := []string{}
 		for _, entry := range entries {
 			if !entry.IsDir() {
 				continue
 			}
-			cmd := cmd{
-				goModule: goModule,
-				pkg:      fmt.Sprintf("./%s", path.Join(cmdDir, entry.Name())),
-				binary:   entry.Name(),
-			}
-			result = append(result, cmd)
+			pkg := fmt.Sprintf("./%s", path.Join(cmdDir, entry.Name()))
+			pkgs = append(pkgs, pkg)
+			bins = append(bins, entry.Name())
 		}
+		if len(pkgs) == 0 {
+			continue
+		}
+		cmd := cmd{
+			goModule: goModule,
+			pkgs:     pkgs,
+			binaries: bins,
+		}
+		result = append(result, cmd)
 	}
 	return result, nil
 }
@@ -182,23 +186,27 @@ func findCommands(goModules []string) ([]cmd, error) {
 func (Go) build(_ context.Context, workingDirectory, input, output, goos, goarch string) error {
 	environmentalVariables := map[string]string{"GOOS": goos, "GOARCH": goarch, "CGO_ENABLED": "0"}
 
-	return golang.DevtoolGo(
-		environmentalVariables,
-		"go",
+	inputs := strings.Split(input, " ")
+
+	args := []string{
 		"-C",
 		workingDirectory,
 		"build",
-		"-v",
 		"-tags='datadog.no_waf'",
 		"-o", output,
-		input)
+	}
+	arguments := append(args, inputs...)
+
+	return toolGo.Run(
+		environmentalVariables,
+		arguments...,
+	)
 }
 
 // Validate runs validation check on the Go source code in the repository.
 //
 // For details see [Go.Test] and [Go.Lint].
 func (Go) Validate(ctx context.Context) error {
-	mg.CtxDeps(ctx, Go.DownloadDevTools)
 	mg.CtxDeps(ctx, Go.DownloadModules)
 	mg.CtxDeps(ctx, Go.Test, Go.Lint)
 	return nil
@@ -208,7 +216,6 @@ func (Go) Validate(ctx context.Context) error {
 //
 // For details see [Go.LintFix].
 func (Go) Fix(ctx context.Context) error {
-	mg.CtxDeps(ctx, Go.DownloadDevTools)
 	mg.CtxDeps(ctx, Go.DownloadModules)
 	mg.CtxDeps(ctx, Go.LintFix)
 	return nil
@@ -239,8 +246,8 @@ func (Go) LintFix(ctx context.Context) error {
 	return nil
 }
 
-func binaryOutputPath(app, os, arch, binary string) string {
-	return path.Join(binaryOutputBasePath(app), os, arch, binary)
+func binaryOutputPathMulti(app, os, arch string) string {
+	return path.Join(binaryOutputBasePath(app), os, arch)
 }
 
 func binaryOutputBasePath(app string) string {
@@ -254,13 +261,16 @@ func (Go) Changes(ctx context.Context) error {
 	return nil
 }
 
-// DownloadDevTools download all devtools required for running the golang
-// targets
-func (Go) DownloadDevTools(ctx context.Context) error {
-	mg.CtxDeps(
-		ctx,
-		mg.F(golangTargets.DownloadDevTool, "golang"),
-		mg.F(golangTargets.DownloadDevTool, "golangci-lint"),
-	)
-	return nil
+// FetchGolangCILintConfig (path: string) writes the golangci-lint configuration file provided path relative
+// to root if it doesn't already exist.
+func (Go) FetchGolangCILintConfig(_ context.Context, where string) error {
+	// Leaving context unusued, will be used when logging package exists.
+	return golangTargets.FetchGolangCIConfig(where)
+}
+
+// FetchConfigs (path: string) syncs all configuration files into [path].
+// Currently syncs GolangCiConfig to the specified path relative to the repository root.
+func (Go) FetchConfigs(_ context.Context, where string) error {
+	// Leaving context unused, will be used when logging package exists.
+	return golangTargets.FetchGolangCIConfig(where)
 }
