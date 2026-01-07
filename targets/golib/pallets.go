@@ -12,7 +12,6 @@ type Pallets mg.Namespace
 
 // Validate validates all terraform projects
 func (Pallets) Validate(ctx context.Context) error {
-	mg.CtxDeps(ctx, mg.F(palletsTargets.DownloadDevTool, "kubeconform"))
 	mg.CtxDeps(ctx, mg.F(palletsTargets.Validate))
 	return nil
 }

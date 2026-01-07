@@ -10,14 +10,17 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/magefile/mage/sh"
-
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/devtool"
 	"github.com/coopnorge/mage/internal/git"
 )
 
 const coverageReport = "coverage.out"
+
+var (
+	toolGo   devtool.Go
+	toolLint devtool.GoLangCILint
+)
 
 // IsGoModule returns true if a directory contains a go module.
 func IsGoModule(p string, d fs.DirEntry) bool {
@@ -123,7 +126,7 @@ func HasChanges(goSourceCodeFolders []string) (bool, error) {
 // the intent to generate Go code. Those commands can run any process but the
 // intent is to create or update Go source files
 func Generate(directory string) error {
-	return DevtoolGo(nil, "go", "-C", directory, "generate", "./...")
+	return toolGo.Run(nil, "-C", directory, "generate", "./...")
 }
 
 // Test automates testing the packages named by the import paths, see also: go
@@ -145,9 +148,8 @@ func Test(directory string) error {
 
 	output := path.Join(relativeRootPath, core.OutputDir, directory, coverageReport)
 
-	return DevtoolGo(
+	return toolGo.Run(
 		nil,
-		"go",
 		"-C",
 		directory,
 		"test",
@@ -157,8 +159,7 @@ func Test(directory string) error {
 		"-covermode=atomic",
 		"-race",
 		"-tags='datadog.no_waf'",
-		"./...",
-	)
+		"./...")
 }
 
 // Lint runs the linters
@@ -173,8 +174,7 @@ func Lint(directory, golangCILintCfg string) error {
 	if err != nil {
 		return err
 	}
-
-	return DevtoolGolangCILint(nil, "bash", "-c", fmt.Sprintf("cd %s && golangci-lint run --verbose --timeout 10m --config %s ./...", directory, lintCfgPath))
+	return toolLint.Run(nil, directory, "run", "--verbose", "--timeout", "10m", "--config", lintCfgPath, "./...")
 }
 
 // LintFix fixes found issues (if it's supported by the linters)
@@ -189,84 +189,13 @@ func LintFix(directory, golangCILintCfg string) error {
 	if err != nil {
 		return err
 	}
-	return DevtoolGolangCILint(nil, "bash", "-c", fmt.Sprintf("cd %s && golangci-lint run --verbose --timeout 10m --fix --config %s ./...", directory, lintCfgPath))
+	return toolLint.Run(nil, directory, "run", "--verbose", "--timeout", "10m", "--fix", "--config", lintCfgPath, "./...")
 }
 
 // DownloadModules downloads Go modules locally
 func DownloadModules(directory string) error {
 	log.Printf("Downloading modules for dir %q", directory)
-	return DevtoolGo(nil, "go", "-C", directory, "mod", "download", "-x")
-}
-
-// DevtoolGo runs the devtool for Go
-func DevtoolGo(env map[string]string, cmd string, args ...string) error {
-	// This is a bit hacky to use the local go binary instead of the container
-	// this is used for running the integration tests on targets.
-	if os.Getenv("GO_RUNTIME") == "local" {
-		return sh.RunWithV(env, cmd, args...)
-	}
-
-	path, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	goModCache, err := sh.Output("go", "env", "GOMODCACHE")
-	if err != nil {
-		goModCache = "$HOME/go/pkg/mod"
-	}
-
-	dockerArgs := []string{
-		"--volume", fmt.Sprintf("%s:/go/pkg/mod", goModCache), // Mount downloaded go modules
-		"--volume", "/var/run/docker.sock:/var/run/docker.sock", // Mount Docker socket for docker-in-docker
-		"--volume", "$HOME/.cache:/root/.cache", // Mount caches, such as linter cache, Go build cache, etc.
-		"--volume", "$HOME/.gitconfig:/root/.gitconfig", // Mount Git config, for access to private repos
-		"--volume", "$HOME/.ssh:/root/.ssh", // Mount SSH config, for access to private repos
-		"--volume", fmt.Sprintf("%s:/app", path), // Mount the source code
-		"--env", "TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal", // For testcontainers to work when running with docker-in-docker
-		"--env", "GOMODCACHE=/go/pkg/mod", // Ensure that the GOMODCACHE env is set correctly
-		"--add-host", "host.docker.internal:host-gateway", // For testcontainers to work when running with docker-in-docker
-		"--workdir", "/app",
-	}
-
-	if env == nil {
-		env = map[string]string{}
-	}
-	for k, v := range env {
-		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", k, v))
-	}
-
-	return devtool.Run("golang", dockerArgs, cmd, args...)
-}
-
-// DevtoolGolangCILint runs the devtool for Golangci-lint
-func DevtoolGolangCILint(env map[string]string, cmd string, args ...string) error {
-	path, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	goModCache, err := sh.Output("go", "env", "GOMODCACHE")
-	if err != nil {
-		goModCache = "$HOME/go/pkg/mod"
-	}
-
-	dockerArgs := []string{
-		"--volume", fmt.Sprintf("%s:/go/pkg/mod", goModCache), // Mount downloaded go modules
-		"--volume", fmt.Sprintf("%s:/app", path), // Mount the source code
-		"--volume", "$HOME/.cache:/root/.cache", // Mount caches, such as linter cache, Go build cache, etc.
-		"--env", "GOMODCACHE=/go/pkg/mod", // Ensure that the GOMODCACHE env is set correctly
-		"--workdir", "/app",
-	}
-
-	if env == nil {
-		env = map[string]string{}
-	}
-	for k, v := range env {
-		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", k, v))
-	}
-
-	return devtool.Run("golangci-lint", dockerArgs, cmd, args...)
+	return toolGo.Run(nil, "-C", directory, "mod", "download", "-x")
 }
 
 // OSArch returns a list of os/arch combinations for which to build binaries

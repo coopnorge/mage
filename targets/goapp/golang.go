@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
+	"github.com/coopnorge/mage/internal/devtool"
 	"github.com/coopnorge/mage/internal/golang"
 	golangTargets "github.com/coopnorge/mage/internal/targets/golang"
 
@@ -21,6 +22,8 @@ const (
 	cmdDir = "cmd"
 	binDir = "bin"
 )
+
+var toolGo devtool.Go
 
 // Generate runs commands described by directives within existing files with
 // the intent to generate Go code. Those commands can run any process but the
@@ -88,7 +91,6 @@ func (Go) Generate(ctx context.Context) error {
 //	                ├── dataloader
 //	                └── server
 func (Go) Build(ctx context.Context) error {
-	mg.CtxDeps(ctx, Go.DownloadDevTools)
 	mg.CtxDeps(ctx, Go.DownloadModules)
 	mg.SerialCtxDeps(ctx, Go.Validate, Go.BuildBinaries)
 
@@ -195,9 +197,8 @@ func (Go) build(_ context.Context, workingDirectory, input, output, goos, goarch
 	}
 	arguments := append(args, inputs...)
 
-	return golang.DevtoolGo(
+	return toolGo.Run(
 		environmentalVariables,
-		"go",
 		arguments...,
 	)
 }
@@ -206,7 +207,6 @@ func (Go) build(_ context.Context, workingDirectory, input, output, goos, goarch
 //
 // For details see [Go.Test] and [Go.Lint].
 func (Go) Validate(ctx context.Context) error {
-	mg.CtxDeps(ctx, Go.DownloadDevTools)
 	mg.CtxDeps(ctx, Go.DownloadModules)
 	mg.CtxDeps(ctx, Go.Test, Go.Lint)
 	return nil
@@ -216,7 +216,6 @@ func (Go) Validate(ctx context.Context) error {
 //
 // For details see [Go.LintFix].
 func (Go) Fix(ctx context.Context) error {
-	mg.CtxDeps(ctx, Go.DownloadDevTools)
 	mg.CtxDeps(ctx, Go.DownloadModules)
 	mg.CtxDeps(ctx, Go.LintFix)
 	return nil
@@ -259,16 +258,5 @@ func binaryOutputBasePath(app string) string {
 // the current branch contains changes compared to the main branch.
 func (Go) Changes(ctx context.Context) error {
 	mg.CtxDeps(ctx, golangTargets.Changes)
-	return nil
-}
-
-// DownloadDevTools download all devtools required for running the golang
-// targets
-func (Go) DownloadDevTools(ctx context.Context) error {
-	mg.CtxDeps(
-		ctx,
-		mg.F(golangTargets.DownloadDevTool, "golang"),
-		mg.F(golangTargets.DownloadDevTool, "golangci-lint"),
-	)
 	return nil
 }
