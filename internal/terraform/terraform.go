@@ -14,6 +14,13 @@ import (
 	"github.com/coopnorge/mage/internal/git"
 )
 
+var (
+	devtoolTerraform devtool.Terraform
+	devtoolTFLint    devtool.TFLint
+	devtoolTrivy     devtool.Trivy
+	devtoolTFDocs    devtool.TerraformDocs
+)
+
 // IsTerraformProject returns true if a directory contains a go module.
 func IsTerraformProject(p string, d fs.DirEntry) bool {
 	if !d.IsDir() {
@@ -74,7 +81,8 @@ func HasChanges(terraformProjects []string) (bool, error) {
 // Test automates testing the packages named by the import paths, see also: go
 // test.
 func Test(directory string) error {
-	return DevtoolTerraform(nil, directory, "validate")
+	return devtoolTerraform.Run(nil, directory, "validate")
+	// return DevtoolTerraform(nil, directory, "validate")
 }
 
 // Lint runs the linters
@@ -84,16 +92,15 @@ func Lint(directory, tfLintCfg string) error {
 		return err
 	}
 	defer cleanup()
-
-	err = DevtoolTerraform(nil, directory, "fmt", "-diff", "-check")
+	err = devtoolTerraform.Run(nil, directory, "fmt", "-diff", "-check")
 	if err != nil {
 		return err
 	}
-	err = DevtoolTFLint(nil, directory, "--init", "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
+	err = devtoolTFLint.Run(nil, directory, "--init", "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
 	if err != nil {
 		return err
 	}
-	err = DevtoolTFLint(nil, directory, "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
+	err = devtoolTFLint.Run(nil, directory, "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
 	if err != nil {
 		return err
 	}
@@ -109,15 +116,17 @@ func LintFix(directory, tfLintCfg string) error {
 	}
 	defer cleanup()
 
-	err = DevtoolTerraform(nil, directory, "fmt", "-diff")
+	err = devtoolTerraform.Run(nil, directory, "fmt", "-diff")
 	if err != nil {
 		return err
 	}
-	err = DevtoolTFLint(nil, directory, "--init", "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
+
+	err = devtoolTFLint.Run(nil, directory, "--init", "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
 	if err != nil {
 		return err
 	}
-	err = DevtoolTFLint(nil, directory, "--fix", "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
+
+	err = devtoolTFLint.Run(nil, directory, "--fix", "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
 	if err != nil {
 		return err
 	}
@@ -128,20 +137,53 @@ func LintFix(directory, tfLintCfg string) error {
 // Init downloads Terraform modules locally
 func Init(directory string) error {
 	log.Printf("Running terraform init for  %q", directory)
-	err := DevtoolTerraform(nil, directory, "init")
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return devtoolTerraform.Run(nil, directory, "init")
 }
 
 // InitUpgrade downloads and updates Terraform modules locally
 func InitUpgrade(directory string) error {
 	log.Printf("Running terraform init -upgrade for  %q", directory)
-	err := DevtoolTerraform(nil, directory, "init", "-upgrade")
-	if err != nil {
-		return err
+	return devtoolTerraform.Run(nil, directory, "init", "-upgrade")
+}
+
+// CheckLock checks that the lockfile exists
+func CheckLock(directory string) error {
+	log.Printf("Checking for terraform lockfile in %q", directory)
+
+	lockfile := ".terraform.lock.hcl"
+	lockfilePath := filepath.Join(directory, lockfile)
+
+	hasLockFile := false
+	if _, err := os.Stat(lockfilePath); err == nil {
+		hasLockFile = true
 	}
+
+	isTracked := false
+	if hasLockFile {
+		isTracked = git.IsTracked(lockfilePath)
+	}
+
+	isModule := HasTerraformDocsConfig(directory) || IsTerraformSubmodule(directory)
+
+	if isModule {
+		if isTracked {
+			return fmt.Errorf(
+				"lockfile %q is tracked by git in directory %q, but it looks like a module",
+				lockfile, directory,
+			)
+		}
+		return nil
+	}
+
+	if !isTracked {
+		return fmt.Errorf(
+			"lockfile %q is not tracked by git in directory %q as expected",
+			lockfile, directory,
+		)
+	}
+
+	log.Printf("Lockfile %q is tracked in %q", lockfile, directory)
 	return nil
 }
 
@@ -149,17 +191,13 @@ func InitUpgrade(directory string) error {
 // os architecures
 func ProviderLock(directory string) error {
 	log.Printf("Running terraform provider lock  %q", directory)
-	err := DevtoolTerraform(nil, directory, "providers", "lock",
+	return devtoolTerraform.Run(nil, directory, "providers", "lock",
 		"-platform=linux_arm64",
 		"-platform=linux_amd64",
 		"-platform=darwin_amd64",
 		"-platform=darwin_arm64",
 		"-platform=windows_amd64",
 	)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // Clean cache in a terraform directory
@@ -180,7 +218,7 @@ func Clean(directory string) error {
 // Security validates security of the terraform project
 // config --exit-code 1 --misconfig-scanners=terraform
 func Security(directory string) error {
-	return DevtoolTrivy(nil, directory, "config", "--exit-code", "1", "--misconfig-scanners=terraform", "./")
+	return devtoolTrivy.Run(nil, directory, "config", "--exit-code", "1", "--misconfig-scanners=terraform", "./")
 }
 
 // HasTerraformDocsConfig checks whether the given directory
@@ -190,6 +228,49 @@ func HasTerraformDocsConfig(dir string) bool {
 	return err == nil
 }
 
+// IsTerraformSubmodule returns true if the directory is a subdirectory
+// of another terraform project.
+func IsTerraformSubmodule(dir string) bool {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return false
+	}
+	absCwd, err := filepath.Abs(cwd)
+	if err != nil {
+		return false
+	}
+	absCwd, err = filepath.EvalSymlinks(absCwd)
+	if err != nil {
+		return false
+	}
+
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		return false
+	}
+
+	absDir, err = filepath.EvalSymlinks(absDir)
+	if err != nil {
+		return false
+	}
+
+	parent := filepath.Dir(absDir)
+	for parent != absDir && strings.HasPrefix(parent, absCwd) {
+		files, err := filepath.Glob(filepath.Join(parent, "*.tf"))
+		if err != nil {
+			return false
+		}
+		if len(files) > 0 {
+			return true
+		}
+
+		absDir = parent
+		parent = filepath.Dir(absDir)
+	}
+
+	return false
+}
+
 // Docs validate if the README of a module are up to date with the
 // content of the module
 func Docs(directory string) error {
@@ -197,7 +278,7 @@ func Docs(directory string) error {
 		return nil
 	}
 
-	return DevtoolTerraformDocs(nil, directory, ".", "-c", "terraform-docs.yml", "--output-check")
+	return devtoolTFDocs.Run(nil, directory, ".", "-c", "terraform-docs.yml", "--output-check")
 }
 
 // DocsFix updates the README to the configuration of the module
@@ -206,87 +287,5 @@ func DocsFix(directory string) error {
 		return nil
 	}
 
-	return DevtoolTerraformDocs(nil, directory, ".", "-c", "terraform-docs.yml")
-}
-
-// DevtoolTerraform runs the devtool for terraform
-func DevtoolTerraform(env map[string]string, directory string, cmd string, args ...string) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	// TODO: add provider cache
-	dockerArgs := []string{
-		"--volume", "$HOME/.cache:/root/.cache",
-		"--volume", "$HOME/.terraform.d:/root/.terraform.d",
-		"--volume", "$HOME/.ssh:/root/.ssh",
-		"--volume", fmt.Sprintf("%s:/src", cwd),
-		"--workdir", path.Join("/src", directory),
-	}
-
-	for k, v := range env {
-		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", k, v))
-	}
-
-	return devtool.Run("terraform", dockerArgs, cmd, args...)
-}
-
-// DevtoolTFLint runs the devtool for tflint
-func DevtoolTFLint(env map[string]string, directory string, cmd string, args ...string) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	dockerArgs := []string{
-		"--volume", "$HOME/.tflint.d:/root/.tflint.d",
-		"--volume", fmt.Sprintf("%s:/src", cwd),
-		"--workdir", path.Join("/src", directory),
-	}
-
-	for k, v := range env {
-		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", k, v))
-	}
-
-	return devtool.Run("tflint", dockerArgs, cmd, args...)
-}
-
-// DevtoolTrivy runs the devtool for trivy
-func DevtoolTrivy(env map[string]string, directory string, cmd string, args ...string) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	dockerArgs := []string{
-		"--volume", fmt.Sprintf("%s:/src", cwd),
-		"--volume", "$HOME/.cache/trivy:/root/.cache/trivy",
-		"--workdir", path.Join("/src", directory),
-	}
-
-	for k, v := range env {
-		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", k, v))
-	}
-
-	return devtool.Run("trivy", dockerArgs, cmd, args...)
-}
-
-// DevtoolTerraformDocs the devtool for trivy
-func DevtoolTerraformDocs(env map[string]string, directory string, cmd string, args ...string) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	dockerArgs := []string{
-		"--volume", fmt.Sprintf("%s:/src", cwd),
-		"--workdir", path.Join("/src", directory),
-	}
-
-	for k, v := range env {
-		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", k, v))
-	}
-
-	return devtool.Run("terraform-docs", dockerArgs, cmd, args...)
+	return devtoolTFDocs.Run(nil, directory, ".", "-c", "terraform-docs.yml")
 }

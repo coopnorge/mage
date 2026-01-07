@@ -37,7 +37,7 @@ func Build(ctx context.Context) error {
 //
 // For details see [Go.Validate].
 func Validate(ctx context.Context) error {
-	mg.SerialCtxDeps(ctx, Go.Validate, PolicyBotConfig.Validate)
+	mg.SerialCtxDeps(ctx, Go.Validate, PolicyBotConfig.Validate, Pallets.Validate)
 	return nil
 }
 

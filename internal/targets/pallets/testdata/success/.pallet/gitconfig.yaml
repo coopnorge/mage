@@ -1,0 +1,20 @@
+apiVersion: github.coop.no/v1alpha1
+kind: RepositoryConfig
+metadata:
+  name: helloworld
+spec:
+  description: "No description provided"
+  branches:
+    default: main
+    protection:
+      - id: main
+        pattern: main
+        requireSignedCommits: false
+        requiredStatusChecks:
+          checks:
+            - "build"
+            - "policy-bot: main"
+            - "Supply Chain / Validate"
+            - "spacelift/proposed"
+        requiredPullRequestReviews:
+          requireCodeOwnerReviews: false

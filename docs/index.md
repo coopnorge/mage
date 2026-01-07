@@ -21,9 +21,12 @@ go 1.23.0
 
 toolchain go1.24.0
 
-require github.com/coopnorge/mage v0.0.1
+require github.com/coopnorge/mage v0.16.7
 
-require github.com/magefile/mage v1.15.0 // indirect
+require (
+ github.com/bmatcuk/doublestar/v4 v4.9.1 // indirect
+ github.com/magefile/mage v1.15.0 // indirect
+)
 
 tool github.com/magefile/mage
 ```
@@ -76,6 +79,8 @@ import (
 - [x] Docker image build
 - [x] Docker image push
 - [x] Terraform CI
+- [x] Policy-bot config validation
+- [x] Catalog-info validation
 - [ ] Techdocs CI
 - [ ] Kubernetes CI
 - [ ] Security Scanning
@@ -97,6 +102,8 @@ import (
 - [x] Go linting
 - [x] Go code generation
 - [ ] Go mock generation
+- [x] Policy-bot config validation
+- [x] Catalog-info validation
 - [ ] Techdocs CI
 - [ ] Security Scanning
 

@@ -32,3 +32,5 @@ var/
 .vale/
 site/
 mkdocs.yml
+
+.terraform

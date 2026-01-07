@@ -42,6 +42,8 @@ jobs:
       - name: Code Validation
         id: validate
         run: go tool mage terraform:validate
+        env:
+          GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
 
       - name: Cleanup
         if: always()
