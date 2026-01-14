@@ -8,7 +8,7 @@ on:
       oci-image-base:
         type: string
         required: false
-        default: ""
+        default: ''
       push-oci-image:
         type: boolean
         required: false
@@ -19,16 +19,19 @@ on:
         type: string
       artifact-registry-location:
         type: string
-        default: "europe"
+        default: 'europe'
         description: Artifact registry region name (e.g. "europe", "europe-north1").
       go-runtime:
         type: string
-        default: "docker"
+        default: 'docker'
         description: Run mage go related tasks in "docker" (default) or local
     outputs:
       oci-images:
         value: ${{ jobs.mage.outputs.oci-images }}
         description: OCI image references.
+      oci-image-pushed:
+        value: ${{ jobs.mage.outputs.oci-image-pushed }}
+        description: Whether an OCI image was pushed.
 jobs:
   mage:
     runs-on: ubuntu-24.04
@@ -38,6 +41,7 @@ jobs:
       packages: read
     outputs:
       oci-images: ${{ steps.oci-images.outputs.images }}
+      oci-image-pushed: ${{ steps.oci-images.outputs.oci-image-pushed }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -74,7 +78,7 @@ jobs:
           password: ${{ steps.gcp-auth.outputs.access_token }}
       - name: Safe Git Workspace
         run: git config --global --add safe.directory /app
-      - name: "Setup spacelift credentials"
+      - name: 'Setup spacelift credentials'
         run: |
           set -x
           mkdir -p $HOME/.terraform.d
@@ -95,11 +99,11 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-          cache-dependency-path: "**/go.sum"
+          cache-dependency-path: '**/go.sum'
       - name: Install go Tools
         run: go install tool
       - name: Build
-        run: "go tool mage -v build"
+        run: 'go tool mage -v build'
         env:
           OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
           PUSH_IMAGE: ${{ inputs.push-oci-image }}
@@ -110,8 +114,10 @@ jobs:
         run: |
           if [ -f ./var/oci-images.json ]; then
             echo "images=$(cat ./var/oci-images.json)" >> $GITHUB_OUTPUT
+            echo "oci-image-pushed=true" >> $GITHUB_OUTPUT
           else
             echo "images={}" >> $GITHUB_OUTPUT
+            echo "oci-image-pushed=false" >> $GITHUB_OUTPUT
           fi
       - name: Show output
         if: always()
