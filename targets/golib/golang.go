@@ -75,3 +75,9 @@ func (Go) DownloadModules(ctx context.Context) error {
 	mg.CtxDeps(ctx, golang.DownloadModules)
 	return nil
 }
+
+// FetchConfig writes the golangci-lint configuration file provided path relative
+// to root if it doesn't already exist.
+func (Go) FetchConfig(ctx context.Context, where string) error {
+	return golang.FetchGolangCIConfig(where)
+}
