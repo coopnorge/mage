@@ -145,8 +145,11 @@ func Changes(_ context.Context) error {
 }
 
 // FetchGolangCIConfig fetches and writes the golangci-lint configuration file
-// to the repository root if it doesn't already exist.
-// TODO(alf): parametrize so that the user can
+// to the specified directory relative to the repository root.
+// The config file will be named .golangci-lint.yaml.
+//
+// The where parameter specifies the directory path relative to the repository root.
+// Use "." or "" to write to the repository root directory.
 func FetchGolangCIConfig(where string) error {
 	// Get the repository root directory
 	repoRoot, err := utils.GetRepoRoot()
@@ -162,11 +165,9 @@ func FetchGolangCIConfig(where string) error {
 	}
 
 	log.Printf("Writing golangci-lint config to %s", filePath)
-	err = os.MkdirAll(dirs, 0777)
+	err = os.MkdirAll(dirs, 0755)
 	if err != nil {
-		fmt.Printf("unable to ensure all directories %s\n", dirs)
-		return err
+		return fmt.Errorf("unable to create directory %s: %w", dirs, err)
 	}
-
 	return os.WriteFile(filePath, []byte(golangCILintCfg), 0644)
 }
