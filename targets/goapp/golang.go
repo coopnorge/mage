@@ -260,3 +260,17 @@ func (Go) Changes(ctx context.Context) error {
 	mg.CtxDeps(ctx, golangTargets.Changes)
 	return nil
 }
+
+// FetchGolangCILintConfig (path: string) writes the golangci-lint configuration file provided path relative
+// to root if it doesn't already exist.
+func (Go) FetchGolangCILintConfig(_ context.Context, where string) error {
+	// Leaving context unusued, will be used when logging package exists.
+	return golangTargets.FetchGolangCIConfig(where)
+}
+
+// FetchConfigs (path: string) syncs all configuration files into [path].
+// Currently syncs GolangCiConfig to the specified path relative to the repository root.
+func (Go) FetchConfigs(_ context.Context, where string) error {
+	// Leaving context unused, will be used when logging package exists.
+	return golangTargets.FetchGolangCIConfig(where)
+}
