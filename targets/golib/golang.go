@@ -76,8 +76,9 @@ func (Go) DownloadModules(ctx context.Context) error {
 	return nil
 }
 
-// FetchConfig writes the golangci-lint configuration file provided path relative
+// FetchGolangCILintConfig writes the golangci-lint configuration file provided path relative
 // to root if it doesn't already exist.
-func (Go) FetchConfig(ctx context.Context, where string) error {
+func (Go) FetchGolangCILintConfig(_ context.Context, where string) error {
+	// Leaving context unused which will be when logging package exists
 	return golang.FetchGolangCIConfig(where)
 }

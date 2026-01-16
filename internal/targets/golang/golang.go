@@ -3,22 +3,13 @@ package golang
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
-	"log"
-	"os"
-	"path"
 
+	"github.com/coopnorge/mage/internal/devtool"
+	golangcilint "github.com/coopnorge/mage/internal/devtool/golangci-lint"
 	"github.com/coopnorge/mage/internal/golang"
-	"github.com/coopnorge/mage/internal/utils"
 	"github.com/magefile/mage/mg"
 )
-
-//go:embed golangci-lint.yml
-var golangCILintCfg string
-
-// golangciLintFile is the name of the configuration
-const golangciLintFile = ".golangci-lint.yaml"
 
 // Generate runs commands described by directives within existing files with
 // the intent to generate Go code. Those commands can run any process but the
@@ -80,7 +71,7 @@ func Lint(ctx context.Context) error {
 }
 
 func lint(_ context.Context, workingDirectory string) error {
-	return golang.Lint(workingDirectory, golangCILintCfg)
+	return golang.Lint(workingDirectory, golangcilint.Cfg())
 }
 
 // LintFix fixes found issues (if it's supported by the linters)
@@ -101,7 +92,7 @@ func LintFix(ctx context.Context) error {
 }
 
 func lintFix(_ context.Context, workingDirectory string) error {
-	return golang.LintFix(workingDirectory, golangCILintCfg)
+	return golang.LintFix(workingDirectory, golangcilint.Cfg())
 }
 
 // DownloadModules downloads Go modules locally
@@ -151,23 +142,5 @@ func Changes(_ context.Context) error {
 // The where parameter specifies the directory path relative to the repository root.
 // Use "." or "" to write to the repository root directory.
 func FetchGolangCIConfig(where string) error {
-	// Get the repository root directory
-	repoRoot, err := utils.GetRepoRoot()
-	if err != nil {
-		return fmt.Errorf("failed to get repository root: %w", err)
-	}
-
-	dirs := path.Join(repoRoot, where)
-	filePath := path.Join(dirs, golangciLintFile)
-	if utils.FileExists(filePath) {
-		log.Printf("Config file already exists at %s", filePath)
-		return nil
-	}
-
-	log.Printf("Writing golangci-lint config to %s", filePath)
-	err = os.MkdirAll(dirs, 0755)
-	if err != nil {
-		return fmt.Errorf("unable to create directory %s: %w", dirs, err)
-	}
-	return os.WriteFile(filePath, []byte(golangCILintCfg), 0644)
+	return devtool.FetchGolangCILintConfig(where)
 }
