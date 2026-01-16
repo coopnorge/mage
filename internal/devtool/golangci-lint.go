@@ -156,30 +156,30 @@ func FetchGolangCILintConfig(where string) error {
 	// Get the repository root directory
 	repoRoot, err := core.GetRepoRoot()
 	if err != nil {
-		return fmt.Errorf("failed to get repository root: %w", err)
+		return fmt.Errorf("failed to get repository root: %w\n", err)
 	}
 
 	dirs := path.Join(repoRoot, where)
 	filePath := path.Join(dirs, golangciLintFile)
 	if core.FileExists(filePath) {
-		log.Printf("Config file already exists at %s", filePath)
+		log.Printf("Config file already exists at %s\n", filePath)
 		b, err := os.ReadFile(filePath)
 		if err != nil {
 			return err
 		}
 
 		if bytes.Equal([]byte(golangCILintCfg), b) {
-			log.Println("golangci-lint config exists and it's the latest")
+			fmt.Println("golangci-lint config exists and it's the latest")
 			return nil
 		}
 
 		// file exists but it's different. Refresh.
 	}
 
-	log.Printf("Writing golangci-lint config to %s", filePath)
+	fmt.Printf("Writing golangci-lint config to %s\n", filePath)
 	err = os.MkdirAll(dirs, 0755)
 	if err != nil {
-		return fmt.Errorf("unable to create directory %s: %w", dirs, err)
+		return fmt.Errorf("unable to create directory %s: %w\n", dirs, err)
 	}
 	return os.WriteFile(filePath, []byte(golangCILintCfg), 0644)
 }

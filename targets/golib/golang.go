@@ -82,3 +82,10 @@ func (Go) FetchGolangCILintConfig(_ context.Context, where string) error {
 	// Leaving context unused which will be when logging package exists
 	return golang.FetchGolangCIConfig(where)
 }
+
+// FetchConfigs syncs all configuration files into the repository.
+// Currently syncs GolangCiConfig to the specified path relative to the repository root.
+func (Go) FetchConfigs(_ context.Context, where string) error {
+	// Leaving context unused which will be when logging package exists
+	return golang.FetchGolangCIConfig(where)
+}
