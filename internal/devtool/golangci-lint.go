@@ -156,7 +156,7 @@ func FetchGolangCILintConfig(where string) error {
 	// Get the repository root directory
 	repoRoot, err := core.GetRepoRoot()
 	if err != nil {
-		return fmt.Errorf("failed to get repository root: %w\n", err)
+		return fmt.Errorf("failed to get repository root: %w", err)
 	}
 
 	dirs := path.Join(repoRoot, where)
@@ -179,7 +179,7 @@ func FetchGolangCILintConfig(where string) error {
 	fmt.Printf("Writing golangci-lint config to %s\n", filePath)
 	err = os.MkdirAll(dirs, 0755)
 	if err != nil {
-		return fmt.Errorf("unable to create directory %s: %w\n", dirs, err)
+		return fmt.Errorf("unable to create directory %s: %w", dirs, err)
 	}
 	return os.WriteFile(filePath, []byte(golangCILintCfg), 0644)
 }
