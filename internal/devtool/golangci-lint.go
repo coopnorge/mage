@@ -1,16 +1,23 @@
 package devtool
 
 import (
+	"bytes"
 	"fmt"
+	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
+	golangcilint "github.com/coopnorge/mage/internal/devtool/golangci-lint"
 	"github.com/hashicorp/go-version"
 	"github.com/magefile/mage/sh"
 )
+
+// golangciLintFile is the name of the configuration
+const golangciLintFile = ".golangci-lint.yaml"
 
 // GoLangCILint holds the devtool for golnagci lint
 type GoLangCILint struct{}
@@ -136,4 +143,43 @@ func (gl GoLangCILint) runInDocker(env map[string]string, workdir string, args .
 		return err
 	}
 	return err
+}
+
+// FetchGolangCILintConfig fetches and writes the golangci-lint configuration file
+// to the specified directory relative to the repository root.
+// The config file will be named .golangci-lint.yaml.
+//
+// The where parameter specifies the directory path relative to the repository root.
+// Use "." or "" to write to the repository root directory.
+func FetchGolangCILintConfig(where string) error {
+	golangCILintCfg := golangcilint.Cfg()
+	// Get the repository root directory
+	repoRoot, err := core.GetRepoRoot()
+	if err != nil {
+		return fmt.Errorf("failed to get repository root: %w", err)
+	}
+
+	dirs := path.Join(repoRoot, where)
+	filePath := path.Join(dirs, golangciLintFile)
+	if core.FileExists(filePath) {
+		log.Printf("Config file already exists at %s\n", filePath)
+		b, err := os.ReadFile(filePath)
+		if err != nil {
+			return err
+		}
+
+		if bytes.Equal([]byte(golangCILintCfg), b) {
+			fmt.Println("golangci-lint config exists and it's the latest")
+			return nil
+		}
+
+		// file exists but it's different. Refresh.
+	}
+
+	fmt.Printf("Writing golangci-lint config to %s\n", filePath)
+	err = os.MkdirAll(dirs, 0755)
+	if err != nil {
+		return fmt.Errorf("unable to create directory %s: %w", dirs, err)
+	}
+	return os.WriteFile(filePath, []byte(golangCILintCfg), 0644)
 }
