@@ -87,11 +87,7 @@ jobs:
           install-only: true
       - name: Install go Tools
         run: go install tool
-        # check if the download devtool command exist and then run it.
-      - name: Check if coop mage has download devtool command
-        id: has-downloaddevtools
-        run: echo "outcome=$(go tool mage -l | grep go:downloadDevTools | wc -l)" >> $GITHUB_OUTPUT
-      - name: Check if coop mage has separeate build commands
+      - name: Check if coop mage has separate build commands
         id: has-multiple-cmds
         run: echo "outcome=$(go tool mage -l | grep go:buildBinaries | wc -l)" >> $GITHUB_OUTPUT
         # this block requires coopnorge/mage > v0.10.0
