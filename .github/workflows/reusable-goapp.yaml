@@ -27,12 +27,71 @@ on:
         description: Run mage go related tasks in "docker" (default) or local
     outputs:
       oci-images:
-        value: ${{ jobs.goapp.outputs.oci-images }}
+        value: ${{ jobs.go-build.outputs.oci-images }}
         description: OCI image references.
 
 jobs:
-  goapp:
-    name: Go application CI
+  go-lint:
+    name: Go Lint
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Configure access to internal and private GitHub repos
+        run: git config --global url."https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: "**/go.sum"
+      - name: Setup Golangci Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          install-only: true
+      - name: Install go Tools
+        run: go install tool
+      - name: Check if coop mage has separeate build commands
+        id: has-multiple-cmds
+        run: echo "outcome=$(go tool mage -l | grep go:buildBinaries | wc -l)" >> $GITHUB_OUTPUT
+      - name: Run Go Lint
+        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
+        run: "go tool mage -v go:lint"
+        env:
+          GO_RUNTIME: ${{ inputs.go-runtime }}
+
+  go-test:
+    name: Go Test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Configure access to internal and private GitHub repos
+        run: git config --global url."https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: "**/go.sum"
+      - name: Install go Tools
+        run: go install tool
+      - name: Check if coop mage has separate build commands
+        id: has-multiple-cmds
+        run: echo "outcome=$(go tool mage -l | grep go:buildBinaries | wc -l)" >> $GITHUB_OUTPUT
+      - name: Run Go Test
+        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
+        run: "go tool mage -v go:test"
+        env:
+          GO_RUNTIME: ${{ inputs.go-runtime }}
+
+  go-build:
+    name: Go build
+    needs:
+      - go-lint
+      - go-test
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -55,7 +114,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Configure access to internal and private GitHub repos
         run: git config --global url."https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
-      - name: Autenticate with GCP
+      - name: Authenticate with GCP
         id: gcp-auth
         if: ${{ inputs.push-oci-image }}
         uses: google-github-actions/auth@v3
@@ -81,10 +140,6 @@ jobs:
         with:
           go-version-file: go.mod
           cache-dependency-path: "**/go.sum"
-      - name: Setup Golangci Lint
-        uses: golangci/golangci-lint-action@v9
-        with:
-          install-only: true
       - name: Install go Tools
         run: go install tool
       - name: Check if coop mage has separate build commands
@@ -94,12 +149,6 @@ jobs:
       - name: Download Go modules
         if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
         run: "go tool mage -v go:downloadModules"
-      - name: Run Go Lint
-        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
-        run: "go tool mage -v go:lint"
-      - name: Run Go Test
-        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
-        run: "go tool mage -v go:test"
       - name: Run Go Build
         if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
         run: "go tool mage -v go:buildBinaries"
@@ -110,7 +159,7 @@ jobs:
           OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
           PUSH_IMAGE: ${{ inputs.push-oci-image }}
           GO_RUNTIME: ${{ inputs.go-runtime }}
-        # this block is uses when <= v0.10.0
+      # this block is uses when <= v0.10.0
       - name: Build Go and Docker Images
         if: ${{ steps.has-multiple-cmds.outputs.outcome == '0' }}
         run: "go tool mage -v docker:buildAndPush"
