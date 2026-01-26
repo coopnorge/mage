@@ -94,12 +94,9 @@ jobs:
       - name: Download Go modules
         if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
         run: "go tool mage -v go:downloadModules"
-      - name: Run Go Lint
+      - name: Run Go Validate
         if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
-        run: "go tool mage -v go:lint"
-      - name: Run Go Test
-        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
-        run: "go tool mage -v go:test"
+        run: "go tool mage -v go:validate"
       - name: Run Go Build
         if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
         run: "go tool mage -v go:buildBinaries"
