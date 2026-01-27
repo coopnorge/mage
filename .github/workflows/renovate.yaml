@@ -39,7 +39,7 @@ jobs:
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.event.repository.name }}
       - name: Run Renovate
-        uses: renovatebot/github-action@8cb0d4a6ab7d8bb90460a005f7bd33b80dd07ca8 # pin@v44.2.5
+        uses: renovatebot/github-action@eaf12548c13069dcc28bb75c4ee4610cdbe400c5 # pin@v44.2.6
         env:
           # Repository taken from variable to keep configuration file generic
           RENOVATE_REPOSITORIES: ${{ github.repository }}
