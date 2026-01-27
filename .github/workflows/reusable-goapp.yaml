@@ -61,8 +61,37 @@ jobs:
         env:
           GO_RUNTIME: ${{ inputs.go-runtime }}
 
+  go-test:
+    name: Go Test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Configure access to internal and private GitHub repos
+        run: git config --global url."https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: "**/go.sum"
+      - name: Install go Tools
+        run: go install tool
+      - name: Check if coop mage has separate build commands
+        id: has-multiple-cmds
+        run: echo "outcome=$(go tool mage -l | grep go:buildBinaries | wc -l)" >> $GITHUB_OUTPUT
+      - name: Run Go Test
+        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
+        run: "go tool mage -v go:test"
+        env:
+          GO_RUNTIME: ${{ inputs.go-runtime }}
+
   go-build:
     name: Go build
+    needs:
+      - go-lint
+      - go-test
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -116,11 +145,6 @@ jobs:
       - name: Check if coop mage has separate build commands
         id: has-multiple-cmds
         run: echo "outcome=$(go tool mage -l | grep go:buildBinaries | wc -l)" >> $GITHUB_OUTPUT
-      - name: Run Go Test
-        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
-        run: "go tool mage -v go:test"
-        env:
-          GO_RUNTIME: ${{ inputs.go-runtime }}
         # this block requires coopnorge/mage > v0.10.0
       - name: Download Go modules
         if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
