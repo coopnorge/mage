@@ -33,7 +33,7 @@ tool github.com/magefile/mage
 
 ### Go app
 
-Ensure the following project structure is used. See
+Use the following project structure. See
 [helloworld repo](https://github.com/coopnorge/helloworld) for reference and
 [Organizing a Go module: Multiple commands](https://go.dev/doc/modules/layout#multiple-commands)
 for more information on the topic.
@@ -69,7 +69,7 @@ import (
 )
 ```
 
-#### Targets for Go apps
+#### Targets for go apps
 
 - [ ] Go run
 - [x] Go build
@@ -96,7 +96,7 @@ import (
 )
 ```
 
-#### Targets for Go modules
+#### Targets for go modules
 
 - [x] Go tests
 - [x] Go linting
@@ -119,7 +119,7 @@ go tool mage <target>
 go tool mage -l
 ```
 
-## Build Go binaries
+## Build go binaries
 
 Builds binaries for all commands in the `cmd` directory.
 
@@ -127,7 +127,7 @@ Builds binaries for all commands in the `cmd` directory.
 go tool mage go:build
 ```
 
-## Run in GitHub Actions
+## Run in GitHub actions
 
 Add this job to your GitHub actions workflow
 
@@ -151,7 +151,7 @@ go-app:
     tag-based-diff: true
 ```
 
-If you did not create a system through inventory you have to hard-code the
+If you didn't create a system through inventory you have to hard-code the
 inputs.
 
 ```yaml
@@ -175,8 +175,8 @@ mage:
 
 ## Updating OCI tags after build
 
-You can use renovate to create pr's that update your infrastrucutre. You need a
-renovate config. Save this in `.github/renovate.json5`
+You can use renovate to create pull requests that update your infrastructure.
+You need a renovate config. Save this in `.github/renovate.json5`
 
 ```json5
 {
@@ -226,8 +226,8 @@ renovate config. Save this in `.github/renovate.json5`
 
 > This renovate config is also valid for updating your helm chart dependencies.
 
-For now you also need a github action job for running renovate. In the future
-this might be handeled by a actual renovate server.
+For now, you also need a GitHub action job for running renovate. In the future
+this might be handled by an actual renovate server.
 
 Save this to `.github/workflows/renovate.yaml`
 
@@ -309,7 +309,7 @@ jobs:
 - During build the command `git status --porcelain` returns the error message
   `fatal: detected dubious ownership in repository at '/src'`
 
-  Solution: Add this lines to `.gitconfig`
+  Solution: add these lines to `.gitconfig`
 
 ```shell
   [safe]
