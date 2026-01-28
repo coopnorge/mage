@@ -19,10 +19,6 @@ linters:
     generated: lax
     rules:
       - linters:
-          - errcheck
-        path: _test[.]go
-        text: Error return value of.* is not checked
-      - linters:
           - gosec
         path: _test[.]go
         text: Potential file inclusion via variable
