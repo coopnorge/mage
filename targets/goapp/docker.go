@@ -145,6 +145,10 @@ func buildAndPush(_ context.Context, app, binary string, shouldPush bool) error 
 }
 
 func writeImageMetadata() error {
+	err := os.MkdirAll(core.OutputDir, 0755)
+	if err != nil {
+		return err
+	}
 	images, err := docker.Images(core.OutputDir)
 	if err != nil {
 		return err
