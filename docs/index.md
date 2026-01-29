@@ -175,96 +175,59 @@ mage:
 
 ## Updating OCI tags after build
 
-You can use renovate to create pr's that update your infrastrucutre. You need a
-renovate config. Save this in `.github/renovate.json5`
+You can use renovate to create pull request that update your infrastructure. You
+need a renovate config. Save this in `.github/renovate.json5`
 
 ```json5
 {
-  "baseBranchPatterns": [
-    "main"
-  ],
-  "rebaseWhen": "behind-base-branch",
-  "labels": [
-    "dependencies",
-    "renovate",
-    "{{depName}}"
-  ],
-  "automergeStrategy": "squash",
-  "enabledManagers": [
-    "helmv3",
-    "helm-values"
-  ],
-  "packageRules": [
+  baseBranchPatterns: ["main"],
+  rebaseWhen: "behind-base-branch",
+  labels: ["dependencies", "renovate", "{{depName}}"],
+  automergeStrategy: "squash",
+  enabledManagers: ["helmv3", "helm-values"],
+  packageRules: [
     {
-      "matchDatasources": [
-        "helm"
-      ],
-      "automerge": true
+      matchDatasources: ["helm"],
+      automerge: true,
     },
     {
-      "branchPrefix": "helm/dev/",
-      "matchManagers": [
-        "helm-values"
-      ],
-      "matchDatasources": [
-        "docker"
-      ],
-      "automerge": true,
-      "matchFileNames": [
-        "/(^|/)values-dev.yaml$/"
-      ],
-      "addLabels": [
-        "development"
-      ],
-      "prHourlyLimit": 0
+      branchPrefix: "helm/dev/",
+      matchManagers: ["helm-values"],
+      matchDatasources: ["docker"],
+      automerge: true,
+      matchFileNames: ["/(^|/)values-dev.yaml$/"],
+      addLabels: ["development"],
+      prHourlyLimit: 0,
     },
     {
-      "branchPrefix": "helm/staging/",
-      "matchManagers": [
-        "helm-values"
-      ],
-      "matchDatasources": [
-        "docker"
-      ],
-      "automerge": true,
-      "matchFileNames": [
-        "/(^|/)values-staging.yaml$/"
-      ],
-      "addLabels": [
-        "staging"
-      ],
-      "prHourlyLimit": 0
+      branchPrefix: "helm/staging/",
+      matchManagers: ["helm-values"],
+      matchDatasources: ["docker"],
+      automerge: true,
+      matchFileNames: ["/(^|/)values-staging.yaml$/"],
+      addLabels: ["staging"],
+      prHourlyLimit: 0,
     },
     {
-      "branchPrefix": "helm/production/",
-      "matchManagers": [
-        "helm-values"
-      ],
-      "matchDatasources": [
-        "docker"
-      ],
-      "automerge": true,
-      "matchFileNames": [
-        "/(^|/)values-production.yaml$/"
-      ],
-      "addLabels": [
-        "production"
-      ],
-      "prHourlyLimit": 0
-    }
+      branchPrefix: "helm/production/",
+      matchManagers: ["helm-values"],
+      matchDatasources: ["docker"],
+      automerge: true,
+      matchFileNames: ["/(^|/)values-production.yaml$/"],
+      addLabels: ["production"],
+      prHourlyLimit: 0,
+    },
   ],
   "helm-values": {
-    "managerFilePatterns": [
-      "/(^|/)values(-\\w+)?\\.ya?ml$/"
-    ]
-  }
+    managerFilePatterns: ["/(^|/)values(-\\w+)?\\.ya?ml$/"],
+  },
 }
 ```
 
 > This renovate config is also valid for updating your helm chart dependencies.
 
-For now you also need a github action job for running renovate. In the future
-this might be handeled by a actual renovate server.
+For now you also need a GitHub action job for running renovate. In the future
+this might be done by a actual renovate server.
 
 Save this to `.github/workflows/renovate.yaml`
 
@@ -313,7 +276,8 @@ jobs:
         id: gcp-auth
         uses: google-github-actions/auth@v3
         with:
-          workload-identity-provider: ${{ vars.PALLET_WORKLOAD_IDENTITY_PROVIDER }}
+          workload-identity-provider:
+            ${{ vars.PALLET_WORKLOAD_IDENTITY_PROVIDER }}
           # or use hardcoded like: workload_identity_provider: projects/889992792607/locations/global/workloadIdentityPools/github-actions/providers/github-actions-provider
           service-account: ${{ vars.PALLET_SERVICE_ACCOUNT }}
           # or use hardcoded like: service_account: gh-ap-helloworld@helloworld-shared-0918.iam.gserviceaccount.com
@@ -325,10 +289,14 @@ jobs:
           RENOVATE_REPOSITORIES: ${{ github.repository }}
           RENOVATE_ONBOARDING: "false"
           RENOVATE_USERNAME: "coopnorge-renovate[bot]"
-          RENOVATE_GIT_AUTHOR: "coopnorge-renovate <121964725+coopnorge-renovate[bot]@users.noreply.github.com>"
+          RENOVATE_GIT_AUTHOR:
+            "coopnorge-renovate
+            <121964725+coopnorge-renovate[bot]@users.noreply.github.com>"
           RENOVATE_PLATFORM_COMMIT: "true"
           RENOVATE_FORCE: "true"
-          RENOVATE_HOST_RULES: '[{"matchHost":"europe-docker.pkg.dev","token":"${{ steps.gcp-auth.outputs.access_token }}"}]'
+          RENOVATE_HOST_RULES:
+            '[{"matchHost":"europe-docker.pkg.dev","token":"${{
+            steps.gcp-auth.outputs.access_token }}"}]'
           RENOVATE_PR_BODY_TEMPLATE: "{{{header}}}{{{table}}}{{{warnings}}}{{{notes}}}{{{changelogs}}}{{{configDescription}}}{{{controls}}}{{{footer}}}"
           LOG_LEVEL: ${{ inputs.logLevel || 'info' }}
         with:
