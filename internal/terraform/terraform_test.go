@@ -217,6 +217,10 @@ func TestCheckLock(t *testing.T) {
 			// Initialize git and track all files by default
 			err = sh.Run("git", "init")
 			require.NoError(t, err)
+			err = sh.Run("git", "config", "user.name", "Unit test")
+			require.NoError(t, err)
+			err = sh.Run("git", "config", "user.email", "unit-test@coop.no")
+			require.NoError(t, err)
 			err = sh.Run("git", "add", ".")
 			require.NoError(t, err)
 			for _, f := range tt.notTracked {
