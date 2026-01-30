@@ -8,16 +8,16 @@ import (
 
 	"github.com/magefile/mage/sh"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/devtool"
 )
 
-var (
-	//go:embed testdata/tools.Dockerfile
-	// TerraformToolsDockerfile the content of tools.Dockerfile
-	TerraformToolsDockerfile string
-)
+// TerraformToolsDockerfile is the content of tools.Dockerfile
+//
+//go:embed testdata/tools.Dockerfile
+var TerraformToolsDockerfile string
 
 func TestFindTerraformFolders(t *testing.T) {
 	tests := []struct {
@@ -62,8 +62,10 @@ func TestInitUpgradet(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dir, cleanup, _ := core.MkdirTemp()
-			_ = os.CopyFS(dir, os.DirFS(tt.workdir))
+			dir, cleanup, err := core.MkdirTemp()
+			require.NoError(t, err)
+			err = os.CopyFS(dir, os.DirFS(tt.workdir))
+			require.NoError(t, err)
 			t.Chdir(dir)
 			t.Cleanup(func() {
 				cleanup()
@@ -100,8 +102,10 @@ func TestLockProviders(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dir, cleanup, _ := core.MkdirTemp()
-			_ = os.CopyFS(dir, os.DirFS(tt.workdir))
+			dir, cleanup, err := core.MkdirTemp()
+			require.NoError(t, err)
+			err = os.CopyFS(dir, os.DirFS(tt.workdir))
+			require.NoError(t, err)
 			t.Chdir(dir)
 			t.Cleanup(func() {
 				cleanup()
@@ -194,16 +198,16 @@ func TestCheckLock(t *testing.T) {
 			}
 
 			projectBase := filepath.Join(tempDir, "workspace", "project")
-			if err := os.MkdirAll(projectBase, 0755); err != nil {
+			if err := os.MkdirAll(projectBase, 0o755); err != nil {
 				t.Fatalf("Failed to create project base: %v", err)
 			}
 
 			for p, content := range tt.files {
 				fullPath := filepath.Join(projectBase, p)
-				if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
+				if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
 					t.Fatalf("Failed to create directory for file %s: %v", p, err)
 				}
-				if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+				if err := os.WriteFile(fullPath, []byte(content), 0o644); err != nil {
 					t.Fatalf("Failed to write file %s: %v", p, err)
 				}
 			}
@@ -211,12 +215,16 @@ func TestCheckLock(t *testing.T) {
 			t.Chdir(projectBase)
 
 			// Initialize git and track all files by default
-			sh.Run("git", "init")
-			sh.Run("git", "add", ".")
+			err = sh.Run("git", "init")
+			require.NoError(t, err)
+			err = sh.Run("git", "add", ".")
+			require.NoError(t, err)
 			for _, f := range tt.notTracked {
-				sh.Run("git", "rm", "--cached", f)
+				err = sh.Run("git", "rm", "--cached", f)
+				require.NoError(t, err)
 			}
-			sh.Run("git", "commit", "-m", "initial commit")
+			err = sh.Run("git", "commit", "-m", "initial commit")
+			require.NoError(t, err)
 
 			testDir := projectBase
 			if tt.checkDir != "" {

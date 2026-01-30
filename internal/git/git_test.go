@@ -10,6 +10,7 @@ import (
 	"github.com/coopnorge/mage/internal/git"
 	"github.com/magefile/mage/sh"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNormalizeGitURL(t *testing.T) {
@@ -170,7 +171,8 @@ func TestGitDiff(t *testing.T) {
 	wd, err := os.Getwd()
 	env := map[string]string{"TD": filepath.Join(wd, "testdata/files")}
 	assert.NoError(t, err)
-	dir, cleanup, _ := core.MkdirTemp()
+	dir, cleanup, err := core.MkdirTemp()
+	require.NoError(t, err)
 	t.Chdir(dir)
 	t.Cleanup(cleanup)
 
@@ -181,7 +183,8 @@ func TestGitDiff(t *testing.T) {
 				assert.NoError(t, sh.RunWith(env, cmd[0], cmd[1:]...))
 			}
 			if tt.changedFilesEnv != "" {
-				os.Setenv("CHANGED_FILES", tt.changedFilesEnv)
+				err = os.Setenv("CHANGED_FILES", tt.changedFilesEnv)
+				require.NoError(t, err)
 			}
 			got, gotErr := git.DiffToMain()
 			if tt.wantErr {

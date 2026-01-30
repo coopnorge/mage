@@ -9,6 +9,7 @@ import (
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/magefile/mage/sh"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var goModTemplateString = `module dummy
@@ -176,32 +177,34 @@ func TestTargets(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// copy stuff to a temp dir to not leave any trace in the testdata
-			dir, cleanup, _ := core.MkdirTemp()
-			err := os.CopyFS(dir, os.DirFS(tt.testProject))
-			if err != nil {
-				panic(err)
-			}
+			dir, cleanup, err := core.MkdirTemp()
+			require.NoError(t, err)
+			err = os.CopyFS(dir, os.DirFS(tt.testProject))
+			require.NoError(t, err)
 			err = os.CopyFS(dir, os.DirFS("testdata/layout"))
-			if err != nil {
-				panic(err)
-			}
+			require.NoError(t, err)
 
 			t.Chdir(dir)
 
-			sh.Run("git", "init")
-			sh.Run("git", "config", "user.email", "test@example.com")
-			sh.Run("git", "config", "user.name", "Test User")
-			sh.Run("git", "add", ".")
-			sh.Run("git", "commit", "-m", "initial commit")
+			err = sh.Run("git", "init")
+			require.NoError(t, err)
+			err = sh.Run("git", "config", "user.email", "test@example.com")
+			require.NoError(t, err)
+			err = sh.Run("git", "config", "user.name", "Test User")
+			require.NoError(t, err)
+			err = sh.Run("git", "add", ".")
+			require.NoError(t, err)
+			err = sh.Run("git", "commit", "-m", "initial commit")
+			require.NoError(t, err)
 
 			goMod, err := os.Create("go.mod")
-			if err != nil {
-				panic(err)
-			}
-			goModTemplate.Execute(goMod, mageRoot)
+			require.NoError(t, err)
+			err = goModTemplate.Execute(goMod, mageRoot)
+			require.NoError(t, err)
 
 			t.Cleanup(func() {
-				goMod.Close()
+				err := goMod.Close()
+				require.NoError(t, err)
 				cleanup()
 			})
 			args := []string{"tool", "mage", "-v"}
