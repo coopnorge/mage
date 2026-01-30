@@ -1,7 +1,6 @@
 package policybot
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,6 +9,7 @@ import (
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/magefile/mage/sh"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var goModTemplateString = `module dummy
@@ -63,27 +63,23 @@ func TestPolicyBotTargets(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// create isolated temp project
-			dir, cleanup, _ := core.MkdirTemp()
-			err := os.CopyFS(dir, os.DirFS(tt.testProject))
-			if err != nil {
-				fmt.Printf("Error while copying %s", tt.testProject)
-				panic(err)
-			}
+			dir, cleanup, err := core.MkdirTemp()
+			require.NoError(t, err)
+			err = os.CopyFS(dir, os.DirFS(tt.testProject))
+			require.NoError(t, err)
 			err = os.CopyFS(dir, os.DirFS("testdata/layout"))
-			if err != nil {
-				panic(err)
-			}
+			require.NoError(t, err)
 
 			t.Chdir(dir)
 
 			goMod, err := os.Create("go.mod")
-			if err != nil {
-				panic(err)
-			}
-			goModTemplate.Execute(goMod, mageRoot)
+			require.NoError(t, err)
+			err = goModTemplate.Execute(goMod, mageRoot)
+			require.NoError(t, err)
 
 			t.Cleanup(func() {
-				goMod.Close()
+				err = goMod.Close()
+				require.NoError(t, err)
 				cleanup()
 			})
 
