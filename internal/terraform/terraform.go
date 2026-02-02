@@ -56,7 +56,7 @@ func FindTerraformProjects(base string) ([]string, error) {
 			return nil
 		}
 
-		directories = append(directories, workDir)
+		directories = append(directories, followSimlink(workDir))
 
 		return nil
 	})
@@ -64,6 +64,14 @@ func FindTerraformProjects(base string) ([]string, error) {
 		return nil, err
 	}
 	return directories, nil
+}
+
+func followSimlink(directory string) string {
+	safePath, err := filepath.EvalSymlinks(directory)
+	if err != nil {
+		panic(err)
+	}
+	return safePath
 }
 
 // HasChanges checks if the current branch has any terraform changes compared
