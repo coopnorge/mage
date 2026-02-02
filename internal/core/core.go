@@ -73,11 +73,16 @@ func WriteTempFile(directory, suffix, content string) (string, func(), error) {
 // the caller's responsibility to call the returned cleanup function when the
 // directory is no longer needed. If cleanup errors it will panic.
 func MkdirTemp() (string, func(), error) {
+	tmpRoot := ""
+	rootDir, found := os.LookupEnv("MAGE_TEMP_ROOT")
+	if found {
+		tmpRoot = rootDir
+	}
 	workDir, err := os.Getwd()
 	if err != nil {
 		return "", func() {}, err
 	}
-	path, err := os.MkdirTemp("", path.Base(workDir))
+	path, err := os.MkdirTemp(tmpRoot, path.Base(workDir))
 	if err != nil {
 		return "", func() {}, err
 	}
