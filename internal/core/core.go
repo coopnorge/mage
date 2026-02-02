@@ -81,14 +81,18 @@ func MkdirTemp() (string, func(), error) {
 	if err != nil {
 		return "", func() {}, err
 	}
+	safePath, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return "", func() {}, err
+	}
 	cleanup := func() {
-		err := os.RemoveAll(path)
+		err := os.RemoveAll(safePath)
 		// Dont panic in CI. GHA  has some issues with deleting
 		if err != nil && os.Getenv("CI") != "true" {
 			panic(err)
 		}
 	}
-	return path, cleanup, nil
+	return safePath, cleanup, nil
 }
 
 // IsDotDirectory checks if the supplied direcory is starts with a dot.
