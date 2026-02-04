@@ -173,3 +173,17 @@ func GetRepoRoot() (string, error) {
 	}
 	return cwd, nil
 }
+
+// GetAbsWorkDir accepts a directory as string and joins it with the current workdir
+// directory to return a absolute directory. If the supplied directory is
+// already absolute it will just return the input.
+func GetAbsWorkDir(workdir string) string {
+	if filepath.IsAbs(workdir) {
+		return workdir
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	return filepath.Join(cwd, workdir)
+}
