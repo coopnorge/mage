@@ -69,24 +69,10 @@ func (gl GoLangCILint) versionOK() error {
 }
 
 func (gl GoLangCILint) runNative(env map[string]string, workdir string, args ...string) error {
-	originalDir, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	if os.Chdir(workdir) != nil {
-		return err
-	}
-	defer func() {
-		err = os.Chdir(originalDir)
-	}()
-	if err != nil {
-		return fmt.Errorf("failed to return to original dir: %s, error: %s", originalDir, err)
-	}
-
 	if core.Verbose() {
-		return sh.RunWith(env, "golangci-lint", args...)
+		return core.RunAtWith(env, core.GetAbsWorkDir(workdir), "golangci-lint", args...)
 	}
-	out, err := sh.OutputWith(env, "golangci-lint", args...)
+	out, err := core.OutputAtWith(env, core.GetAbsWorkDir(workdir), "golangci-lint", args...)
 	if err != nil {
 		fmt.Println(out)
 		return err
@@ -177,9 +163,9 @@ func FetchGolangCILintConfig(where string) error {
 	}
 
 	fmt.Printf("Writing golangci-lint config to %s\n", filePath)
-	err = os.MkdirAll(dirs, 0755)
+	err = os.MkdirAll(dirs, 0o755)
 	if err != nil {
 		return fmt.Errorf("unable to create directory %s: %w", dirs, err)
 	}
-	return os.WriteFile(filePath, []byte(golangCILintCfg), 0644)
+	return os.WriteFile(filePath, []byte(golangCILintCfg), 0o644)
 }

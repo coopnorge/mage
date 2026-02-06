@@ -63,20 +63,6 @@ func (tfdocs TerraformDocs) versionOK() error {
 }
 
 func (tfdocs TerraformDocs) runNative(env map[string]string, workdir string, args ...string) error {
-	originalDir, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	if os.Chdir(workdir) != nil {
-		return err
-	}
-	defer func() {
-		err = os.Chdir(originalDir)
-	}()
-	if err != nil {
-		return fmt.Errorf("failed to return to original dir: %s, error: %s", originalDir, err)
-	}
-
 	if env == nil {
 		env = map[string]string{}
 	}
@@ -85,9 +71,9 @@ func (tfdocs TerraformDocs) runNative(env map[string]string, workdir string, arg
 	// env["TF_PLUGIN_CACHE_DIR"] = "$HOME/.tfdocs.d/plugin-cache"
 
 	if core.Verbose() {
-		return sh.RunWith(env, "terraform-docs", args...)
+		return core.RunAtWith(env, core.GetAbsWorkDir(workdir), "terraform-docs", args...)
 	}
-	out, err := sh.OutputWith(env, "terraform-docs", args...)
+	out, err := core.OutputAtWith(env, core.GetAbsWorkDir(workdir), "terraform-docs", args...)
 	if err != nil {
 		fmt.Println(out)
 		return err
