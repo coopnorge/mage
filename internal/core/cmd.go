@@ -1,5 +1,12 @@
 package core
 
+// Copyright 2026 Coop Norge SA
+// Copyright 2017 Nate Finch (Original Mage Authors)
+//
+// Licensed under the Apache License, Version 2.0;
+// this file contains modifications from the original source.
+// Original source: https://github.com/magefile/mage/blob/master/sh/cmd.go
+
 import (
 	"bytes"
 	"fmt"
