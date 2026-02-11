@@ -56,8 +56,8 @@ func (gl GoLangCILint) versionOK() error {
 	if err != nil {
 		return err
 	}
-	// set constraint that minor minus 2 version should be minimum
-	constraintString := fmt.Sprintf(">= %s.%s", strconv.Itoa(devtool.Segments()[0]), strconv.Itoa(devtool.Segments()[1]-2))
+	// set constraint that minor version should be minimum
+	constraintString := fmt.Sprintf(">= %s.%s", strconv.Itoa(devtool.Segments()[0]), strconv.Itoa(devtool.Segments()[1]))
 	constraint, err := version.NewConstraint(constraintString)
 	if err != nil {
 		return err
