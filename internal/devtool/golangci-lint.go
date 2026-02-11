@@ -25,13 +25,13 @@ type GoLangCILint struct{}
 // Run runs the Go devtool
 func (gl GoLangCILint) Run(env map[string]string, workdir string, args ...string) error {
 	if !isCommandAvailable("golangci-lint") {
-		fmt.Println("Golangci-lint binary not found. Use 'brew install golangci-lint' to install. Falling back to running the docker version")
+		fmt.Println("golangci-lint binary not found. Use 'brew install golangci-lint' to install. Falling back to running the docker version")
 		return gl.runInDocker(env, workdir, args...)
 	}
 
 	err := gl.versionOK()
 	if err != nil {
-		fmt.Printf("Golangci-lint does not meet version constraints. Falling back to docker verion\n error: %s\n", err)
+		fmt.Printf("golangci-lint does not meet version constraints. Falling back to docker version\n error: %s\n", err)
 		return gl.runInDocker(env, workdir, args...)
 	}
 
@@ -63,7 +63,7 @@ func (gl GoLangCILint) versionOK() error {
 		return err
 	}
 	if !constraint.Check(current) {
-		return fmt.Errorf("version found %s does not match constrant %s", current.Original(), constraint.String())
+		return fmt.Errorf("version found %s does not match constraint %s", current.Original(), constraint.String())
 	}
 	return nil
 }

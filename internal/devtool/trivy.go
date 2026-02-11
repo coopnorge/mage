@@ -24,7 +24,7 @@ func (trivy Trivy) Run(env map[string]string, workdir string, args ...string) er
 
 	err := trivy.versionOK()
 	if err != nil {
-		fmt.Printf("trivy does not meet version constraints. Falling back to docker verion\n error: %s\n", err)
+		fmt.Printf("trivy does not meet version constraints. Falling back to docker version\n error: %s\n", err)
 		return trivy.runInDocker(env, workdir, args...)
 	}
 
@@ -57,7 +57,7 @@ func (trivy Trivy) versionOK() error {
 		return err
 	}
 	if !constraint.Check(current) {
-		return fmt.Errorf("version found %s does not match constrant %s", current.Original(), constraint.String())
+		return fmt.Errorf("version found %s does not match constraint %s", current.Original(), constraint.String())
 	}
 	return nil
 }
