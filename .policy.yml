@@ -3,16 +3,17 @@
 policy:
   approval:
     - or:
-        - Dependabot update
+        - Dependabot or renovate update
         - Code change
 
 approval_rules:
-  # This rule matches when a pr is created by dependabot
-  - name: Dependabot update
+  # This rule matches when a pr is created by dependabot or renovate
+  - name: Dependabot or renovate update
     if:
       only_has_contributors_in:
         users:
           - "dependabot[bot]"
+          - "renovate-coop-norge[bot]"
       only_changed_files:
         paths:
           - "^.*Dockerfile$"
