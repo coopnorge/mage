@@ -33,3 +33,7 @@ jobs:
       issues: write
     uses: coopnorge/github-workflow-renovate/.github/workflows/renovate.yaml@v0
     secrets: inherit
+    with:
+      # Copy go.sum to all the paths where it exists
+      post-upgrade-command: |
+        bash -c ./.github/renovate-post-upgrade.sh
