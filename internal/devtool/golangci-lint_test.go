@@ -81,6 +81,22 @@ func TestGolangCILintVersionIsSameMajorAndMinor(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "same major and minor, patch significantly higher",
+			args: args{
+				devtoolVer: "1.55.0",
+				currentVer: "1.55.20",
+			},
+			wantErr: false,
+		},
+		{
+			name: "same major and minor, patch significantly lower",
+			args: args{
+				devtoolVer: "1.55.20",
+				currentVer: "1.55.0",
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -96,7 +112,7 @@ func TestGolangCILintVersionIsSameMajorAndMinor(t *testing.T) {
 			if tt.wantErr {
 				require.Error(t, err, "expected error but got nil")
 			} else {
-				require.NoError(t, err, "go unexpected error")
+				require.NoError(t, err, "got unexpected error")
 			}
 		})
 	}
