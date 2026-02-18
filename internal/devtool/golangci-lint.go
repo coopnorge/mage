@@ -7,7 +7,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
@@ -56,8 +55,14 @@ func (gl GoLangCILint) versionOK() error {
 	if err != nil {
 		return err
 	}
-	// set constraint that minor version should be minimum
-	constraintString := fmt.Sprintf(">= %s.%s", strconv.Itoa(devtool.Segments()[0]), strconv.Itoa(devtool.Segments()[1]))
+	return gl.versionIsSameMajorAndMinor(devtool, current)
+}
+
+func (gl GoLangCILint) versionIsSameMajorAndMinor(devtool *version.Version, current *version.Version) error {
+	// set constraint that Major and Minor versions should be exact. Patch version can differ, as it should not contain breaking changes.
+	// golangci-lint often changes linting rules in minor versions, so we want to ensure that we run with the expected minor version installed to avoid unexpected linting issues.
+	// We use ~> Major.Minor.0 to allow any patch version within the same minor version.
+	constraintString := fmt.Sprintf("~> %d.%d.0", devtool.Segments()[0], devtool.Segments()[1])
 	constraint, err := version.NewConstraint(constraintString)
 	if err != nil {
 		return err
