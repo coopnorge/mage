@@ -31,4 +31,8 @@
             "allowedVersions": "< 1.6.0"
         },
     ],
+    "ignorePaths": [
+        "internal/terraform/testdata/**",
+        "internal/targets/terraform/testdata/**",
+    ]
 }
