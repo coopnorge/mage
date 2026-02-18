@@ -36,4 +36,4 @@ jobs:
     with:
       # Copy go.sum to all the paths where it exists
       post-upgrade-command: |
-        bash -c ./.github/renovate-post-upgrade.sh
+        bash .github/renovate-post-upgrade.sh
