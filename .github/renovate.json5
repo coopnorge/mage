@@ -1,10 +1,16 @@
 {
-    "baseBranchPatterns": ["main"],
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": [
+        "config:recommended",
+    ],
     "rebaseWhen": "conflicted",
     "labels": ["dependencies", "renovate"],
     "automerge": true,
     "automergeStrategy": "squash",
-    "enabledManagers": ["tflint-plugin", "custom.regex"],
+    "postUpdateOptions": [
+        "gomodTidy",
+        "gomodUpdateImportPaths",
+    ],
     "customManagers": [
         // backstage entity validator version in Dockerfile
         {
