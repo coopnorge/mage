@@ -23,5 +23,12 @@
             "depNameTemplate": "@roadiehq/backstage-entity-validator",
             "versioningTemplate": "semver",
         }
-    ]
+    ],
+    "packageRules": [
+        {
+            "matchPackageNames": ["docker.io/hashicorp/terraform"],
+            "matchManagers": ["dockerfile", "docker-compose"],
+            "allowedVersions": "< 1.6.0"
+        },
+    ],
 }
