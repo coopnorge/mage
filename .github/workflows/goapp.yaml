@@ -33,6 +33,13 @@ on:
         type: string
         default: ""
         description: A comma separated list of Globs which triggers terraform ci
+      tag-based-diff:
+        type: boolean
+        default: false
+        description: |
+          When set to true use git tags to calucate when certain build steps are required. When
+          set to false, the github event data will be used. This event might get lost when runs are
+          canceled etc.
     outputs:
       oci-images:
         value: ${{ jobs.goapp.outputs.oci-images }}
@@ -71,12 +78,21 @@ jobs:
       - name: List changes
         id: list
         run: go tool mage git:listChanges
-      - name: Check for Go changes
+      - name: Check for Go changes (pr event based)
         id: go
-        run: echo "golang=$(go tool mage go:changes)" >> $GITHUB_OUTPUT
+        run: |
+          if [[ "$TAG_BASED" == "true" ]]  ; then
+            echo "Running with tag based diff"
+            echo "golang=$(go tool mage go:changes)" >> $GITHUB_OUTPUT
+          else
+            echo "Running with pr event based diff"
+            export CHANGED_FILES="$CHANGES"
+            echo "golang=$(go tool mage go:changes)" >> $GITHUB_OUTPUT
+          fi
         env:
           ADDITIONAL_GLOBS_GO: ${{ inputs.additional-globs-go }}
-          CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
+          CHANGES: ${{ steps.filter.outputs.changed_files }}
+          TAG_BASED: ${{ inputs.tag-based-diff }}
       - name: Check for Terraform changes
         id: terraform
         run: echo "terraform=$(go tool mage terraform:changes)" >> $GITHUB_OUTPUT
@@ -105,7 +121,7 @@ jobs:
     if: ${{  needs.detect-changes.outputs.golang == 'true'  }}
     uses: ./.github/workflows/reusable-goapp.yaml
     permissions:
-      contents: read
+      contents: write
       id-token: write
       packages: read
     secrets: inherit
