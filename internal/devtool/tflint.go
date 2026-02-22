@@ -17,6 +17,11 @@ type TFLint struct{}
 
 // Run runs the tflint devtool
 func (tfl TFLint) Run(env map[string]string, workdir string, args ...string) error {
+	forceDocker, found := os.LookupEnv("TFLINT_DOCKER")
+	if found && forceDocker == "1" {
+		fmt.Println("forcing running tflint in docker because TFLINT_DOCKER=1")
+		return tfl.runInDocker(env, workdir, args...)
+	}
 	if !isCommandAvailable("tflint") {
 		fmt.Println("tflint binary not found. Falling back to running the docker version")
 		return tfl.runInDocker(env, workdir, args...)
@@ -87,7 +92,7 @@ func (tfl TFLint) runInDocker(env map[string]string, workdir string, args ...str
 		return err
 	}
 
-	path, err := os.Getwd()
+	path, err := core.GetRepoRoot()
 	if err != nil {
 		return err
 	}
