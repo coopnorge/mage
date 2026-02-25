@@ -1,4 +1,4 @@
-FROM node:24-slim@sha256:a81a03dd965b4052269a57fac857004022b522a4bf06e7a739e25e18bce45af2 AS backstage-entity-validator
+FROM node:24-slim@sha256:61bf992754b4ab288d41cb92c25392195d0035871b4723a0abd30a49dcba356c AS backstage-entity-validator
 
 ARG BACKSTAGE_ENTITY_VALIDATOR_VERSION
 
