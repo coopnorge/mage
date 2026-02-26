@@ -173,3 +173,42 @@ func GetRepoRoot() (string, error) {
 	}
 	return cwd, nil
 }
+
+// ListRescursiveFiles recursively finds all files in the root directory that match the given pattern.
+func ListRescursiveFiles(root, pattern string) ([]string, error) {
+	var matches []string
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			// If an error occurs (e.g., permission denied on a directory),
+			// the function can decide how to handle it. Returning nil skips the error
+			// for this specific path and continues the traversal.
+			return nil
+		}
+
+		// Check if it's a file and if its name matches the pattern.
+		if !d.IsDir() {
+			// filepath.Match checks a filename against a glob pattern.
+			if matched, _ := filepath.Match(pattern, d.Name()); matched {
+				matches = append(matches, path)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error walking directory: %w", err)
+	}
+
+	return matches, nil
+}
+
+// DirExists returns true if a dir exists
+func DirExists(path string) bool {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true
+	}
+	if errors.Is(err, fs.ErrNotExist) {
+		return false
+	}
+	return false
+}
