@@ -15,20 +15,23 @@ import (
 type KubeScore struct{}
 
 // Run runs the kubescore devtool
-func (kubescore KubeScore) Run(env map[string]string, args ...string) error {
+func (kubescore KubeScore) Run(env map[string]string, workdir string, args ...string) (string, string, error) {
+	if val, found := os.LookupEnv("KUBESCORE_IN_DOCKER"); found && val == "1" {
+		return kubescore.runInDocker(env, workdir, args...)
+	}
 	if !isCommandAvailable("kube-score") {
 		fmt.Println("kube-score binary not found. Use 'brew install kube-score' to install. Falling back to running the docker version")
-		return kubescore.runInDocker(env, args...)
+		return kubescore.runInDocker(env, workdir, args...)
 	}
 
 	err := kubescore.versionOK()
 	if err != nil {
 		fmt.Printf("kube-score does not meet version constraints. Falling back to docker verion\n error: %s\n", err)
-		return kubescore.runInDocker(env, args...)
+		return kubescore.runInDocker(env, workdir, args...)
 	}
 
 	fmt.Println("Using native kube-score")
-	return kubescore.runNative(env, args...)
+	return kubescore.runNative(env, workdir, args...)
 }
 
 func (kubescore KubeScore) versionOK() error {
@@ -36,7 +39,6 @@ func (kubescore KubeScore) versionOK() error {
 	if err != nil {
 		return err
 	}
-	// example v3.17.1+g980d8ac
 	out, err := sh.Output("kube-score", "version")
 	if err != nil {
 		return err
@@ -64,31 +66,21 @@ func (kubescore KubeScore) versionOK() error {
 	return nil
 }
 
-func (kubescore KubeScore) runNative(env map[string]string, args ...string) error {
-	if core.Verbose() {
-		return sh.RunWith(env, "kube-score", kubescore.addDefautsArgs(args...)...)
-	}
-	out, err := sh.OutputWith(env, "kube-score", kubescore.addDefautsArgs(args...)...)
-	if err != nil {
-		fmt.Println(out)
-		return err
-	}
-	return err
+func (kubescore KubeScore) runNative(env map[string]string, workdir string, args ...string) (string, string, error) {
+	outs := setupStdOutErr(true)
+	_, err := core.ExecAt(env, outs.StdOut, outs.StdErr, workdir, "kube-score", kubescore.addDefautsArgs(args...)...)
+
+	return strings.TrimSuffix((outs.BufOut).String(), "\n"), strings.TrimSuffix((outs.BufErr).String(), "\n"), err
 }
 
-func (kubescore KubeScore) runInDocker(env map[string]string, args ...string) error {
+func (kubescore KubeScore) runInDocker(env map[string]string, workdir string, args ...string) (string, string, error) {
 	devtool, err := getTool(ToolsDockerfile, "kube-score")
 	if err != nil {
-		return err
-	}
-
-	path, err := os.Getwd()
-	if err != nil {
-		return err
+		return "", "", err
 	}
 
 	dockerArgs := []string{
-		"--volume", fmt.Sprintf("%s:/app", path), // Mount the source code
+		"--volume", fmt.Sprintf("%s:/app", workdir), // Mount the source code
 		"--workdir", "/app", // set workdir to where we want to run
 	}
 
@@ -107,15 +99,10 @@ func (kubescore KubeScore) runInDocker(env map[string]string, args ...string) er
 	runArgs = append(runArgs, devtool.image)
 	runArgs = append(runArgs, kubescore.addDefautsArgs(args...)...)
 
-	if core.Verbose() {
-		return sh.RunWith(env, "docker", runArgs...)
-	}
-	out, err := sh.OutputWith(env, "docker", runArgs...)
-	if err != nil {
-		fmt.Println(out)
-		return err
-	}
-	return err
+	outs := setupStdOutErr(true)
+	_, err = core.Exec(env, outs.StdOut, outs.StdErr, "docker", kubescore.addDefautsArgs(runArgs...)...)
+
+	return strings.TrimSuffix((outs.BufOut).String(), "\n"), strings.TrimSuffix((outs.BufErr).String(), "\n"), err
 }
 
 func (kubescore KubeScore) addDefautsArgs(args ...string) []string {

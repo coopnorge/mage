@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/coopnorge/mage/internal/core"
 	"github.com/hashicorp/go-version"
 	"github.com/magefile/mage/sh"
 )
@@ -15,23 +16,23 @@ type Helm struct{}
 
 // Run runs the helm devtool. It returns stdout, stderr and error. If verbose
 // is enable on mage it will also stream stdout to the console
-func (helm Helm) Run(env map[string]string, args ...string) (string, string, error) {
+func (helm Helm) Run(env map[string]string, workdir string, args ...string) (string, string, error) {
 	if val, found := os.LookupEnv("HELM_IN_DOCKER"); found && val == "1" {
-		return helm.runInDocker(env, args...)
+		return helm.runInDocker(env, workdir, args...)
 	}
 	if !isCommandAvailable("helm") {
 		fmt.Println("helm binary not found. Use 'brew install helm' to install. Falling back to running the docker version")
-		return helm.runInDocker(env, args...)
+		return helm.runInDocker(env, workdir, args...)
 	}
 
 	err := helm.versionOK()
 	if err != nil {
 		fmt.Printf("helm does not meet version constraints. Falling back to docker verion\n error: %s\n", err)
-		return helm.runInDocker(env, args...)
+		return helm.runInDocker(env, workdir, args...)
 	}
 
 	fmt.Println("Using native helm")
-	return helm.runNative(env, args...)
+	return helm.runNative(env, workdir, args...)
 }
 
 func (helm Helm) versionOK() error {
@@ -64,26 +65,21 @@ func (helm Helm) versionOK() error {
 	return nil
 }
 
-func (helm Helm) runNative(env map[string]string, args ...string) (string, string, error) {
+func (helm Helm) runNative(env map[string]string, workdir string, args ...string) (string, string, error) {
 	outs := setupStdOutErr(false)
-	_, err := sh.Exec(env, outs.StdOut, outs.StdErr, "helm", helm.addDefautsArgs(args...)...)
+	_, err := core.ExecAt(env, outs.StdOut, outs.StdErr, workdir, "helm", helm.addDefautsArgs(args...)...)
 
 	return strings.TrimSuffix((outs.BufOut).String(), "\n"), strings.TrimSuffix((outs.BufErr).String(), "\n"), err
 }
 
-func (helm Helm) runInDocker(env map[string]string, args ...string) (string, string, error) {
+func (helm Helm) runInDocker(env map[string]string, workdir string, args ...string) (string, string, error) {
 	devtool, err := getTool(ToolsDockerfile, "helm")
 	if err != nil {
 		return "", "", err
 	}
 
-	path, err := os.Getwd()
-	if err != nil {
-		return "", "", err
-	}
-
 	dockerArgs := []string{
-		"--volume", fmt.Sprintf("%s:/app", path), // Mount the source code
+		"--volume", fmt.Sprintf("%s:/app", workdir), // Mount the source code
 		"--workdir", "/app", // set workdir to where we want to run
 	}
 

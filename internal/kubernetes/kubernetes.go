@@ -75,22 +75,32 @@ func renderTemplatesToOutput(chart HelmChart, singleFile bool, try bool) (string
 			}
 		}
 		valueFilesFlags = append(valueFilesFlags, "--values")
-		valueFilesFlags = append(valueFilesFlags, fp)
+		valueFilesFlags = append(valueFilesFlags, file)
 	}
 	args := []string{}
 	args = append(args, "template")
-	args = append(args, chart.path)
 	args = append(args, valueFilesFlags...)
 	if !singleFile {
 		args = append(args, "--output-dir")
 		args = append(args, outdir)
 	}
+	args = append(args, ".")
 
-	_, _, err = helm.Run(nil, "dep", "up", chart.path)
+	// make path abs when it is not, required for running in docker
+	path := chart.path
+	if filepath.IsLocal(chart.path) {
+		base, err := core.GetRepoRoot()
+		if err != nil {
+			return outdir, cleanup, err
+		}
+		path = filepath.Join(base, chart.path)
+	}
+	// make sure dependencies are there
+	_, _, err = helm.Run(nil, path, "dep", "up", ".")
 	if err != nil {
 		return outdir, cleanup, err
 	}
-	out, _, err := helm.Run(nil, args...)
+	out, _, err := helm.Run(nil, path, args...)
 	if singleFile {
 		outdir = filepath.Join(outdir, "templates.yaml")
 		err = os.WriteFile(outdir, []byte(out), 0o644)
@@ -144,7 +154,7 @@ func DiffTemplates(chart HelmChart) error {
 	}
 	args = append(args, mainTemplates, branchTemplates)
 
-	fmt.Printf("Diff compared to main of chart: %s env: %s\n", filepath.Base(chart.path), chart.env)
+	fmt.Printf("---\nDiff compared to main of \nchart: %s\nenv: %s\n---\n", chart.path, chart.env)
 	out, _, err := dyff.Run(nil, args...)
 
 	if inCI {
@@ -232,7 +242,8 @@ func ValidateWithKubeConform(chart HelmChart) error {
 		return err
 	}
 	args = append(args, files...)
-	return kubeconform.Run(nil, args...)
+	_, _, err = kubeconform.Run(nil, dir, args...)
+	return err
 }
 
 func ValidateWithKubeScore(chart HelmChart) error {
@@ -244,6 +255,7 @@ func ValidateWithKubeScore(chart HelmChart) error {
 	args := []string{
 		"score",
 	}
+
 	files, err := core.ListRescursiveFiles(dir, "*.yaml")
 	if err != nil {
 		return err
@@ -252,7 +264,15 @@ func ValidateWithKubeScore(chart HelmChart) error {
 		return nil
 	}
 	args = append(args, files...)
-	return kubescore.Run(nil, args...)
+	// if filepath.IsLocal(dir) {
+	// 	root, err := core.GetRepoRoot()
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	dir = filepath.Join(root, dir)
+	// }
+	_, _, err = kubescore.Run(nil, dir, args...)
+	return err
 }
 
 func findHelmValues(dir string, env string) ([]string, error) {
