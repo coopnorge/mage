@@ -40,6 +40,19 @@ func isHelmChart(p string, d fs.DirEntry) bool {
 // files are not there. This is used when rendering a template which is in
 // unkown state
 func RenderTemplates(chart HelmChart, try bool) (string, func(), error) {
+	return renderTemplatesToOutput(chart, false, try)
+}
+
+// RenderTemplatesSingleFile renders the templates of a specific helm chart. It will
+// return a function for cleanup
+// When second argument is set to true it will try to render even if some
+// files are not there. This is used when rendering a template which is in
+// unkown state
+func RenderTemplatesSingleFile(chart HelmChart, try bool) (string, func(), error) {
+	return renderTemplatesToOutput(chart, true, try)
+}
+
+func renderTemplatesToOutput(chart HelmChart, singleFile bool, try bool) (string, func(), error) {
 	outdir, cleanup, err := core.MkdirTemp()
 	if err != nil {
 		return outdir, nil, err
@@ -67,11 +80,22 @@ func RenderTemplates(chart HelmChart, try bool) (string, func(), error) {
 	args := []string{}
 	args = append(args, "template")
 	args = append(args, chart.path)
-	args = append(args, "--output-dir")
-	args = append(args, outdir)
 	args = append(args, valueFilesFlags...)
+	if !singleFile {
+		args = append(args, "--output-dir")
+		args = append(args, outdir)
+	}
 
-	return outdir, cleanup, helm.Run(nil, args...)
+	_, _, err = helm.Run(nil, "dep", "up", chart.path)
+	if err != nil {
+		return outdir, cleanup, err
+	}
+	out, _, err := helm.Run(nil, args...)
+	if singleFile {
+		outdir = filepath.Join(outdir, "templates.yaml")
+		err = os.WriteFile(outdir, []byte(out), 0o644)
+	}
+	return outdir, cleanup, err
 }
 
 func DiffTemplates(chart HelmChart) error {
@@ -81,38 +105,63 @@ func DiffTemplates(chart HelmChart) error {
 		return err
 	}
 
-	branchTemplates, branchDirCleanup, err := RenderTemplates(chart, false)
-	defer branchDirCleanup()
+	branchTemplates, branchTemplatesCleanup, err := RenderTemplatesSingleFile(chart, false)
 	if err != nil {
 		return err
 	}
+	defer branchTemplatesCleanup()
 
 	mainWorktree, worktreeCleanup, err := git.Worktree("main")
-	defer worktreeCleanup()
 	if err != nil {
 		return err
 	}
+	defer worktreeCleanup()
 	// create a chart object for the chart in the main branch
 	mainChart := HelmChart{
 		path:       filepath.Join(mainWorktree, chart.path),
 		env:        chart.env,
 		valueFiles: chart.valueFiles,
 	}
-	mainTemplates, mainBranchCleanup, err := RenderTemplates(mainChart, true)
-	defer mainBranchCleanup()
+	mainTemplates, mainTemplatesCleanup, err := RenderTemplatesSingleFile(mainChart, true)
 	if err != nil {
 		return err
 	}
+	defer mainTemplatesCleanup()
 
-	args := []string{"between"}
-	env := make(map[string]string)
+	args := []string{
+		"--color", "on",
+		"--truecolor", "on",
+		"between",
+	}
 	// simply assumming that if CI is set, we are in github actions
-	if _, found := os.LookupEnv("CI"); found {
+	_, inCI := os.LookupEnv("CI")
+	if inCI {
 		args = append(args, "--output", "github")
-		env["OUTPUT_FILE"] = fmt.Sprintf("%s-%s-%s.diff", filepath.Base(chart.path), chart.env, currentBranch)
+		// env["OUTPUT_FILE"] = fmt.Sprintf("%s-%s-%s.diff", filepath.Base(chart.path), chart.env, currentBranch)
+	}
+	if !core.FileExists(mainTemplates) {
+		return fmt.Errorf("%s does not exist", mainTemplates)
 	}
 	args = append(args, mainTemplates, branchTemplates)
-	return dyff.Run(env, args...)
+
+	fmt.Printf("Diff compared to main of chart: %s env: %s\n", filepath.Base(chart.path), chart.env)
+	out, _, err := dyff.Run(nil, args...)
+
+	if inCI {
+		path := filepath.Join("var", "kubernetes", "diff", fmt.Sprintf("%s-%s-%s.diff", currentBranch, filepath.Base(chart.path), chart.env))
+		err := os.MkdirAll(filepath.Dir(path), 0o755)
+		if err != nil {
+			return err
+		}
+		if out == "" {
+			out = fmt.Sprintf("# no diff for %s %s", filepath.Base(chart.path), chart.env)
+		}
+		err = os.WriteFile(path, []byte(out), 0o644)
+		if err != nil {
+			return err
+		}
+	}
+	return err
 }
 
 // FindHelmCharts will search through the base directory to find the
@@ -161,10 +210,10 @@ func FindHelmCharts(base string) ([]HelmChart, error) {
 
 func ListHelmCharts(charts []HelmChart) {
 	for _, chart := range charts {
-		fmt.Sprintf("---\n")
-		fmt.Sprintf("path: %s\n", chart.path)
-		fmt.Sprintf("environment: %s\n", chart.env)
-		fmt.Sprintf("valueFiles: [%s]\n", strings.Join(chart.valueFiles, "\", \""))
+		fmt.Printf("---\n")
+		fmt.Printf("path: %s\n", chart.path)
+		fmt.Printf("environment: %s\n", chart.env)
+		fmt.Printf("valueFiles: [\"%s\"]\n", strings.Join(chart.valueFiles, "\", \""))
 	}
 }
 

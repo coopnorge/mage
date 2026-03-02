@@ -12,7 +12,7 @@ type K8s mg.Namespace
 
 // Validate validates all helm charts
 func (K8s) Validate(ctx context.Context) error {
-	mg.CtxDeps(ctx, mg.F(kubernetesTargets.Validate))
+	mg.CtxDeps(ctx, kubernetesTargets.Validate)
 	return nil
 }
 

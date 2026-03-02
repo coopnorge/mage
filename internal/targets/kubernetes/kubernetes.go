@@ -5,7 +5,6 @@ import (
 	_ "embed"
 
 	"github.com/coopnorge/mage/internal/kubernetes"
-	"github.com/magefile/mage/mg"
 )
 
 // Validate runs kubeconform, kube-score and render templates
@@ -14,18 +13,23 @@ func Validate(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-
-	var renders []any
-	var kubeconforms []any
-	var kubescores []any
+	// we are not using mg.(Serial)CtxDeps here because the input of the
+	// functions are not strings, int, bools or time duration.
+	// Ref: https://github.com/magefile/mage/blob/master/mg/fn.go#L174-L192
 	for _, chart := range charts {
-		renders = append(renders, mg.F(render, chart))
-		kubeconforms = append(kubeconforms, mg.F(kubernetes.ValidateWithKubeConform, chart))
-		kubescores = append(kubescores, mg.F(kubernetes.ValidateWithKubeScore, chart))
+		err = render(ctx, chart)
+		if err != nil {
+			return err
+		}
+		err = kubeconform(ctx, chart)
+		if err != nil {
+			return err
+		}
+		err = kubescore(ctx, chart)
+		if err != nil {
+			return err
+		}
 	}
-
-	mg.CtxDeps(ctx, renders...)
-	mg.CtxDeps(ctx, append(kubeconforms, kubescores)...)
 	return nil
 }
 
@@ -35,18 +39,26 @@ func render(_ context.Context, chart kubernetes.HelmChart) error {
 	return err
 }
 
+func kubeconform(_ context.Context, chart kubernetes.HelmChart) error {
+	return kubernetes.ValidateWithKubeConform(chart)
+}
+
+func kubescore(_ context.Context, chart kubernetes.HelmChart) error {
+	return kubernetes.ValidateWithKubeScore(chart)
+}
+
 // Diff runs a diff for all the helm charts compared to the manin brdnch
 func Diff(ctx context.Context) error {
 	charts, err := kubernetes.FindHelmCharts(".")
 	if err != nil {
 		return err
 	}
-	var diffs []any
 	for _, chart := range charts {
-		diffs = append(diffs, mg.F(kubernetes.DiffTemplates, chart))
+		err = kubernetes.DiffTemplates(chart)
+		if err != nil {
+			return err
+		}
 	}
-
-	mg.SerialCtxDeps(ctx, diffs...)
 	return nil
 }
 
