@@ -34,34 +34,18 @@ func isHelmChart(p string, d fs.DirEntry) bool {
 	return core.FileExists(filepath.Join(p, "Chart.yaml"))
 }
 
-// RenderTemplates renders the templates of a specific helm chart. It will
-// return a function for cleanup
-// When second argument is set to true it will try to render even if some
+// RenderTemplates renders the templates of a specific helm chart. It required
+// a destination. If the dest is a folder it will render the files separate. If
+// it is a file, then it will render all in 1 temiplate.
+// When third argument is set to true it will try to render even if some
 // files are not there. This is used when rendering a template which is in
 // unkown state
-func RenderTemplates(chart HelmChart, try bool) (string, func(), error) {
-	return renderTemplatesToOutput(chart, false, try)
-}
-
-// RenderTemplatesSingleFile renders the templates of a specific helm chart. It will
-// return a function for cleanup
-// When second argument is set to true it will try to render even if some
-// files are not there. This is used when rendering a template which is in
-// unkown state
-func RenderTemplatesSingleFile(chart HelmChart, try bool) (string, func(), error) {
-	return renderTemplatesToOutput(chart, true, try)
-}
-
-func renderTemplatesToOutput(chart HelmChart, singleFile bool, try bool) (string, func(), error) {
-	outdir, cleanup, err := core.MkdirTemp()
-	if err != nil {
-		return outdir, nil, err
-	}
+func RenderTemplates(chart HelmChart, dest string, try bool) error {
 	if try {
 		// if the chart does not exist it will just return an empty dir, which
 		// we can diff against
 		if !core.FileExists(filepath.Join(chart.path, "Chart.yaml")) {
-			return outdir, cleanup, nil
+			return nil
 		}
 	}
 
@@ -80,9 +64,9 @@ func renderTemplatesToOutput(chart HelmChart, singleFile bool, try bool) (string
 	args := []string{}
 	args = append(args, "template")
 	args = append(args, valueFilesFlags...)
-	if !singleFile {
+	if filepath.Ext(dest) == "" {
 		args = append(args, "--output-dir")
-		args = append(args, outdir)
+		args = append(args, dest)
 	}
 	args = append(args, ".")
 
@@ -91,31 +75,38 @@ func renderTemplatesToOutput(chart HelmChart, singleFile bool, try bool) (string
 	if filepath.IsLocal(chart.path) {
 		base, err := core.GetRepoRoot()
 		if err != nil {
-			return outdir, cleanup, err
+			return err
 		}
 		path = filepath.Join(base, chart.path)
 	}
 	// make sure dependencies are there
-	_, _, err = helm.Run(nil, path, "dep", "up", ".")
+	_, _, err := helm.Run(nil, path, "dep", "up", ".")
 	if err != nil {
-		return outdir, cleanup, err
+		return err
 	}
 	out, _, err := helm.Run(nil, path, args...)
-	if singleFile {
-		outdir = filepath.Join(outdir, "templates.yaml")
-		err = os.WriteFile(outdir, []byte(out), 0o644)
+	if filepath.Ext(dest) != "" {
+		fmt.Printf("write to file %s\n", dest)
+		return os.WriteFile(dest, []byte(out), 0o644)
 	}
-	return outdir, cleanup, err
+	return err
 }
 
 func DiffTemplates(chart HelmChart) error {
 	// dyff between a/helloworld/charts/app/templates/ b/helloworld/charts/app/templates/ -o github
 
-	branchTemplates, branchTemplatesCleanup, err := RenderTemplatesSingleFile(chart, false)
+	diffDir, cleanupDiffDir, err := core.MkdirTemp()
+	defer cleanupDiffDir()
 	if err != nil {
 		return err
 	}
-	defer branchTemplatesCleanup()
+	branchFilename := fmt.Sprintf("branch-%s-%s.yaml", filepath.Base(chart.path), chart.env)
+	mainFilename := fmt.Sprintf("main-%s-%s.yaml", filepath.Base(chart.path), chart.env)
+
+	err = RenderTemplates(chart, filepath.Join(diffDir, branchFilename), false)
+	if err != nil {
+		return err
+	}
 
 	mainWorktree, worktreeCleanup, err := git.Worktree("main")
 	if err != nil {
@@ -128,11 +119,11 @@ func DiffTemplates(chart HelmChart) error {
 		env:        chart.env,
 		valueFiles: chart.valueFiles,
 	}
-	mainTemplates, mainTemplatesCleanup, err := RenderTemplatesSingleFile(mainChart, true)
+
+	err = RenderTemplates(mainChart, filepath.Join(diffDir, mainFilename), true)
 	if err != nil {
 		return err
 	}
-	defer mainTemplatesCleanup()
 
 	args := []string{
 		"--color", "on",
@@ -143,29 +134,8 @@ func DiffTemplates(chart HelmChart) error {
 	_, inCI := os.LookupEnv("CI")
 	if inCI {
 		args = append(args, "--output", "github")
-		// env["OUTPUT_FILE"] = fmt.Sprintf("%s-%s-%s.diff", filepath.Base(chart.path), chart.env, currentBranch)
-	}
-	if !core.FileExists(mainTemplates) {
-		return fmt.Errorf("%s does not exist", mainTemplates)
 	}
 
-	diffDir, cleanupDiffDir, err := core.MkdirTemp()
-	defer cleanupDiffDir()
-	if err != nil {
-		return err
-	}
-
-	branchFilename := fmt.Sprintf("branch-%s-%s.yaml", filepath.Base(chart.path), chart.env)
-	mainFilename := fmt.Sprintf("main-%s-%s.yaml", filepath.Base(chart.path), chart.env)
-	err = core.CopyFile(branchTemplates, filepath.Join(diffDir, branchFilename))
-	if err != nil {
-		return err
-	}
-
-	err = core.CopyFile(mainTemplates, filepath.Join(diffDir, mainFilename))
-	if err != nil {
-		return err
-	}
 	args = append(args, branchFilename, mainFilename)
 
 	fmt.Printf("---\nDiff compared to main of \nchart: %s\nenv: %s\n---\n", chart.path, chart.env)
@@ -242,8 +212,12 @@ func ListHelmCharts(charts []HelmChart) {
 }
 
 func ValidateWithKubeConform(chart HelmChart) error {
-	dir, cleanup, err := RenderTemplates(chart, false)
+	dest, cleanup, err := core.MkdirTemp()
 	defer cleanup()
+	if err != nil {
+		return err
+	}
+	err = RenderTemplates(chart, dest, false)
 	if err != nil {
 		return err
 	}
@@ -251,18 +225,22 @@ func ValidateWithKubeConform(chart HelmChart) error {
 		"-schema-location", "default",
 		"--schema-location", "https://raw.githubusercontent.com/coopnorge/kubernetes-schemas/main/api-platform/{{ .ResourceKind }}{{ .KindSuffix }}.json",
 	}
-	files, err := core.ListRescursiveFiles(dir, "*.yaml")
+	files, err := core.ListRescursiveFiles(dest, "*.yaml")
 	if err != nil {
 		return err
 	}
 	args = append(args, files...)
-	_, _, err = kubeconform.Run(nil, dir, args...)
+	_, _, err = kubeconform.Run(nil, dest, args...)
 	return err
 }
 
 func ValidateWithKubeScore(chart HelmChart) error {
-	dir, cleanup, err := RenderTemplates(chart, false)
+	dest, cleanup, err := core.MkdirTemp()
 	defer cleanup()
+	if err != nil {
+		return err
+	}
+	err = RenderTemplates(chart, dest, false)
 	if err != nil {
 		return err
 	}
@@ -270,7 +248,7 @@ func ValidateWithKubeScore(chart HelmChart) error {
 		"score",
 	}
 
-	files, err := core.ListRescursiveFiles(dir, "*.yaml")
+	files, err := core.ListRescursiveFiles(dest, "*.yaml")
 	if err != nil {
 		return err
 	}
@@ -285,7 +263,7 @@ func ValidateWithKubeScore(chart HelmChart) error {
 	// 	}
 	// 	dir = filepath.Join(root, dir)
 	// }
-	_, _, err = kubescore.Run(nil, dir, args...)
+	_, _, err = kubescore.Run(nil, dest, args...)
 	return err
 }
 

@@ -1,9 +1,10 @@
-package terraform
+package kubernetes
 
 import (
 	"context"
 	_ "embed"
 
+	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/kubernetes"
 )
 
@@ -34,9 +35,12 @@ func Validate(ctx context.Context) error {
 }
 
 func render(_ context.Context, chart kubernetes.HelmChart) error {
-	_, cleanup, err := kubernetes.RenderTemplates(chart, false)
+	dest, cleanup, err := core.MkdirTemp()
 	defer cleanup()
-	return err
+	if err != nil {
+		return err
+	}
+	return kubernetes.RenderTemplates(chart, dest, false)
 }
 
 func kubeconform(_ context.Context, chart kubernetes.HelmChart) error {
