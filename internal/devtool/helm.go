@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/coopnorge/mage/internal/core"
 	"github.com/hashicorp/go-version"
 	"github.com/magefile/mage/sh"
 )
@@ -14,8 +13,12 @@ import (
 // Helm holds the devtool for helm
 type Helm struct{}
 
-// Run runs the helm devtool
-func (helm Helm) Run(env map[string]string, args ...string) error {
+// Run runs the helm devtool. It returns stdout, stderr and error. If verbose
+// is enable on mage it will also stream stdout to the console
+func (helm Helm) Run(env map[string]string, args ...string) (string, string, error) {
+	if val, found := os.LookupEnv("HELM_IN_DOCKER"); found && val == "1" {
+		return helm.runInDocker(env, args...)
+	}
 	if !isCommandAvailable("helm") {
 		fmt.Println("helm binary not found. Use 'brew install helm' to install. Falling back to running the docker version")
 		return helm.runInDocker(env, args...)
@@ -61,30 +64,23 @@ func (helm Helm) versionOK() error {
 	return nil
 }
 
-func (helm Helm) runNative(env map[string]string, args ...string) error {
-	if core.Verbose() {
-		return sh.RunWith(env, "helm", helm.addDefautsArgs(args...)...)
-	}
-	out, err := sh.OutputWith(env, "helm", helm.addDefautsArgs(args...)...)
-	if err != nil {
-		fmt.Println(out)
-		return err
-	}
-	return err
+func (helm Helm) runNative(env map[string]string, args ...string) (string, string, error) {
+	outs := setupStdOutErr(false)
+	_, err := sh.Exec(env, outs.StdOut, outs.StdErr, "helm", helm.addDefautsArgs(args...)...)
+
+	return strings.TrimSuffix((outs.BufOut).String(), "\n"), strings.TrimSuffix((outs.BufErr).String(), "\n"), err
 }
 
-func (helm Helm) runInDocker(env map[string]string, args ...string) error {
+func (helm Helm) runInDocker(env map[string]string, args ...string) (string, string, error) {
 	devtool, err := getTool(ToolsDockerfile, "helm")
 	if err != nil {
-		return err
+		return "", "", err
 	}
 
 	path, err := os.Getwd()
 	if err != nil {
-		return err
+		return "", "", err
 	}
-
-	//  helm --strict -verbose  -schema-location "https://raw.githubusercontent.com/coopnorge/kubernetes-schemas/main/pallets/{{ .ResourceKind }}{{ .KindSuffix }}.json" .pallet/gitconfig.yaml
 
 	dockerArgs := []string{
 		"--volume", fmt.Sprintf("%s:/app", path), // Mount the source code
@@ -106,15 +102,10 @@ func (helm Helm) runInDocker(env map[string]string, args ...string) error {
 	runArgs = append(runArgs, devtool.image)
 	runArgs = append(runArgs, helm.addDefautsArgs(args...)...)
 
-	if core.Verbose() {
-		return sh.RunWith(env, "docker", runArgs...)
-	}
-	out, err := sh.OutputWith(env, "docker", runArgs...)
-	if err != nil {
-		fmt.Println(out)
-		return err
-	}
-	return err
+	outs := setupStdOutErr(false)
+	_, err = sh.Exec(env, outs.StdOut, outs.StdErr, "docker", runArgs...)
+
+	return strings.TrimSuffix((outs.BufOut).String(), "\n"), strings.TrimSuffix((outs.BufErr).String(), "\n"), err
 }
 
 func (helm Helm) addDefautsArgs(args ...string) []string {
