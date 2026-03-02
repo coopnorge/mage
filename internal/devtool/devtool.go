@@ -181,11 +181,11 @@ type devtoolOutput struct {
 // write to a buffer and if mage is run verbose will output to stdout. If non
 // verbose, stdout will be redirected to io.Discard
 // Stderr will always outoput to stderr and to a buffer.
-func setupStdOutErr(forceStdOut bool) devtoolOutput {
+func setupStdOutErr(alwaysStdOut bool) devtoolOutput {
 	bufOut := &bytes.Buffer{}
 	bufErr := &bytes.Buffer{}
 	var stdOutDevice io.Writer
-	if mg.Verbose() || forceStdOut {
+	if mg.Verbose() || alwaysStdOut {
 		stdOutDevice = os.Stdout
 	} else {
 		stdOutDevice = io.Discard
