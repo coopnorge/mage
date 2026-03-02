@@ -110,10 +110,6 @@ func renderTemplatesToOutput(chart HelmChart, singleFile bool, try bool) (string
 
 func DiffTemplates(chart HelmChart) error {
 	// dyff between a/helloworld/charts/app/templates/ b/helloworld/charts/app/templates/ -o github
-	currentBranch, err := git.CurrentBranch()
-	if err != nil {
-		return err
-	}
 
 	branchTemplates, branchTemplatesCleanup, err := RenderTemplatesSingleFile(chart, false)
 	if err != nil {
@@ -152,13 +148,31 @@ func DiffTemplates(chart HelmChart) error {
 	if !core.FileExists(mainTemplates) {
 		return fmt.Errorf("%s does not exist", mainTemplates)
 	}
-	args = append(args, mainTemplates, branchTemplates)
+
+	diffDir, cleanupDiffDir, err := core.MkdirTemp()
+	defer cleanupDiffDir()
+	if err != nil {
+		return err
+	}
+
+	branchFilename := fmt.Sprintf("branch-%s-%s.yaml", filepath.Base(chart.path), chart.env)
+	mainFilename := fmt.Sprintf("main-%s-%s.yaml", filepath.Base(chart.path), chart.env)
+	err = core.CopyFile(branchTemplates, filepath.Join(diffDir, branchFilename))
+	if err != nil {
+		return err
+	}
+
+	err = core.CopyFile(mainTemplates, filepath.Join(diffDir, mainFilename))
+	if err != nil {
+		return err
+	}
+	args = append(args, branchFilename, mainFilename)
 
 	fmt.Printf("---\nDiff compared to main of \nchart: %s\nenv: %s\n---\n", chart.path, chart.env)
-	out, _, err := dyff.Run(nil, args...)
+	out, _, err := dyff.Run(nil, diffDir, args...)
 
 	if inCI {
-		path := filepath.Join("var", "kubernetes", "diff", fmt.Sprintf("%s-%s-%s.diff", currentBranch, filepath.Base(chart.path), chart.env))
+		path := filepath.Join("var", "kubernetes", "diff", fmt.Sprintf("%s-%s.diff", filepath.Base(chart.path), chart.env))
 		err := os.MkdirAll(filepath.Dir(path), 0o755)
 		if err != nil {
 			return err

@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path"
@@ -230,4 +231,27 @@ func GetAbsWorkDir(workdir string) string {
 		panic(err)
 	}
 	return filepath.Join(cwd, workdir)
+}
+
+// CopyFiles copies a file from src to dst.
+func CopyFile(src, dst string) error {
+	source, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer source.Close() // Reading close is usually safe to defer
+
+	destination, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+
+	// io.Copy does the heavy lifting
+	if _, err := io.Copy(destination, source); err != nil {
+		destination.Close() // Close but prioritize returning the Copy error
+		return err
+	}
+
+	// Manually close to catch write/flush errors
+	return destination.Close()
 }
