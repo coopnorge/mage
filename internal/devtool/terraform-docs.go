@@ -24,7 +24,7 @@ func (tfdocs TerraformDocs) Run(env map[string]string, workdir string, args ...s
 
 	err := tfdocs.versionOK()
 	if err != nil {
-		fmt.Printf("terraform-docs does not meet version constraints. Falling back to docker verion\n error: %s\n", err)
+		fmt.Printf("terraform-docs does not meet version constraints. Falling back to docker version\n error: %s\n", err)
 		return tfdocs.runInDocker(env, workdir, args...)
 	}
 
@@ -57,26 +57,12 @@ func (tfdocs TerraformDocs) versionOK() error {
 		return err
 	}
 	if !constraint.Check(current) {
-		return fmt.Errorf("version found %s does not match constrant %s", current.Original(), constraint.String())
+		return fmt.Errorf("version found %s does not match constraint %s", current.Original(), constraint.String())
 	}
 	return nil
 }
 
 func (tfdocs TerraformDocs) runNative(env map[string]string, workdir string, args ...string) error {
-	originalDir, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	if os.Chdir(workdir) != nil {
-		return err
-	}
-	defer func() {
-		err = os.Chdir(originalDir)
-	}()
-	if err != nil {
-		return fmt.Errorf("failed to return to original dir: %s, error: %s", originalDir, err)
-	}
-
 	if env == nil {
 		env = map[string]string{}
 	}
@@ -85,9 +71,9 @@ func (tfdocs TerraformDocs) runNative(env map[string]string, workdir string, arg
 	// env["TF_PLUGIN_CACHE_DIR"] = "$HOME/.tfdocs.d/plugin-cache"
 
 	if core.Verbose() {
-		return sh.RunWith(env, "terraform-docs", args...)
+		return core.RunAtWith(env, core.GetAbsWorkDir(workdir), "terraform-docs", args...)
 	}
-	out, err := sh.OutputWith(env, "terraform-docs", args...)
+	out, err := core.OutputAtWith(env, core.GetAbsWorkDir(workdir), "terraform-docs", args...)
 	if err != nil {
 		fmt.Println(out)
 		return err

@@ -7,7 +7,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
@@ -25,13 +24,13 @@ type GoLangCILint struct{}
 // Run runs the Go devtool
 func (gl GoLangCILint) Run(env map[string]string, workdir string, args ...string) error {
 	if !isCommandAvailable("golangci-lint") {
-		fmt.Println("Golangci-lint binary not found. Use 'brew install golangci-lint' to install. Falling back to running the docker version")
+		fmt.Println("golangci-lint binary not found. Use 'brew install golangci-lint' to install. Falling back to running the docker version")
 		return gl.runInDocker(env, workdir, args...)
 	}
 
 	err := gl.versionOK()
 	if err != nil {
-		fmt.Printf("Golangci-lint does not meet version constraints. Falling back to docker verion\n error: %s\n", err)
+		fmt.Printf("golangci-lint does not meet version constraints. Falling back to docker version\n error: %s\n", err)
 		return gl.runInDocker(env, workdir, args...)
 	}
 
@@ -56,37 +55,29 @@ func (gl GoLangCILint) versionOK() error {
 	if err != nil {
 		return err
 	}
-	// set constraint that minor minus 2 version should be minimum
-	constraintString := fmt.Sprintf(">= %s.%s", strconv.Itoa(devtool.Segments()[0]), strconv.Itoa(devtool.Segments()[1]-2))
+	return gl.versionIsSameMajorAndMinor(devtool, current)
+}
+
+func (gl GoLangCILint) versionIsSameMajorAndMinor(devtool *version.Version, current *version.Version) error {
+	// set constraint that Major and Minor versions should be exact. Patch version can differ, as it should not contain breaking changes.
+	// golangci-lint often changes linting rules in minor versions, so we want to ensure that we run with the expected minor version installed to avoid unexpected linting issues.
+	// We use ~> Major.Minor.0 to allow any patch version within the same minor version.
+	constraintString := fmt.Sprintf("~> %d.%d.0", devtool.Segments()[0], devtool.Segments()[1])
 	constraint, err := version.NewConstraint(constraintString)
 	if err != nil {
 		return err
 	}
 	if !constraint.Check(current) {
-		return fmt.Errorf("version found %s does not match constrant %s", current.Original(), constraint.String())
+		return fmt.Errorf("version found %s does not match constraint %s", current.Original(), constraint.String())
 	}
 	return nil
 }
 
 func (gl GoLangCILint) runNative(env map[string]string, workdir string, args ...string) error {
-	originalDir, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	if os.Chdir(workdir) != nil {
-		return err
-	}
-	defer func() {
-		err = os.Chdir(originalDir)
-	}()
-	if err != nil {
-		return fmt.Errorf("failed to return to original dir: %s, error: %s", originalDir, err)
-	}
-
 	if core.Verbose() {
-		return sh.RunWith(env, "golangci-lint", args...)
+		return core.RunAtWith(env, core.GetAbsWorkDir(workdir), "golangci-lint", args...)
 	}
-	out, err := sh.OutputWith(env, "golangci-lint", args...)
+	out, err := core.OutputAtWith(env, core.GetAbsWorkDir(workdir), "golangci-lint", args...)
 	if err != nil {
 		fmt.Println(out)
 		return err
@@ -177,9 +168,9 @@ func FetchGolangCILintConfig(where string) error {
 	}
 
 	fmt.Printf("Writing golangci-lint config to %s\n", filePath)
-	err = os.MkdirAll(dirs, 0755)
+	err = os.MkdirAll(dirs, 0o755)
 	if err != nil {
 		return fmt.Errorf("unable to create directory %s: %w", dirs, err)
 	}
-	return os.WriteFile(filePath, []byte(golangCILintCfg), 0644)
+	return os.WriteFile(filePath, []byte(golangCILintCfg), 0o644)
 }

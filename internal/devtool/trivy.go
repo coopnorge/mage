@@ -24,7 +24,7 @@ func (trivy Trivy) Run(env map[string]string, workdir string, args ...string) er
 
 	err := trivy.versionOK()
 	if err != nil {
-		fmt.Printf("trivy does not meet version constraints. Falling back to docker verion\n error: %s\n", err)
+		fmt.Printf("trivy does not meet version constraints. Falling back to docker version\n error: %s\n", err)
 		return trivy.runInDocker(env, workdir, args...)
 	}
 
@@ -57,26 +57,12 @@ func (trivy Trivy) versionOK() error {
 		return err
 	}
 	if !constraint.Check(current) {
-		return fmt.Errorf("version found %s does not match constrant %s", current.Original(), constraint.String())
+		return fmt.Errorf("version found %s does not match constraint %s", current.Original(), constraint.String())
 	}
 	return nil
 }
 
 func (trivy Trivy) runNative(env map[string]string, workdir string, args ...string) error {
-	originalDir, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	if os.Chdir(workdir) != nil {
-		return err
-	}
-	defer func() {
-		err = os.Chdir(originalDir)
-	}()
-	if err != nil {
-		return fmt.Errorf("failed to return to original dir: %s, error: %s", originalDir, err)
-	}
-
 	if env == nil {
 		env = map[string]string{}
 	}
@@ -85,9 +71,9 @@ func (trivy Trivy) runNative(env map[string]string, workdir string, args ...stri
 	// env["TF_PLUGIN_CACHE_DIR"] = "$HOME/.trivy.d/plugin-cache"
 
 	if core.Verbose() {
-		return sh.RunWith(env, "trivy", args...)
+		return core.RunAtWith(env, core.GetAbsWorkDir(workdir), "trivy", args...)
 	}
-	out, err := sh.OutputWith(env, "trivy", args...)
+	out, err := core.OutputAtWith(env, core.GetAbsWorkDir(workdir), "trivy", args...)
 	if err != nil {
 		fmt.Println(out)
 		return err

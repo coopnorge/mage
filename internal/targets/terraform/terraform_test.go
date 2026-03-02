@@ -14,14 +14,17 @@ import (
 
 var goModTemplateString = `module dummy
 go 1.25.0
-require github.com/coopnorge/mage v0.16.7
+
+require github.com/coopnorge/mage v0.23.3
 require (
-	github.com/bmatcuk/doublestar/v4 v4.9.1 // indirect
-	github.com/magefile/mage v1.15.0 // indirect
+	github.com/bmatcuk/doublestar/v4 v4.10.0
+	github.com/hashicorp/go-version v1.8.0
+	github.com/magefile/mage v1.15.0
+	github.com/stretchr/testify v1.11.1
 )
+
 tool github.com/magefile/mage
-replace github.com/coopnorge/mage => {{ . }}
-`
+replace github.com/coopnorge/mage => {{ . }}`
 
 func TestTargets(t *testing.T) {
 	tests := []struct {
