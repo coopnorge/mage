@@ -17,7 +17,7 @@ import (
 // Dyff holds the devtool for policy-bot
 type Dyff struct{}
 
-// DyffConfigCheckDocker the content of policy-bot.Dockerfile
+// DyffDocker the content of dyff.Dockerfile
 //
 //go:embed policy-bot/policy-bot.Dockerfile
 var DyffDocker string
@@ -25,19 +25,19 @@ var DyffDocker string
 const dyffVersion = "v1.10.5"
 
 // Run runs the policy-bot devtool
-func (dyff Dyff) Run(env map[string]string, args ...string) error {
+func (dyff Dyff) Run(env map[string]string, args ...string) (string, string, error) {
 	if !isCommandAvailable("dyff") {
 		fmt.Println("Dyff binary not found. Use 'brew install dyff' to install. Falling back to running the docker version")
-		return dyff.runInDocker(env, args...)
+		return "", "", dyff.runInDocker(env, args...)
 	}
 
 	err := dyff.versionOK()
 	if err != nil {
-		fmt.Printf("Go does not meet version constraints. Falling back to docker verion\n error: %s\n", err)
-		return dyff.runInDocker(env, args...)
+		fmt.Printf("Dyff does not meet version constraints. Falling back to docker verion\n error: %s\n", err)
+		return "", "", dyff.runInDocker(env, args...)
 	}
 
-	fmt.Println("Using native go")
+	fmt.Println("Using native dyff")
 	return dyff.runNative(env, args...)
 	// for now only support running in Docker
 }
@@ -68,22 +68,11 @@ func (dyff Dyff) versionOK() error {
 	return nil
 }
 
-func (dyff Dyff) runNative(env map[string]string, args ...string) error {
-	// check if env var with output filename exist then also write content to
-	// file name
-	out, err := sh.OutputWith(env, "dyff", args...)
-	if err != nil {
-		return err
-	}
-	fmt.Println(out)
-	filename, found := env["OUTPUT_FILE"]
-	if found {
-		err = os.WriteFile(filename, []byte(out), 0x644)
-	}
-	if err != nil {
-		return err
-	}
-	return err
+func (dyff Dyff) runNative(env map[string]string, args ...string) (string, string, error) {
+	outs := setupStdOutErr(true)
+	_, err := sh.Exec(env, outs.StdOut, outs.StdErr, "dyff", args...)
+
+	return strings.TrimSuffix((outs.BufOut).String(), "\n"), strings.TrimSuffix((outs.BufErr).String(), "\n"), err
 }
 
 func (dyff Dyff) runInDocker(env map[string]string, args ...string) error {
