@@ -189,7 +189,12 @@ func ListRescursiveFiles(root, pattern string) ([]string, error) {
 		if !d.IsDir() {
 			// filepath.Match checks a filename against a glob pattern.
 			if matched, _ := filepath.Match(pattern, d.Name()); matched {
-				matches = append(matches, path)
+				// make relateive
+				relPath, err := filepath.Rel(root, path)
+				if err != nil {
+					return err
+				}
+				matches = append(matches, relPath)
 			}
 		}
 		return nil
