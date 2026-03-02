@@ -8,7 +8,7 @@ import (
 )
 
 func TestExitCode(t *testing.T) {
-	ran, err := Exec(nil, nil, nil, "", "sh", "-c", "exit 99")
+	ran, err := Exec(nil, nil, nil, "sh", "-c", "exit 99")
 	if err == nil {
 		t.Fatal("unexpected nil error from run")
 	}
@@ -24,7 +24,7 @@ func TestExitCode(t *testing.T) {
 func TestSettingPwd(t *testing.T) {
 	pwd := "/"
 	out := &bytes.Buffer{}
-	ran, err := Exec(nil, out, nil, pwd, "pwd")
+	ran, err := ExecAt(nil, out, nil, pwd, "pwd")
 	if err != nil {
 		t.Fatalf("unexpected error from runner: %#v", err)
 	}
@@ -42,7 +42,7 @@ func TestSettingNoPwd(t *testing.T) {
 		t.Errorf("Failed getting current working directory")
 	}
 	out := &bytes.Buffer{}
-	ran, err := Exec(nil, out, nil, "", "pwd")
+	ran, err := ExecAt(nil, out, nil, "", "pwd")
 	if err != nil {
 		t.Fatalf("unexpected error from runner: %#v", err)
 	}
@@ -66,7 +66,7 @@ func TestSettingInvalidPwd(t *testing.T) {
 func TestEnv(t *testing.T) {
 	env := "SOME_REALLY_LONG_MAGEFILE_SPECIFIC_THING"
 	out := &bytes.Buffer{}
-	ran, err := Exec(map[string]string{env: "foobar"}, out, nil, "", "echo", fmt.Sprintf("$%s", env))
+	ran, err := Exec(map[string]string{env: "foobar"}, out, nil, "echo", fmt.Sprintf("$%s", env))
 	if err != nil {
 		t.Fatalf("unexpected error from runner: %#v", err)
 	}
