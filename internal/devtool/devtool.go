@@ -1,8 +1,10 @@
 package devtool
 
 import (
+	"bytes"
 	_ "embed"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"runtime"
@@ -11,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
+	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 )
 
@@ -159,4 +162,42 @@ func getTool(dockerfile string, tool string) (*dockerDevTool, error) {
 		}
 	}
 	return &devtool, fmt.Errorf("unable to find devtool %s", tool)
+}
+
+// devtoolOutput represents the output of a devtool to stdout and stderr
+type devtoolOutput struct {
+	// StdOut is the stdout stream to the console
+	StdOut io.Writer
+	// StdErr is the stderr stream to the console
+	StdErr io.Writer
+	// BufOut is the stdout to a buffer
+	BufOut *bytes.Buffer
+	// Buferr is the stdout to a buffer
+	BufErr *bytes.Buffer
+}
+
+// setupStdOutErr setups up multi iowriters and resturns one for
+// stdout and one for stderr. The multi writer for std out will
+// write to a buffer and if mage is run verbose will output to stdout. If non
+// verbose, stdout will be redirected to io.Discard
+// Stderr will always outoput to stderr and to a buffer.
+func setupStdOutErr(forceStdOut bool) devtoolOutput {
+	bufOut := &bytes.Buffer{}
+	bufErr := &bytes.Buffer{}
+	var stdOutDevice io.Writer
+	if mg.Verbose() || forceStdOut {
+		stdOutDevice = os.Stdout
+	} else {
+		stdOutDevice = io.Discard
+	}
+
+	stdout := io.MultiWriter(bufOut, stdOutDevice)
+	stderr := io.MultiWriter(bufErr, os.Stderr)
+
+	return devtoolOutput{
+		StdOut: stdout,
+		StdErr: stderr,
+		BufOut: bufOut,
+		BufErr: bufErr,
+	}
 }
