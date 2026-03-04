@@ -353,6 +353,26 @@ func ValidateWithKubeScore(chart HelmChart) error {
 	return err
 }
 
+// HasChanges checks if the current branch has helmchart changes
+// from the main branch
+func HasChanges() (bool, error) {
+	changedFiles, err := git.DiffToMain()
+	if err != nil {
+		return false, err
+	}
+	charts, err := FindHelmCharts(".")
+	if err != nil {
+		return false, err
+	}
+	paths := []string{}
+	for _, chart := range charts {
+		paths = append(paths, chart.path)
+	}
+	// always trigger on go.mod/sum and workflows because of changes in ci.
+	additionalGlobs := []string{"go.mod", "go.sum", ".github/workflows/*"}
+	return core.CompareChangesToPaths(changedFiles, paths, additionalGlobs)
+}
+
 // findHelmValues will find value yaml files for a  specific environment. It
 // will return them in the correct rendering order.
 // order of finding value files is

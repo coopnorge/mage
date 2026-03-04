@@ -27,3 +27,10 @@ func (K8s) List(ctx context.Context) error {
 	mg.CtxDeps(ctx, kubernetesTargets.List)
 	return nil
 }
+
+// Changes returns the string true or false depending on the fact that
+// the current branch contains changes compared to the main branch.
+func (K8s) Changes(ctx context.Context) error {
+	mg.CtxDeps(ctx, kubernetesTargets.Changes)
+	return nil
+}

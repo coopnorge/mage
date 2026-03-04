@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"context"
 	_ "embed"
+	"fmt"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/kubernetes"
@@ -73,5 +74,21 @@ func List(ctx context.Context) error {
 		return err
 	}
 	kubernetes.ListHelmCharts(charts)
+	return nil
+}
+
+// Changes implements a target that check if the current branch has changes
+// related to main branch
+func Changes(_ context.Context) error {
+	changes, err := kubernetes.HasChanges()
+	if err != nil {
+		return err
+	}
+
+	if changes {
+		fmt.Println("true")
+		return nil
+	}
+	fmt.Println("false")
 	return nil
 }
