@@ -149,3 +149,13 @@ jobs:
       contents: read
       pull-requests: read
     secrets: inherit
+
+  kubernetes:
+    name: Kubernetes
+    needs: ["detect-changes"]
+    # if: ${{  needs.detect-changes.outputs.catalog-info == 'true'  }}
+    uses: ./.github/workflows/reusable-kubernetes.yaml
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: write

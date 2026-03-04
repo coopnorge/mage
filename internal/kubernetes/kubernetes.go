@@ -2,16 +2,21 @@
 package kubernetes
 
 import (
+	"bytes"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
+	"text/template"
+	"unicode/utf8"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/devtool"
 	"github.com/coopnorge/mage/internal/git"
+	"github.com/coopnorge/mage/internal/github"
 )
 
 var (
@@ -80,9 +85,15 @@ func RenderTemplates(chart HelmChart, dest string, try bool) error {
 		path = filepath.Join(base, chart.path)
 	}
 	// make sure dependencies are there
-	_, _, err := helm.Run(nil, path, "dep", "up", ".")
+	depstatus, _, err := helm.Run(nil, path, "dep", "list", ".")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to check dependencies. Please remove all contents %s/charts. Error: %s", chart.path, err)
+	}
+	if strings.Contains(depstatus, "missing") {
+		_, _, err := helm.Run(nil, path, "dep", "up", ".")
+		if err != nil {
+			return err
+		}
 	}
 	out, _, err := helm.Run(nil, path, args...)
 	if filepath.Ext(dest) != "" {
@@ -92,6 +103,8 @@ func RenderTemplates(chart HelmChart, dest string, try bool) error {
 	return err
 }
 
+// DiffTemplates will create a diff of the rendered templates of a helmchart
+// compared to the main branch
 func DiffTemplates(chart HelmChart) error {
 	// dyff between a/helloworld/charts/app/templates/ b/helloworld/charts/app/templates/ -o github
 
@@ -130,32 +143,96 @@ func DiffTemplates(chart HelmChart) error {
 		"--truecolor", "on",
 		"between",
 	}
-	// simply assumming that if CI is set, we are in github actions
-	_, inCI := os.LookupEnv("CI")
-	if inCI {
+	if github.InCI() {
 		args = append(args, "--output", "github")
 	}
 
-	args = append(args, branchFilename, mainFilename)
+	args = append(args, mainFilename, branchFilename)
 
 	fmt.Printf("---\nDiff compared to main of \nchart: %s\nenv: %s\n---\n", chart.path, chart.env)
 	out, _, err := dyff.Run(nil, diffDir, args...)
 
-	if inCI {
-		path := filepath.Join("var", "kubernetes", "diff", fmt.Sprintf("%s-%s.diff", filepath.Base(chart.path), chart.env))
+	if github.InCI() {
+		path := filepath.Join("var", "kubernetes", "diff", fmt.Sprintf("%s-%s.md", filepath.Base(chart.path), chart.env))
 		err := os.MkdirAll(filepath.Dir(path), 0o755)
 		if err != nil {
 			return err
 		}
-		if out == "" {
-			out = fmt.Sprintf("# no diff for %s %s", filepath.Base(chart.path), chart.env)
+
+		title := fmt.Sprintf("%s %s", filepath.Base(chart.path), chart.env)
+		changes := strings.Count(out, "!")
+		summary := fmt.Sprintf("found %d change(s)", changes)
+		if changes > 0 {
+			summary = fmt.Sprintf("found **%d** change(s)", changes)
 		}
-		err = os.WriteFile(path, []byte(out), 0o644)
+		md, err := diffMarkdownTemplate(title, summary, out, 64000)
 		if err != nil {
 			return err
 		}
+		err = os.WriteFile(path, []byte(md), 0o644)
+		if err != nil {
+			return err
+		}
+
+		searchString := fmt.Sprintf("### Kubernetes templates for %s", title)
+
+		found, id, err := github.FindCommentInPR(searchString)
+		if err != nil {
+			return err
+		}
+		if found {
+
+			// err := github.ReplaceCommentInPR(id, path)
+			err := github.HideComment(id)
+			if err != nil {
+				return err
+			}
+		}
+		return github.CreateCommentInPR(path)
 	}
 	return err
+}
+
+func diffMarkdownTemplate(title, summary, diff string, limit int) (string, error) {
+	// make sure template are not to long
+	diffNote := ""
+	if utf8.RuneCountInString(diff) > limit {
+		diff = diff[:limit]
+		diffNote = fmt.Sprintf("# !!NOTE diff has been cut of because it is longer than %d. Full diff is in action log.", limit)
+	}
+
+	// cleanup colorcoding
+	const ansi = "[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]"
+	re := regexp.MustCompile(ansi)
+	diff = re.ReplaceAllString(diff, "")
+	data := map[string]string{
+		"Title":    title,
+		"Summary":  summary,
+		"Diff":     diff,
+		"DiffNote": diffNote,
+	}
+
+	funcMap := template.FuncMap{
+		"tripplebacktick": func() string { return "```" },
+	}
+
+	const mdTemplate = `### Kubernetes templates for {{.Title}}
+
+<details><summary>{{ .Summary }}</summary>
+{{.DiffNote}}
+{{tripplebacktick}}diff
+{{ .Diff }}
+{{tripplebacktick}}
+</details>
+`
+	tmpl, err := template.New("md").Funcs(funcMap).Parse(mdTemplate)
+	if err != nil {
+		return "", err
+	}
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, data)
+	return buf.String(), err
 }
 
 // FindHelmCharts will search through the base directory to find the
@@ -202,6 +279,7 @@ func FindHelmCharts(base string) ([]HelmChart, error) {
 	return charts, nil
 }
 
+// ListHelmCharts list the found helm charts in this repository
 func ListHelmCharts(charts []HelmChart) {
 	for _, chart := range charts {
 		fmt.Printf("---\n")
@@ -211,6 +289,8 @@ func ListHelmCharts(charts []HelmChart) {
 	}
 }
 
+// ValidateWithKubeConform will run kubeconform validation on a supplied
+// HelmChart
 func ValidateWithKubeConform(chart HelmChart) error {
 	dest, cleanup, err := core.MkdirTemp()
 	defer cleanup()
@@ -230,10 +310,17 @@ func ValidateWithKubeConform(chart HelmChart) error {
 		return err
 	}
 	args = append(args, files...)
-	_, _, err = kubeconform.Run(nil, dest, args...)
+	out, _, err := kubeconform.Run(nil, dest, args...)
+	if github.InCI() && err != nil {
+		err := github.PrintActionMessage("error", fmt.Sprintf("kubeconform failed for %s %s", filepath.Base(chart.path), chart.env), out)
+		if err != nil {
+			return err
+		}
+	}
 	return err
 }
 
+// ValidateWithKubeScore will run kube-score validation on a supplied HelmChart
 func ValidateWithKubeScore(chart HelmChart) error {
 	dest, cleanup, err := core.MkdirTemp()
 	defer cleanup()
@@ -256,23 +343,24 @@ func ValidateWithKubeScore(chart HelmChart) error {
 		return nil
 	}
 	args = append(args, files...)
-	// if filepath.IsLocal(dir) {
-	// 	root, err := core.GetRepoRoot()
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	dir = filepath.Join(root, dir)
-	// }
-	_, _, err = kubescore.Run(nil, dest, args...)
+	out, _, err := kubescore.Run(nil, dest, args...)
+	if github.InCI() && err != nil {
+		err := github.PrintActionMessage("error", fmt.Sprintf("kubecore failed for %s %s", filepath.Base(chart.path), chart.env), out)
+		if err != nil {
+			return err
+		}
+	}
 	return err
 }
 
+// findHelmValues will find value yaml files for a  specific environment. It
+// will return them in the correct rendering order.
+// order of finding value files is
+// case only env files
+// values.yaml, values-<env>.yaml
+// case with extra name
+// values.yaml, values-<name>.yaml, values-<name>-<env>.yaml
 func findHelmValues(dir string, env string) ([]string, error) {
-	// order of finding value files is
-	// case only env files
-	// values.yaml, values-<env>.yaml
-	// case with extra name
-	// values.yaml, values-<name>.yaml, values-<name>-<env>.yaml
 	// We are finding in reverse because if no env values are found we assume
 	// no env
 	files := []string{}
