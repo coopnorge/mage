@@ -116,6 +116,20 @@ func gitHubActionsEscape(s string) string {
 	return r.Replace(s)
 }
 
+// StartLogGroup starts a log group if running in github actions
+func StartLogGroup(name string) {
+	if InCI() {
+		fmt.Printf("::group::%s\n", gitHubActionsEscape(name))
+	}
+}
+
+// EndLogGroup ends a log group if running in github actions
+func EndLogGroup() {
+	if InCI() {
+		fmt.Println("::endgroup::")
+	}
+}
+
 // InCI returns a true if you are runing in Github Actions
 func InCI() bool {
 	_, found := os.LookupEnv("CI")

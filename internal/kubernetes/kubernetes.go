@@ -310,7 +310,9 @@ func ValidateWithKubeConform(chart HelmChart) error {
 		return err
 	}
 	args = append(args, files...)
+	github.StartLogGroup("kubeconform")
 	out, _, err := kubeconform.Run(nil, dest, args...)
+	github.EndLogGroup()
 	if github.InCI() && err != nil {
 		err := github.PrintActionMessage("error", fmt.Sprintf("kubeconform failed for %s %s", filepath.Base(chart.path), chart.env), out)
 		if err != nil {
@@ -343,7 +345,9 @@ func ValidateWithKubeScore(chart HelmChart) error {
 		return nil
 	}
 	args = append(args, files...)
+	github.StartLogGroup("kube-score")
 	out, _, err := kubescore.Run(nil, dest, args...)
+	github.EndLogGroup()
 	if github.InCI() && err != nil {
 		err := github.PrintActionMessage("error", fmt.Sprintf("kubecore failed for %s %s", filepath.Base(chart.path), chart.env), out)
 		if err != nil {
