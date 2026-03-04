@@ -13,7 +13,7 @@ import (
 )
 
 var goModTemplateString = `module dummy
-go 1.25.0
+go 1.26.0
 
 require github.com/coopnorge/mage v0.23.3
 require (
