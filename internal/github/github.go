@@ -130,7 +130,7 @@ func EndLogGroup() {
 	}
 }
 
-// InCI returns a true if you are runing in Github Actions
+// InCI returns a true if you are running in Github Actions
 func InCI() bool {
 	_, found := os.LookupEnv("CI")
 	return found

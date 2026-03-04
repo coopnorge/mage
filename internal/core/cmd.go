@@ -148,7 +148,7 @@ func OutputWith(env map[string]string, cmd string, args ...string) (string, erro
 	return OutputAtWith(env, "", cmd, args...)
 }
 
-// OutputAt	With is like RunAtWith, but returns what is written to stdout.
+// OutputAtWith is like RunAtWith, but returns what is written to stdout.
 func OutputAtWith(env map[string]string, pwd string, cmd string, args ...string) (string, error) {
 	buf := &bytes.Buffer{}
 	_, err := ExecAt(env, buf, os.Stderr, pwd, cmd, args...)
@@ -172,7 +172,6 @@ func Exec(env map[string]string, stdout, stderr io.Writer, cmd string, args ...s
 // Ran reports if the command ran (rather than was not found or not executable).
 // Code reports the exit code the command returned if it ran. If err == nil, ran
 // is always true and code is always 0.
-
 func ExecAt(env map[string]string, stdout, stderr io.Writer, pwd string, cmd string, args ...string) (ran bool, err error) {
 	expand := func(s string) string {
 		s2, ok := env[s]

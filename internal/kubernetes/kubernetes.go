@@ -26,6 +26,7 @@ var (
 	dyff        devtool.Dyff
 )
 
+// HelmChart represents a helmchart with the path env and valuefiles
 type HelmChart struct {
 	path       string
 	env        string
@@ -44,7 +45,7 @@ func isHelmChart(p string, d fs.DirEntry) bool {
 // it is a file, then it will render all in 1 temiplate.
 // When third argument is set to true it will try to render even if some
 // files are not there. This is used when rendering a template which is in
-// unkown state
+// unknown state
 func RenderTemplates(chart HelmChart, dest string, try bool) error {
 	if try {
 		// if the chart does not exist it will just return an empty dir, which
@@ -181,8 +182,6 @@ func DiffTemplates(chart HelmChart) error {
 			return err
 		}
 		if found {
-
-			// err := github.ReplaceCommentInPR(id, path)
 			err := github.HideComment(id)
 			if err != nil {
 				return err

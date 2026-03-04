@@ -1,7 +1,6 @@
 package kubernetes
 
 import (
-	_ "embed"
 	"testing"
 
 	"github.com/coopnorge/mage/internal/core"
@@ -144,9 +143,7 @@ func TestKubeScore(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := ValidateWithKubeScore(tt.chart)
 			if tt.wantErr {
-				if assert.Error(t, err, tt.name) { //&& tt.errMsg != "" {
-					// assert.Contains(t, err.Error(), tt.errMsg)
-				}
+				assert.Error(t, err, tt.name)
 			} else {
 				assert.NoError(t, err, tt.name)
 			}

@@ -112,7 +112,7 @@ func Worktree(branch string) (string, func(), error) {
 
 	// We use git worktree remove which cleans up the admin files and the directory.
 	cleanup := func() {
-		_ = sh.Run("git", "worktree", "remove", targetDir)
+		_ = sh.Run("git", "worktree", "remove", targetDir) //nolint:errcheck
 		cleanupDir()
 	}
 

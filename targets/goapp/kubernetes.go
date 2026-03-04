@@ -23,6 +23,7 @@ func (K8s) Diff(ctx context.Context) error {
 	return nil
 }
 
+// List returns a list of found helm charts with their envs
 func (K8s) List(ctx context.Context) error {
 	mg.CtxDeps(ctx, kubernetesTargets.List)
 	return nil

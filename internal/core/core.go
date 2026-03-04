@@ -188,7 +188,10 @@ func ListRescursiveFiles(root, pattern string) ([]string, error) {
 		// Check if it's a file and if its name matches the pattern.
 		if !d.IsDir() {
 			// filepath.Match checks a filename against a glob pattern.
-			if matched, _ := filepath.Match(pattern, d.Name()); matched {
+			if matched, err := filepath.Match(pattern, d.Name()); matched {
+				if err != nil {
+					return err
+				}
 				// make relateive
 				relPath, err := filepath.Rel(root, path)
 				if err != nil {

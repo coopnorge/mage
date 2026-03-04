@@ -2,7 +2,6 @@ package kubernetes
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
 
 	"github.com/coopnorge/mage/internal/core"
@@ -53,7 +52,7 @@ func kubescore(_ context.Context, chart kubernetes.HelmChart) error {
 }
 
 // Diff runs a diff for all the helm charts compared to the manin brdnch
-func Diff(ctx context.Context) error {
+func Diff(_ context.Context) error {
 	charts, err := kubernetes.FindHelmCharts(".")
 	if err != nil {
 		return err
@@ -68,7 +67,7 @@ func Diff(ctx context.Context) error {
 }
 
 // List lists the found helm charts
-func List(ctx context.Context) error {
+func List(_ context.Context) error {
 	charts, err := kubernetes.FindHelmCharts(".")
 	if err != nil {
 		return err
