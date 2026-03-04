@@ -9,7 +9,7 @@ on:
 
   schedule:
     # At 07:30 AM and 12:30 PM, every day
-    - cron: '30 7,12 * * *'
+    - cron: "30 7,12 * * *"
 
   pull_request:
     types:
@@ -33,7 +33,3 @@ jobs:
       issues: write
     uses: coopnorge/github-workflow-renovate/.github/workflows/renovate.yaml@v0
     secrets: inherit
-    with:
-      # Copy go.sum to all the paths where it exists
-      post-upgrade-command: |
-        bash .github/renovate-post-upgrade.sh

@@ -2,29 +2,14 @@ package policybot
 
 import (
 	"os"
-	"path/filepath"
 	"testing"
-	"text/template"
 
 	"github.com/coopnorge/mage/internal/core"
+	"github.com/coopnorge/mage/internal/targets/testhelpers"
 	"github.com/magefile/mage/sh"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-var goModTemplateString = `module dummy
-go 1.25.0
-
-require github.com/coopnorge/mage v0.23.3
-require (
-	github.com/bmatcuk/doublestar/v4 v4.10.0
-	github.com/hashicorp/go-version v1.8.0
-	github.com/magefile/mage v1.15.0
-	github.com/stretchr/testify v1.11.1
-)
-
-tool github.com/magefile/mage
-replace github.com/coopnorge/mage => {{ . }}`
 
 func TestPolicyBotTargets(t *testing.T) {
 	tests := []struct {
@@ -53,21 +38,14 @@ func TestPolicyBotTargets(t *testing.T) {
 		},
 	}
 
-	goModMage, err := sh.Output("go", "env", "GOMOD")
-	if err != nil {
-		panic(err)
-	}
-	mageRoot := filepath.Dir(goModMage)
-	goModTemplate, err := template.New("gomod").Parse(goModTemplateString)
-	if err != nil {
-		panic(err)
-	}
+	goModuleFactory := testhelpers.CreateGoModuleFactory(t)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// create isolated temp project
 			dir, cleanup, err := core.MkdirTemp()
 			require.NoError(t, err)
+			t.Cleanup(cleanup)
 			err = os.CopyFS(dir, os.DirFS(tt.testProject))
 			require.NoError(t, err)
 			err = os.CopyFS(dir, os.DirFS("testdata/layout"))
@@ -75,16 +53,7 @@ func TestPolicyBotTargets(t *testing.T) {
 
 			t.Chdir(dir)
 
-			goMod, err := os.Create("go.mod")
-			require.NoError(t, err)
-			err = goModTemplate.Execute(goMod, mageRoot)
-			require.NoError(t, err)
-
-			t.Cleanup(func() {
-				err = goMod.Close()
-				require.NoError(t, err)
-				cleanup()
-			})
+			goModuleFactory(t)
 
 			args := []string{"tool", "mage", "-v"}
 			args = append(args, tt.targets...)
