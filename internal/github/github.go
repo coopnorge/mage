@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 	"os/exec"
 	"slices"
@@ -104,8 +103,17 @@ func PrintActionMessage(level, title, message string) error {
 	if !slices.Contains(allowedLevels, level) {
 		return fmt.Errorf("supplied level %s is not in the list %s", level, strings.Join(allowedLevels, ","))
 	}
-	fmt.Printf("::%s title=%s::%s", level, url.QueryEscape(title), url.QueryEscape(message))
+	fmt.Printf("::%s title=%s::%s", level, gitHubActionsEscape(title), gitHubActionsEscape(message))
 	return nil
+}
+
+func gitHubActionsEscape(s string) string {
+	r := strings.NewReplacer(
+		"%", "%25",
+		"\n", "%0A",
+		"\r", "%0D",
+	)
+	return r.Replace(s)
 }
 
 // InCI returns a true if you are runing in Github Actions
