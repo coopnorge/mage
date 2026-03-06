@@ -60,7 +60,7 @@ func (dyff Dyff) versionOK() error {
 		return err
 	}
 	// set constraint that minor minus 5 version should be minimum
-	constraintString := fmt.Sprintf(">= %s.%s", strconv.Itoa(devtool.Segments()[0]), strconv.Itoa(devtool.Segments()[1]-2))
+	constraintString := fmt.Sprintf(">= %s.%s", strconv.Itoa(devtool.Segments()[0]), strconv.Itoa(devtool.Segments()[1]-5))
 	constraint, err := version.NewConstraint(constraintString)
 	if err != nil {
 		return err
