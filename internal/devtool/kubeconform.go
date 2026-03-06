@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/hashicorp/go-version"
@@ -67,7 +66,7 @@ func (kf KubeConform) runNative(env map[string]string, workdir string, args ...s
 	outs := setupStdOutErr(true)
 	_, err := core.ExecAt(env, outs.StdOut, outs.StdErr, workdir, "kubeconform", kf.addDefautsArgs(args...)...)
 
-	return strings.TrimSuffix((outs.BufOut).String(), "\n"), strings.TrimSuffix((outs.BufErr).String(), "\n"), err
+	return outs.printOut(), outs.printErr(), err
 }
 
 // DevtoolGo runs the devtool for Go
@@ -102,7 +101,7 @@ func (kf KubeConform) runInDocker(env map[string]string, workdir string, args ..
 	outs := setupStdOutErr(true)
 	_, err = core.Exec(env, outs.StdOut, outs.StdErr, "docker", runArgs...)
 
-	return strings.TrimSuffix((outs.BufOut).String(), "\n"), strings.TrimSuffix((outs.BufErr).String(), "\n"), err
+	return outs.printOut(), outs.printErr(), err
 }
 
 func (kf KubeConform) addDefautsArgs(args ...string) []string {

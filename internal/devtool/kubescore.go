@@ -70,7 +70,7 @@ func (kubescore KubeScore) runNative(env map[string]string, workdir string, args
 	outs := setupStdOutErr(true)
 	_, err := core.ExecAt(env, outs.StdOut, outs.StdErr, workdir, "kube-score", kubescore.addDefautsArgs(args...)...)
 
-	return strings.TrimSuffix((outs.BufOut).String(), "\n"), strings.TrimSuffix((outs.BufErr).String(), "\n"), err
+	return outs.printOut(), outs.printErr(), err
 }
 
 func (kubescore KubeScore) runInDocker(env map[string]string, workdir string, args ...string) (string, string, error) {
@@ -102,7 +102,7 @@ func (kubescore KubeScore) runInDocker(env map[string]string, workdir string, ar
 	outs := setupStdOutErr(true)
 	_, err = core.Exec(env, outs.StdOut, outs.StdErr, "docker", kubescore.addDefautsArgs(runArgs...)...)
 
-	return strings.TrimSuffix((outs.BufOut).String(), "\n"), strings.TrimSuffix((outs.BufErr).String(), "\n"), err
+	return outs.printOut(), outs.printErr(), err
 }
 
 func (kubescore KubeScore) addDefautsArgs(args ...string) []string {

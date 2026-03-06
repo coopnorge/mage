@@ -60,7 +60,7 @@ func (dyff Dyff) versionOK() error {
 		return err
 	}
 	// set constraint that minor minus 5 version should be minimum
-	constraintString := fmt.Sprintf(">= %s.%s", strconv.Itoa(devtool.Segments()[0]), strconv.Itoa(devtool.Segments()[1]-5))
+	constraintString := fmt.Sprintf(">= %s.%s", strconv.Itoa(devtool.Segments()[0]), strconv.Itoa(devtool.Segments()[1]-2))
 	constraint, err := version.NewConstraint(constraintString)
 	if err != nil {
 		return err
@@ -75,7 +75,7 @@ func (dyff Dyff) runNative(env map[string]string, workdir string, args ...string
 	outs := setupStdOutErr(true)
 	_, err := core.ExecAt(env, outs.StdOut, outs.StdErr, workdir, "dyff", args...)
 
-	return strings.TrimSuffix((outs.BufOut).String(), "\n"), strings.TrimSuffix((outs.BufErr).String(), "\n"), err
+	return outs.printOut(), outs.printErr(), err
 }
 
 func (dyff Dyff) runInDocker(env map[string]string, workdir string, args ...string) (string, string, error) {
@@ -107,7 +107,7 @@ func (dyff Dyff) runInDocker(env map[string]string, workdir string, args ...stri
 	outs := setupStdOutErr(true)
 	_, err = core.Exec(env, outs.StdOut, outs.StdErr, "docker", runArgs...)
 
-	return strings.TrimSuffix((outs.BufOut).String(), "\n"), strings.TrimSuffix((outs.BufErr).String(), "\n"), err
+	return outs.printOut(), outs.printErr(), err
 }
 
 func (dyff Dyff) buildImage() (string, error) {

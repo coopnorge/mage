@@ -201,3 +201,13 @@ func setupStdOutErr(alwaysStdOut bool) devtoolOutput {
 		BufErr: bufErr,
 	}
 }
+
+// printOut returns the bufOut in strings  with new lines.
+func (o devtoolOutput) printOut() string {
+	return strings.TrimSuffix((o.BufOut).String(), "\n")
+}
+
+// printErr returns the bufErr in stringswith new lines.
+func (o devtoolOutput) printErr() string {
+	return strings.TrimSuffix((o.BufErr).String(), "\n")
+}

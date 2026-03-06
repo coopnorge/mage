@@ -69,7 +69,7 @@ func (helm Helm) runNative(env map[string]string, workdir string, args ...string
 	outs := setupStdOutErr(false)
 	_, err := core.ExecAt(env, outs.StdOut, outs.StdErr, workdir, "helm", helm.addDefautsArgs(args...)...)
 
-	return strings.TrimSuffix((outs.BufOut).String(), "\n"), strings.TrimSuffix((outs.BufErr).String(), "\n"), err
+	return outs.printOut(), outs.printErr(), err
 }
 
 func (helm Helm) runInDocker(env map[string]string, workdir string, args ...string) (string, string, error) {
@@ -101,7 +101,7 @@ func (helm Helm) runInDocker(env map[string]string, workdir string, args ...stri
 	outs := setupStdOutErr(false)
 	_, err = sh.Exec(env, outs.StdOut, outs.StdErr, "docker", runArgs...)
 
-	return strings.TrimSuffix((outs.BufOut).String(), "\n"), strings.TrimSuffix((outs.BufErr).String(), "\n"), err
+	return outs.printOut(), outs.printErr(), err
 }
 
 func (helm Helm) addDefautsArgs(args ...string) []string {
