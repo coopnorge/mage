@@ -54,7 +54,7 @@ func (kubescore KubeScore) versionOK() error {
 	if err != nil {
 		return err
 	}
-	// set constraint that minor minus 5 version should be minimum
+	// set constraint that minor minus 2 version should be minimum
 	constraintString := fmt.Sprintf(">= %s.%s", strconv.Itoa(devtool.Segments()[0]), strconv.Itoa(devtool.Segments()[1]-2))
 	constraint, err := version.NewConstraint(constraintString)
 	if err != nil {
