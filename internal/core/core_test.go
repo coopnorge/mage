@@ -82,7 +82,7 @@ func TestMkdirTemp(t *testing.T) {
 			got, cleanup, gotErr := core.MkdirTemp()
 			assert.NoError(t, gotErr)
 			assert.DirExists(t, got)
-			//assert.Regexp(t, regexp.MustCompile(fmt.Sprintf("%s/.+", os.TempDir())), got)
+			// assert.Regexp(t, regexp.MustCompile(fmt.Sprintf("%s/.+", os.TempDir())), got)
 			assert.Regexp(t, regexp.MustCompile(filepath.Join(os.TempDir(), "/.+")), got)
 			cleanup()
 		})
@@ -145,6 +145,30 @@ func TestCompareChangesToPaths(t *testing.T) {
 			got, gotErr := core.CompareChangesToPaths(tt.changes, tt.paths, tt.additionalGlobs)
 			assert.NoError(t, gotErr)
 			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestListFilesRecursively(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		directory string
+		pattern   string
+		want      []string
+	}{
+		{
+			name:      "List files recursevely",
+			pattern:   "*.txt",
+			directory: "testdata/folder1",
+			want:      []string{"a/a.txt", "a/b.txt", "b/c.txt"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out, gotErr := core.ListFilesRecursively(tt.directory, tt.pattern)
+			assert.NoError(t, gotErr)
+			assert.ElementsMatch(t, tt.want, out)
 		})
 	}
 }

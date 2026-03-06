@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/coopnorge/mage/internal/core"
 	"github.com/magefile/mage/sh"
 )
 
@@ -87,4 +88,36 @@ func checkBranch(branch string) error {
 // IsTracked returns true if the file is tracked by git
 func IsTracked(path string) bool {
 	return sh.Run("git", "ls-files", "--error-unmatch", path) == nil
+}
+
+// CurrentBranch returns the current branch
+func CurrentBranch() (string, error) {
+	return sh.Output("git", "rev-parse", "--abbrev-ref", "HEAD")
+}
+
+// Worktree creates a new worktree for the given branch.
+// It returns the absolute path to the worktree and an error if the operation fails.
+func Worktree(branch string) (string, func(), error) {
+	// Define target location (e.g., in a 'worktrees' directory outside the current repo).
+	// Placing worktrees outside prevents recursive issues with tools scanning the main repo.
+	targetDir, cleanupDir, err := core.MkdirTemp()
+	if err != nil {
+		return targetDir, cleanupDir, err
+	}
+	// Execute 'git worktree add <path> <branch>'
+	err = sh.Run("git", "worktree", "add", targetDir, branch)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to create worktree for branch %s: %w", branch, err)
+	}
+
+	// We use git worktree remove which cleans up the admin files and the directory.
+	cleanup := func() {
+		err = sh.Run("git", "worktree", "remove", targetDir)
+		if err != nil {
+			fmt.Printf("Failed to delete %s, error %s", targetDir, err)
+		}
+		cleanupDir()
+	}
+
+	return targetDir, cleanup, nil
 }
