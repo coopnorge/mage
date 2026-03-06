@@ -149,7 +149,7 @@ func TestCompareChangesToPaths(t *testing.T) {
 	}
 }
 
-func TestListRecursiveFiles(t *testing.T) {
+func TestListFilesRecursively(t *testing.T) {
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for target function.
@@ -166,7 +166,7 @@ func TestListRecursiveFiles(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			out, gotErr := core.ListRescursiveFiles(tt.directory, tt.pattern)
+			out, gotErr := core.ListFilesRecursively(tt.directory, tt.pattern)
 			assert.NoError(t, gotErr)
 			assert.ElementsMatch(t, tt.want, out)
 		})

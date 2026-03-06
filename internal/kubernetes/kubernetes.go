@@ -304,7 +304,7 @@ func ValidateWithKubeConform(chart HelmChart) error {
 		"-schema-location", "default",
 		"--schema-location", "https://raw.githubusercontent.com/coopnorge/kubernetes-schemas/main/api-platform/{{ .ResourceKind }}{{ .KindSuffix }}.json",
 	}
-	files, err := core.ListRescursiveFiles(dest, "*.yaml")
+	files, err := core.ListFilesRecursively(dest, "*.yaml")
 	if err != nil {
 		return err
 	}
@@ -336,7 +336,7 @@ func ValidateWithKubeScore(chart HelmChart) error {
 		"score",
 	}
 
-	files, err := core.ListRescursiveFiles(dest, "*.yaml")
+	files, err := core.ListFilesRecursively(dest, "*.yaml")
 	if err != nil {
 		return err
 	}

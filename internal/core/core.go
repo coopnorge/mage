@@ -174,8 +174,8 @@ func GetRepoRoot() (string, error) {
 	return cwd, nil
 }
 
-// ListRescursiveFiles recursively finds all files in the root directory that match the given pattern.
-func ListRescursiveFiles(root, pattern string) ([]string, error) {
+// ListFilesRecursively recursively finds all files in the root directory that match the given pattern.
+func ListFilesRecursively(root, pattern string) ([]string, error) {
 	var matches []string
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
