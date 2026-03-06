@@ -35,6 +35,11 @@ func TestFindHelmCharts(t *testing.T) {
 					env:        "dev",
 					valueFiles: []string{"values.yaml", "values-this-dev.yaml"},
 				},
+				{
+					path:       "infrastructure/kubernetes/helm/charts/charta",
+					env:        "fail",
+					valueFiles: []string{"values.yaml", "values-production-fail.yaml"},
+				},
 			},
 			wantErr: false,
 		},

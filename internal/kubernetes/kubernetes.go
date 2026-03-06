@@ -239,7 +239,6 @@ func diffMarkdownTemplate(title, summary, diff string, limit int) (string, error
 func FindHelmCharts(base string) ([]HelmChart, error) {
 	directories := []string{}
 	charts := []HelmChart{}
-	envs := []string{"dev", "test", "staging", "production"}
 
 	err := filepath.WalkDir(base, func(workDir string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -258,6 +257,10 @@ func FindHelmCharts(base string) ([]HelmChart, error) {
 		return nil, err
 	}
 	for _, dir := range directories {
+		envs, err := detectHelmEnvironments(dir)
+		if err != nil {
+			return charts, err
+		}
 		for _, env := range envs {
 			valueFiles, err := findHelmValues(dir, env)
 			if err != nil {
@@ -414,4 +417,26 @@ func findHelmValues(dir string, env string) ([]string, error) {
 		files = append(files, "values.yaml")
 	}
 	return files, nil
+}
+
+// detectHelmEnvironments will try to detect all environments for helm values
+func detectHelmEnvironments(dir string) ([]string, error) {
+	// Try to detect environments
+	environments := []string{}
+	allEnvironmentFiles, err := filepath.Glob(fmt.Sprintf("%s/values-*.yaml", dir))
+	if err != nil {
+		return environments, err
+	}
+	if err != nil {
+		return []string{}, err
+	}
+	for _, environmentFile := range allEnvironmentFiles {
+		environmentFileSlice := strings.Split(environmentFile, "-")
+		environment := strings.Split(environmentFileSlice[len(environmentFileSlice)-1], ".")[0]
+		if slices.Contains(environments, environment) {
+			continue
+		}
+		environments = append(environments, environment)
+	}
+	return environments, nil
 }
