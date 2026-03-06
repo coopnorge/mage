@@ -427,9 +427,6 @@ func detectHelmEnvironments(dir string) ([]string, error) {
 	if err != nil {
 		return environments, err
 	}
-	if err != nil {
-		return []string{}, err
-	}
 	for _, environmentFile := range allEnvironmentFiles {
 		environmentFileSlice := strings.Split(environmentFile, "-")
 		environment := strings.Split(environmentFileSlice[len(environmentFileSlice)-1], ".")[0]
