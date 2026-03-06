@@ -13,7 +13,7 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
-// Dyff holds the devtool for policy-bot
+// Dyff holds the devtool for dyff
 type Dyff struct{}
 
 // DyffDockerfile the content of dyff.Dockerfile
@@ -23,7 +23,7 @@ var DyffDockerfile string
 
 const dyffVersion = "1.10.5"
 
-// Run runs the policy-bot devtool
+// Run runs the dyff devtool
 func (dyff Dyff) Run(env map[string]string, workdir string, args ...string) (string, string, error) {
 	if val, found := os.LookupEnv("DYFF_IN_DOCKER"); found && val == "1" {
 		return dyff.runInDocker(env, workdir, args...)
@@ -60,7 +60,7 @@ func (dyff Dyff) versionOK() error {
 		return err
 	}
 	// set constraint that minor minus 5 version should be minimum
-	constraintString := fmt.Sprintf(">= %s.%s", strconv.Itoa(devtool.Segments()[0]), strconv.Itoa(devtool.Segments()[1]-2))
+	constraintString := fmt.Sprintf(">= %s.%s", strconv.Itoa(devtool.Segments()[0]), strconv.Itoa(devtool.Segments()[1]-5))
 	constraint, err := version.NewConstraint(constraintString)
 	if err != nil {
 		return err
