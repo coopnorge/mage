@@ -55,6 +55,9 @@ jobs:
       - name: Check if coop mage has separeate build commands
         id: has-multiple-cmds
         run: echo "outcome=$(go tool mage -l | grep go:buildBinaries | wc -l)" >> $GITHUB_OUTPUT
+      - name: Download Go modules
+        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
+        run: "go tool mage -v go:downloadModules"
       - name: Run Go Lint
         if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
         run: "go tool mage -v go:lint"
@@ -81,6 +84,9 @@ jobs:
       - name: Check if coop mage has separate build commands
         id: has-multiple-cmds
         run: echo "outcome=$(go tool mage -l | grep go:buildBinaries | wc -l)" >> $GITHUB_OUTPUT
+      - name: Download Go modules
+        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
+        run: "go tool mage -v go:downloadModules"
       - name: Run Go Test
         if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
         run: "go tool mage -v go:test"
