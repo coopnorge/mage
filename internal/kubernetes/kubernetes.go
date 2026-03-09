@@ -337,6 +337,7 @@ func ValidateWithKubeScore(chart HelmChart) error {
 	}
 	args := []string{
 		"score",
+		"--ignore-container-cpu-limit", // We cannot ignore cpu limit as a annotation. Only all resources can be ignored.
 	}
 
 	files, err := core.ListFilesRecursively(dest, "*.yaml")

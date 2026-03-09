@@ -142,6 +142,15 @@ func TestKubeScore(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "No cpu limits should pass",
+			chart: HelmChart{
+				env:        "production",
+				path:       "internal/kubernetes/testdata/repo/infrastructure/kubernetes/helm/charts/chartd",
+				valueFiles: []string{"values.yaml"},
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {

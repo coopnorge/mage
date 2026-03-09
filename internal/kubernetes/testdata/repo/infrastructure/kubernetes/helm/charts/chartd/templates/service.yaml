@@ -1,0 +1,144 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    argocd.argoproj.io/tracking-id: helloworld-api-staging-helloworld:apps/Deployment:helloworld/helloworld
+    kube-score/ignore: >-
+      pod-probes,pod-probes-identical,pod-networkpolicy,deployment-has-poddisruptionbudget,deployment-has-host-podantiaffinity,container-ephemeral-storage-request-and-limit
+    reloader.stakater.com/auto: 'true'
+  labels:
+    app.kubernetes.io/name: helloworld
+    helm.sh/chart: coop-app-chart-0.32.0
+    tags.datadoghq.com/env: staging
+    tags.datadoghq.com/service: helloworld
+    tags.datadoghq.com/version: v2026.02.24093214
+  name: helloworld
+  namespace: helloworld
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: helloworld
+  template:
+    metadata:
+      annotations:
+        apm.datadoghq.com/env: >-
+          { "DD_ENV": "staging", "DD_SERVICE": "helloworld.istio-sidecar",
+          "DD_VERSION": "v2026.02.24093214"}
+        proxy.istio.io/config: '{ "holdApplicationUntilProxyStarts": true }'
+        sidecar.istio.io/proxyCPU: 20m
+        sidecar.istio.io/proxyCPULimit: 1000m
+        sidecar.istio.io/proxyMemory: 64Mi
+        sidecar.istio.io/proxyMemoryLimit: 1Gi
+      labels:
+        app.kubernetes.io/name: helloworld
+        tags.datadoghq.com/env: staging
+        tags.datadoghq.com/service: helloworld
+        tags.datadoghq.com/version: v2026.02.24093214
+    spec:
+      containers:
+        - env:
+            - name: DD_DOGSTATSD_URL
+              value: unix:///var/run/datadog/dsd.socket
+            - name: DD_TRACE_AGENT_URL
+              value: /var/run/datadog/apm.socket
+            - name: DD_ENV
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/env']
+            - name: DD_SERVICE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/service']
+            - name: DD_VERSION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/version']
+            - name: GRPC_GW_PORT
+              value: '3001'
+            - name: PORT
+              value: '3000'
+            - name: APIS
+              value: helloworldv1 helloworldv1beta1
+            - name: DD_EXPERIMENTAL_TRACING_ENABLED
+              value: 'true'
+            - name: SHUTDOWN_TIMEOUT
+              value: 5s
+            - name: STORE_INFORMATION_ADDRESS
+              value: api.staging.coop:443
+            - name: STORE_INFORMATION_TOKEN_URL
+              value: https://login.staging.coop/oauth/token
+            - name: TEST_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: TEST_SECRET
+                  name: helloworld
+            - name: STORE_INFORMATION_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key: STORE_INFORMATION_CLIENT_ID
+                  name: store-information-auth
+            - name: STORE_INFORMATION_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: STORE_INFORMATION_CLIENT_SECRET
+                  name: store-information-auth
+          image: >-
+            europe-docker.pkg.dev/helloworld-shared-0918/helloworld/helloworld:v2026.02.24093214
+          imagePullPolicy: Always
+          livenessProbe:
+            tcpSocket:
+              port: 3000
+          name: helloworld
+          ports:
+            - containerPort: 3000
+              name: helloworld
+              protocol: TCP
+            - containerPort: 3001
+              name: grpc-gateway
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+          resources:
+            limits:
+              memory: 64Mi
+            requests:
+              cpu: 30m
+              memory: 64Mi
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 65534
+            runAsNonRoot: true
+            runAsUser: 65534
+          volumeMounts:
+            - mountPath: /var/run/datadog
+              name: dsdsocket
+              readOnly: true
+            - mountPath: /tmp
+              name: temp
+      securityContext:
+        fsGroup: 65534
+      serviceAccountName: helloworld
+      topologySpreadConstraints:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: helloworld
+          maxSkew: 1
+          topologyKey: topology.gke.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: helloworld
+          maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+      volumes:
+        - hostPath:
+            path: /var/run/datadog/
+          name: dsdsocket
+        - emptyDir: {}
+          name: temp
+
