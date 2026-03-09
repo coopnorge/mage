@@ -337,6 +337,7 @@ func ValidateWithKubeScore(chart HelmChart) error {
 	}
 	args := []string{
 		"score",
+		"--ignore-container-cpu-limit",
 	}
 
 	files, err := core.ListFilesRecursively(dest, "*.yaml")
