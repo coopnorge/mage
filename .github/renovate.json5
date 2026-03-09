@@ -22,7 +22,18 @@
             "datasourceTemplate": "npm",
             "depNameTemplate": "@roadiehq/backstage-entity-validator",
             "versioningTemplate": "semver",
+        },
+        {
+            "customType": "regex",
+            "managerFilePatterns": ["/^internal/devtool/dyff.go$/"],
+            "matchStrings": [
+                "const\\s+dyffVersion\\s*=\\s*(?<currentValue>[^\"]+)"
+            ],
+            "datasourceTemplate": "gitub-releases",
+            "depNameTemplate": "homeport/dyff",
+            "versioningTemplate": "semver",
         }
+
     ],
     "packageRules": [
         {

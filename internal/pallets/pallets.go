@@ -35,7 +35,8 @@ func Validate() error {
 		"https://raw.githubusercontent.com/coopnorge/kubernetes-schemas/main/pallets/{{ .ResourceKind }}{{ .KindSuffix }}.json",
 	}
 	args = append(args, palletList...)
-	return kubeconform.Run(nil, args...)
+	_, _, err = kubeconform.Run(nil, ".", args...)
+	return err
 	// return devtool.Run("kubeconform", dockerArgs, cmd, args...)
 }
 

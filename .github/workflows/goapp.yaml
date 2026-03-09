@@ -50,6 +50,7 @@ jobs:
       policy-bot: ${{ steps.policy-bot.outputs.policy_bot == 'true' && github.event_name == 'pull_request' }}
       pallets: ${{ steps.pallets.outputs.pallets == 'true' && github.event_name == 'pull_request' }}
       catalog-info: ${{ steps.catalog-info.outputs.catalog_info == 'true' && github.event_name == 'pull_request' }}
+      kubernetes: ${{ steps.kubernetes.outputs.kubernetes == 'true' && github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -96,6 +97,11 @@ jobs:
       - name: Check for Catalog-info changes
         id: catalog-info
         run: echo "catalog_info=$(go tool mage catalogInfo:changes)" >> $GITHUB_OUTPUT
+        env:
+          CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
+      - name: Check for Kubernetes changes
+        id: kubernetes
+        run: echo "kubernetes=$(go tool mage k8s:changes)" >> $GITHUB_OUTPUT
         env:
           CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
 
@@ -149,3 +155,13 @@ jobs:
       contents: read
       pull-requests: read
     secrets: inherit
+
+  kubernetes:
+    name: Kubernetes
+    needs: ["detect-changes"]
+    if: ${{  needs.detect-changes.outputs.kubernetes == 'true'  }}
+    uses: ./.github/workflows/reusable-kubernetes.yaml
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: write

@@ -1,0 +1,39 @@
+concurrency:
+  group: reusable-kubernetes-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+on:
+  workflow_call:
+    inputs: {}
+    secrets: {}
+
+jobs:
+  validate-kubernetes:
+    name: Validate Kuberenetes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "stable"
+          cache-dependency-path: "**/go.sum"
+      - name: Install go Tools
+        run: go install tool
+
+      - name: Kubernetes List Detected charts
+        id: list
+        run: go tool mage k8s:list
+
+      - name: Kubernetes validation
+        id: validate
+        run: go tool mage k8s:validate
+
+      - name: Kubernetes validation
+        id: diff
+        run: go tool mage k8s:diff

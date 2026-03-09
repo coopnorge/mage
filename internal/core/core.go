@@ -174,6 +174,53 @@ func GetRepoRoot() (string, error) {
 	return cwd, nil
 }
 
+// ListFilesRecursively recursively finds all files in the root directory that match the given pattern.
+func ListFilesRecursively(root, pattern string) ([]string, error) {
+	var matches []string
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			// If an error occurs (e.g., permission denied on a directory),
+			// the function can decide how to handle it. Returning nil skips the error
+			// for this specific path and continues the traversal.
+			return nil
+		}
+
+		// Check if it's a file and if its name matches the pattern.
+		if !d.IsDir() {
+			// filepath.Match checks a filename against a glob pattern.
+			if matched, err := filepath.Match(pattern, d.Name()); matched {
+				if err != nil {
+					return err
+				}
+				// make relateive
+				relPath, err := filepath.Rel(root, path)
+				if err != nil {
+					return err
+				}
+				matches = append(matches, relPath)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error walking directory: %w", err)
+	}
+
+	return matches, nil
+}
+
+// DirExists returns true if a dir exists
+func DirExists(path string) bool {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true
+	}
+	if errors.Is(err, fs.ErrNotExist) {
+		return false
+	}
+	return false
+}
+
 // GetAbsWorkDir accepts a directory as string and joins it with the current workdir
 // directory to return a absolute directory. If the supplied directory is
 // already absolute it will just return the input.
