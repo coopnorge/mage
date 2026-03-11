@@ -11,7 +11,7 @@ jobs:
     name: Validate Kuberenetes
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: read
       issues: write
     steps:
