@@ -162,6 +162,6 @@ jobs:
     if: ${{  needs.detect-changes.outputs.kubernetes == 'true'  }}
     uses: ./.github/workflows/reusable-kubernetes.yaml
     permissions:
-      contents: read
+      contents: write
       pull-requests: read
       issues: write
