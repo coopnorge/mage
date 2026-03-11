@@ -27,8 +27,13 @@ type ghIssueComments struct {
 // found it will return the most recent. If no comment found it will return
 // false
 func FindCommentInPR(searchString string) (bool, string, error) {
+	args := []string{"pr", "view"}
+	if prNumber, found := os.LookupEnv("PR_NUMBER"); found {
+		args = append(args, prNumber)
+	}
+	args = append(args, "--json", "comments")
 	// jq := fmt.Sprintf(".comments[] | select(.body | contains(\\\"%s\\\")) | .id\, searchString)
-	out, err := sh.Output("gh", "pr", "view", "--json", "comments")
+	out, err := sh.Output("gh", args...)
 	if err != nil {
 		return false, "", err
 	}
@@ -62,7 +67,8 @@ func HideComment(id string) error {
 	cmd.Stderr = &stderr
 	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("failed to run command. Error %s", stderr.String())
+		fmt.Printf("failed to run command. Error %s\n", stderr.String())
+		return nil
 	}
 	return nil
 }
@@ -90,7 +96,14 @@ func CreateCommentInPR(filename string) error {
 	if err != nil {
 		return err
 	}
-	return sh.Run("gh", "pr", "comment", "--body-file", filename)
+
+	args := []string{"pr", "comment"}
+	if prNumber, found := os.LookupEnv("PR_NUMBER"); found {
+		args = append(args, prNumber)
+	}
+	args = append(args, "--body-file", filename)
+
+	return sh.Run("gh", args...)
 }
 
 // PrintActionMessage prints a action message in github action using the

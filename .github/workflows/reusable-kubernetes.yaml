@@ -41,3 +41,4 @@ jobs:
         run: go tool mage k8s:diff
         env:
           GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
