@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/bmatcuk/doublestar/v4 v4.10.0
 	github.com/hashicorp/go-version v1.8.0
-	github.com/magefile/mage v1.15.0
+	github.com/magefile/mage v1.16.0
 	github.com/stretchr/testify v1.11.1
 )
 
