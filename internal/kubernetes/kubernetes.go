@@ -162,9 +162,16 @@ func DiffTemplates(chart HelmChart) error {
 
 		title := fmt.Sprintf("%s %s", filepath.Base(chart.path), chart.env)
 		changes := strings.Count(out, "!")
-		summary := fmt.Sprintf("found %d change(s)", changes)
-		if changes > 0 {
-			summary = fmt.Sprintf("found **%d** change(s)", changes)
+		var summary string
+		switch {
+		case changes == 0:
+			summary = "No changes"
+		case changes == 1:
+			summary = "1 change"
+		case changes > 1:
+			summary = fmt.Sprintf("%d changes", changes)
+		default:
+			summary = fmt.Sprintf("Could not count changes, found %d", changes)
 		}
 		md, err := diffMarkdownTemplate(title, summary, out, 64000)
 		if err != nil {
