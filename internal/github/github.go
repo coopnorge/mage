@@ -22,13 +22,19 @@ type ghIssueComments struct {
 	Comments []ghIssueComment `json:"comments"`
 }
 
+const prNumberEnvVar = "PR_NUMBER"
+
 // FindCommentInPR searches the current PR for a string in a comment.
 // It will return true if found and the comment ID. If muiltiple comments are
 // found it will return the most recent. If no comment found it will return
 // false
 func FindCommentInPR(searchString string) (bool, string, error) {
+	prNumber, found := os.LookupEnv(prNumberEnvVar)
+	if !found {
+		return false, "", fmt.Errorf("the environment variable %s is required but not found", prNumberEnvVar)
+	}
 	// jq := fmt.Sprintf(".comments[] | select(.body | contains(\\\"%s\\\")) | .id\, searchString)
-	out, err := sh.Output("gh", "pr", "view", "--json", "comments")
+	out, err := sh.Output("gh", "pr", "view", prNumber, "--json", "comments")
 	if err != nil {
 		return false, "", err
 	}
@@ -62,7 +68,8 @@ func HideComment(id string) error {
 	cmd.Stderr = &stderr
 	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("failed to run command. Error %s", stderr.String())
+		fmt.Printf("failed to run command. Error %s\n", stderr.String())
+		return nil
 	}
 	return nil
 }
@@ -90,7 +97,12 @@ func CreateCommentInPR(filename string) error {
 	if err != nil {
 		return err
 	}
-	return sh.Run("gh", "pr", "comment", "--body-file", filename)
+	prNumber, found := os.LookupEnv(prNumberEnvVar)
+	if !found {
+		return fmt.Errorf("the environment variable %s is required but not found", prNumberEnvVar)
+	}
+
+	return sh.Run("gh", "pr", "comment", prNumber, "--body-file", filename)
 }
 
 // PrintActionMessage prints a action message in github action using the
