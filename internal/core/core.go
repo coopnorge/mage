@@ -73,22 +73,31 @@ func WriteTempFile(directory, suffix, content string) (string, func(), error) {
 // the caller's responsibility to call the returned cleanup function when the
 // directory is no longer needed. If cleanup errors it will panic.
 func MkdirTemp() (string, func(), error) {
+	tmpRoot := ""
+	rootDir, found := os.LookupEnv("MAGE_TEMP_ROOT")
+	if found {
+		tmpRoot = rootDir
+	}
 	workDir, err := os.Getwd()
 	if err != nil {
 		return "", func() {}, err
 	}
-	path, err := os.MkdirTemp("", path.Base(workDir))
+	path, err := os.MkdirTemp(tmpRoot, path.Base(workDir))
+	if err != nil {
+		return "", func() {}, err
+	}
+	safePath, err := filepath.EvalSymlinks(path)
 	if err != nil {
 		return "", func() {}, err
 	}
 	cleanup := func() {
-		err := os.RemoveAll(path)
+		err := os.RemoveAll(safePath)
 		// Dont panic in CI. GHA  has some issues with deleting
 		if err != nil && os.Getenv("CI") != "true" {
 			panic(err)
 		}
 	}
-	return path, cleanup, nil
+	return safePath, cleanup, nil
 }
 
 // IsDotDirectory checks if the supplied direcory is starts with a dot.
