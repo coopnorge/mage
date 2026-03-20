@@ -4,11 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
-	"github.com/hashicorp/go-version"
 	"github.com/magefile/mage/sh"
 )
 
@@ -17,69 +14,74 @@ type Trivy struct{}
 
 // Run runs the trivy devtool
 func (trivy Trivy) Run(env map[string]string, workdir string, args ...string) error {
-	if !isCommandAvailable("trivy") {
-		fmt.Println("trivy binary not found. Install using 'brew install trivy' Falling back to running the docker version")
-		return trivy.runInDocker(env, workdir, args...)
-	}
+	fmt.Println("Temporary disabling trivy until https://github.com/aquasecurity/trivy-action/ is fixed")
+	// temparary disable trivy until this is fixed
+	// https://github.com/aquasecurity/trivy-action/
+	fmt.Printf("Using docker only until https://github.com/aquasecurity/trivy-action/ is fixed")
+	return trivy.runInDocker(env, workdir, args...)
 
-	err := trivy.versionOK()
-	if err != nil {
-		fmt.Printf("trivy does not meet version constraints. Falling back to docker version\n error: %s\n", err)
-		return trivy.runInDocker(env, workdir, args...)
-	}
-
-	fmt.Println("Using native trivy")
-	return trivy.runNative(env, workdir, args...)
+	// if !isCommandAvailable("trivy") {
+	// 	fmt.Println("trivy binary not found. Install using 'brew install trivy' Falling back to running the docker version")
+	// }
+	//
+	// err := trivy.versionOK()
+	// if err != nil {
+	// 	fmt.Printf("trivy does not meet version constraints. Falling back to docker version\n error: %s\n", err)
+	// 	return trivy.runInDocker(env, workdir, args...)
+	// }
+	//
+	// fmt.Println("Using native trivy")
+	// return trivy.runNative(env, workdir, args...)
 }
 
-func (trivy Trivy) versionOK() error {
-	devtoolData, err := getTool(ToolsDockerfile, "trivy")
-	if err != nil {
-		return err
-	}
-
-	out, err := sh.Output("trivy", "--version")
-	if err != nil {
-		return err
-	}
-	current, err := version.NewVersion(strings.Fields(out)[1])
-	if err != nil {
-		return err
-	}
-	devtool, err := version.NewVersion(devtoolData.version)
-	if err != nil {
-		return err
-	}
-	// set constraint that minor minus 2 version should be minimum
-	constraintString := fmt.Sprintf(">= %s.%s", strconv.Itoa(devtool.Segments()[0]), strconv.Itoa(devtool.Segments()[1]-0))
-	constraint, err := version.NewConstraint(constraintString)
-	if err != nil {
-		return err
-	}
-	if !constraint.Check(current) {
-		return fmt.Errorf("version found %s does not match constraint %s", current.Original(), constraint.String())
-	}
-	return nil
-}
-
-func (trivy Trivy) runNative(env map[string]string, workdir string, args ...string) error {
-	if env == nil {
-		env = map[string]string{}
-	}
-	// set cache
-	// skip for now
-	// env["TF_PLUGIN_CACHE_DIR"] = "$HOME/.trivy.d/plugin-cache"
-
-	if core.Verbose() {
-		return core.RunAtWith(env, core.GetAbsWorkDir(workdir), "trivy", args...)
-	}
-	out, err := core.OutputAtWith(env, core.GetAbsWorkDir(workdir), "trivy", args...)
-	if err != nil {
-		fmt.Println(out)
-		return err
-	}
-	return err
-}
+// func (trivy Trivy) versionOK() error {
+// 	devtoolData, err := getTool(ToolsDockerfile, "trivy")
+// 	if err != nil {
+// 		return err
+// 	}
+//
+// 	out, err := sh.Output("trivy", "--version")
+// 	if err != nil {
+// 		return err
+// 	}
+// 	current, err := version.NewVersion(strings.Fields(out)[1])
+// 	if err != nil {
+// 		return err
+// 	}
+// 	devtool, err := version.NewVersion(devtoolData.version)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	// set constraint that minor minus 2 version should be minimum
+// 	constraintString := fmt.Sprintf(">= %s.%s", strconv.Itoa(devtool.Segments()[0]), strconv.Itoa(devtool.Segments()[1]-0))
+// 	constraint, err := version.NewConstraint(constraintString)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if !constraint.Check(current) {
+// 		return fmt.Errorf("version found %s does not match constraint %s", current.Original(), constraint.String())
+// 	}
+// 	return nil
+// }
+//
+// func (trivy Trivy) runNative(env map[string]string, workdir string, args ...string) error {
+// 	if env == nil {
+// 		env = map[string]string{}
+// 	}
+// 	// set cache
+// 	// skip for now
+// 	// env["TF_PLUGIN_CACHE_DIR"] = "$HOME/.trivy.d/plugin-cache"
+//
+// 	if core.Verbose() {
+// 		return core.RunAtWith(env, core.GetAbsWorkDir(workdir), "trivy", args...)
+// 	}
+// 	out, err := core.OutputAtWith(env, core.GetAbsWorkDir(workdir), "trivy", args...)
+// 	if err != nil {
+// 		fmt.Println(out)
+// 		return err
+// 	}
+// 	return err
+// }
 
 func (trivy Trivy) runInDocker(env map[string]string, workdir string, args ...string) error {
 	devtool, err := getTool(ToolsDockerfile, "trivy")
