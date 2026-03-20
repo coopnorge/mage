@@ -14,7 +14,7 @@ type Trivy struct{}
 
 // Run runs the trivy devtool
 func (trivy Trivy) Run(env map[string]string, workdir string, args ...string) error {
-	fmt.Println("Temporary disabling trivy until https://github.com/aquasecurity/trivy-action/ is fixed")
+	fmt.Println("Temporary disabling native trivy until https://github.com/aquasecurity/trivy-action/ is fixed")
 	// temparary disable trivy until this is fixed
 	// https://github.com/aquasecurity/trivy-action/
 	fmt.Printf("Using docker only until https://github.com/aquasecurity/trivy-action/ is fixed")
