@@ -3,7 +3,15 @@ concurrency:
   cancel-in-progress: true
 on:
   workflow_call:
-    inputs: {}
+    inputs:
+      skip-terraform-if-dir-has-no-changes:
+        type: boolean
+        default: false
+        description: |
+          Skip terraform validation if a found terraform directory does not contain
+          any changes. If there is a chnage in a workfow in mage ci will be run in all
+          cases. If you are using terraform modules with filebased source you should set
+          this to false
     secrets: {}
 
 jobs:
@@ -44,6 +52,7 @@ jobs:
         run: go tool mage terraform:validate
         env:
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
+          TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
 
       - name: Cleanup
         if: always()
@@ -127,7 +136,7 @@ jobs:
       contents: read
       pull-requests: write
     runs-on: ubuntu-24.04
-    needs: ['validate-terraform']
+    needs: ["validate-terraform"]
     steps:
       #- uses: actions/checkout@v6
       - name: Waiting for checks suites to populate
