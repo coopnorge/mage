@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
@@ -16,12 +17,17 @@ type Terraform struct{}
 
 // Run runs the terraform devtool
 func (tf Terraform) Run(env map[string]string, workdir string, args ...string) (string, string, error) {
+	forceDocker, err := strconv.ParseBool(os.Getenv("TERRAFORM_DOCKER"))
+	if forceDocker && err == nil {
+		fmt.Println("Running in terraform in docker forced by env var")
+		return tf.runInDocker(env, workdir, args...)
+	}
 	if !isCommandAvailable("terraform") {
 		fmt.Println("terraform binary not found. Falling back to running the docker version")
 		return tf.runInDocker(env, workdir, args...)
 	}
 
-	err := tf.versionOK()
+	err = tf.versionOK()
 	if err != nil {
 		fmt.Printf("terraform does not meet version constraints. Falling back to docker version\n error: %s\n", err)
 		return tf.runInDocker(env, workdir, args...)
