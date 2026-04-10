@@ -1,4 +1,4 @@
-FROM docker.io/library/golang:1.26.1@sha256:5e69504bb541a36b859ee1c3daeb670b544b74b3dfd054aea934814e9107f6eb AS golang
+FROM docker.io/library/golang:1.26.1@sha256:cd78d88e00afadbedd272f977d375a6247455f3a4b1178f8ae8bbcb201743a8a AS golang
 FROM golangci/golangci-lint:v2.11.4@sha256:67dfc9eeeb0eb13fc1a36329c2c378197dc561f1edf1a7792e3f771606bb0e15 AS golangci-lint
 FROM ghcr.io/yannh/kubeconform:v0.7.0@sha256:85dbef6b4b312b99133decc9c6fc9495e9fc5f92293d4ff3b7e1b30f5611823c AS kubeconform
 FROM docker.io/palantirtechnologies/policy-bot:1.41.1@sha256:1babe4d474db1ed7184146fbd2d332138c30121b2f860451347d9dbb825f5a20 AS policy-bot-version-tracker
