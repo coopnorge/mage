@@ -35,7 +35,7 @@ on:
         description: A comma separated list of Globs which triggers terraform ci
       tag-based-diff:
         type: boolean
-        default: false
+        default: true
         description: |
           When set to true use git tags to calucate when certain build steps are required. When
           set to false, the github event data will be used. This event might get lost when runs are
@@ -136,6 +136,7 @@ jobs:
       push-oci-image: ${{ inputs.push-oci-image }}
       workload-identity-provider: ${{ inputs.workload-identity-provider }}
       service-account: ${{ inputs.service-account }}
+      tag-based-diff: ${{ inputs.tag-based-diff }}
 
   terraform:
     name: Terraform

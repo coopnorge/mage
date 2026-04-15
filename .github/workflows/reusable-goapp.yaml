@@ -25,9 +25,9 @@ on:
         type: string
         default: "docker"
         description: Run mage go related tasks in "docker" (default) or local
-      publish-release:
+      tag-based-diff:
         type: boolean
-        default: false
+        default: true
         required: false
         description: If true it will create a github release based on the tag of the OCI
     outputs:
@@ -189,7 +189,7 @@ jobs:
 
       - name: Generate token for release
         id: generate_token
-        if: ${{ github.ref == 'refs/heads/main' && inputs.publish-release }}
+        if: ${{ github.ref == 'refs/heads/main' && inputs.tag-based-diff }}
         # v1.5.1
         uses: actions/create-github-app-token@v2.2.1
         with:
@@ -199,7 +199,7 @@ jobs:
 
       - name: Get tag of the build OCI
         id: oci-tag
-        if: ${{ github.ref == 'refs/heads/main' && inputs.publish-release }}
+        if: ${{ github.ref == 'refs/heads/main' && inputs.tag-based-diff }}
         run: |
           OCI_TAG=$(cat var/oci-images.json | yq -P | grep tag: | head -1 | yq .tag)
           if [[ -z "$OCI_TAG" ]]; then
@@ -211,7 +211,7 @@ jobs:
       - uses: release-drafter/release-drafter@b1476f6e6eb133afa41ed8589daba6dc69b4d3f5 # pin@v6.1.0
         name: Create release
         id: make-release
-        if: ${{ github.ref == 'refs/heads/main' && inputs.publish-release }}
+        if: ${{ github.ref == 'refs/heads/main' && inputs.tag-based-diff }}
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
         with:
