@@ -64,8 +64,8 @@ other relevant targets for the tech stack.
 package main
 
 import (
-    //mage:import
-    _ "github.com/coopnorge/mage/targets/goapp"
+  //mage:import
+  _ "github.com/coopnorge/mage/targets/goapp"
 )
 ```
 
@@ -91,8 +91,8 @@ import (
 package main
 
 import (
-    //mage:import
-    _ "github.com/coopnorge/mage/targets/golib"
+  //mage:import
+  _ "github.com/coopnorge/mage/targets/golib"
 )
 ```
 
@@ -180,47 +180,84 @@ need a renovate config. Save this in `.github/renovate.json5`
 
 ```json5
 {
-  baseBranchPatterns: ["main"],
-  rebaseWhen: "behind-base-branch",
-  labels: ["dependencies", "renovate", "{{depName}}"],
-  automergeStrategy: "squash",
-  enabledManagers: ["helmv3", "helm-values"],
-  packageRules: [
+  "extends": ["github>coopnorge/github-workflow-renovate"],
+  "packageRules": [
     {
-      matchDatasources: ["helm"],
-      automerge: true,
+      "matchDatasources": [
+        "helm"
+      ],
+      "automerge": true,
+      "rebaseWhen": "behind-base-branch",
+      "minimumReleaseAge": "0 days",
     },
     {
-      branchPrefix: "helm/dev/",
-      matchManagers: ["helm-values"],
-      matchDatasources: ["docker"],
-      automerge: true,
-      matchFileNames: ["/(^|/)values-dev.yaml$/"],
-      addLabels: ["development"],
-      prHourlyLimit: 0,
+      "matchManagers": [
+        "helm-values"
+      ],
+      "matchDatasources": [
+        "docker"
+      ],
+      "rebaseWhen": "behind-base-branch",
+      "prHourlyLimit": 0,
+      "minimumReleaseAge": "0 days",
     },
     {
-      branchPrefix: "helm/staging/",
-      matchManagers: ["helm-values"],
-      matchDatasources: ["docker"],
-      automerge: true,
-      matchFileNames: ["/(^|/)values-staging.yaml$/"],
-      addLabels: ["staging"],
-      prHourlyLimit: 0,
+      "branchPrefix": "helm/dev/",
+      "matchManagers": [
+        "helm-values"
+      ],
+      "matchDatasources": [
+        "docker"
+      ],
+      "automerge": true,
+      "matchFileNames": [
+        "/(^|/)values-dev.yaml$/"
+      ],
+      "addLabels": [
+        "development"
+      ],
+      "prHourlyLimit": 0
     },
     {
-      branchPrefix: "helm/production/",
-      matchManagers: ["helm-values"],
-      matchDatasources: ["docker"],
-      automerge: true,
-      matchFileNames: ["/(^|/)values-production.yaml$/"],
-      addLabels: ["production"],
-      prHourlyLimit: 0,
+      "branchPrefix": "helm/staging/",
+      "matchManagers": [
+        "helm-values"
+      ],
+      "matchDatasources": [
+        "docker"
+      ],
+      "automerge": true,
+      "matchFileNames": [
+        "/(^|/)values-staging.yaml$/"
+      ],
+      "addLabels": [
+        "staging"
+      ],
+      "prHourlyLimit": 0
     },
+    {
+      "branchPrefix": "helm/production/",
+      "matchManagers": [
+        "helm-values"
+      ],
+      "matchDatasources": [
+        "docker"
+      ],
+      "automerge": true,
+      "matchFileNames": [
+        "/(^|/)values-production.yaml$/"
+      ],
+      "addLabels": [
+        "production"
+      ],
+      "prHourlyLimit": 0
+    }
   ],
   "helm-values": {
-    managerFilePatterns: ["/(^|/)values(-\\w+)?\\.ya?ml$/"],
-  },
+    "managerFilePatterns": [
+      "/(^|/)values(-\\w+)?\\.ya?ml$/"
+    ]
+  }
 }
 ```
 
@@ -231,28 +268,25 @@ this might be done by a actual renovate server.
 
 Save this to `.github/workflows/renovate.yaml`
 
+> make sure update the values to your own repo settings
+
 ```yaml
+
 on:
   push:
     tags:
       - "v*"
-  workflow_call:
-    inputs:
-      logLevel:
-        description: "Override default log level"
-        required: false
-        default: "info"
-        type: string
-    secrets: {}
   workflow_dispatch:
     inputs:
-      logLevel:
+      log-level:
         description: "Override default log level"
         required: false
-        default: "info"
+        default: "debug"
         type: string
   schedule:
+    # At 07:30 AM and 12:30 PM, every day
     - cron: "30 7,12 * * *"
+
 jobs:
   renovate:
     permissions:
@@ -260,48 +294,13 @@ jobs:
       pull-requests: write
       id-token: write
       issues: write
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-      - name: Get token
-        id: get_token
-        uses: actions/create-github-app-token@v2.2.1
-        with:
-          app-id: 635546
-          private-key: ${{ secrets.RENOVATE_APP_PRIVATE_KEY_PEM }}
-          owner: ${{github.repository_owner }}
-          repositories: helloworld
-      - name: Autenticate with GCP
-        id: gcp-auth
-        uses: google-github-actions/auth@v3
-        with:
-          workload-identity-provider:
-            ${{ vars.PALLET_WORKLOAD_IDENTITY_PROVIDER }}
-          # or use hardcoded like: workload_identity_provider: projects/889992792607/locations/global/workloadIdentityPools/github-actions/providers/github-actions-provider
-          service-account: ${{ vars.PALLET_SERVICE_ACCOUNT }}
-          # or use hardcoded like: service_account: gh-ap-helloworld@helloworld-shared-0918.iam.gserviceaccount.com
-          token_format: access_token
-          create_credentials_file: true
-      - name: Run Renovate
-        uses: renovatebot/github-action@822441559e94f98b67b82d97ab89fe3003b0a247 # v44.2.0
-        env:
-          RENOVATE_REPOSITORIES: ${{ github.repository }}
-          RENOVATE_ONBOARDING: "false"
-          RENOVATE_USERNAME: "coopnorge-renovate[bot]"
-          RENOVATE_GIT_AUTHOR:
-            "coopnorge-renovate
-            <121964725+coopnorge-renovate[bot]@users.noreply.github.com>"
-          RENOVATE_PLATFORM_COMMIT: "true"
-          RENOVATE_FORCE: "true"
-          RENOVATE_HOST_RULES:
-            '[{"matchHost":"europe-docker.pkg.dev","token":"${{
-            steps.gcp-auth.outputs.access_token }}"}]'
-          RENOVATE_PR_BODY_TEMPLATE: "{{{header}}}{{{table}}}{{{warnings}}}{{{notes}}}{{{changelogs}}}{{{configDescription}}}{{{controls}}}{{{footer}}}"
-          LOG_LEVEL: ${{ inputs.logLevel || 'info' }}
-        with:
-          configurationFile: .github/renovate.json
-          token: ${{ steps.get_token.outputs.token }}
+    uses: coopnorge/github-workflow-renovate/.github/workflows/renovate.yaml@v0
+    secrets: inherit
+    with:
+      config-file: ".github/renovate.json5"
+      log-level: ${{ inputs.log-level }}
+      gcp-workload-identity-provider: projects/889992792607/locations/global/workloadIdentityPools/github-actions/providers/github-actions-provider
+      gcp-service-account: gh-ap-helloworld@helloworld-shared-0918.iam.gserviceaccount.com
 ```
 
 ## Troubleshooting
