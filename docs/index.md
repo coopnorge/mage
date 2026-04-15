@@ -64,8 +64,8 @@ other relevant targets for the tech stack.
 package main
 
 import (
- //mage:import
- _ "github.com/coopnorge/mage/targets/goapp"
+    //mage:import
+    _ "github.com/coopnorge/mage/targets/goapp"
 )
 ```
 
@@ -91,8 +91,8 @@ import (
 package main
 
 import (
- //mage:import
- _ "github.com/coopnorge/mage/targets/golib"
+    //mage:import
+    _ "github.com/coopnorge/mage/targets/golib"
 )
 ```
 
