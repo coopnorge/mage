@@ -221,10 +221,11 @@ func GetLatestReleaseTagWithPrefix(prefix string, opts ...Option) (string, error
 	url := fmt.Sprintf("%s/repos/%s/%s/releases", o.baseURL, o.owner, o.repo)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
-	req.Header.Set("Authorization", "Bearer "+o.token)
 	if err != nil {
 		return "", err
 	}
+
+	req.Header.Set("Authorization", "Bearer "+o.token)
 
 	resp, err := o.httpClient.Do(req)
 	if err != nil {
