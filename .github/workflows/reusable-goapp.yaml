@@ -219,6 +219,8 @@ jobs:
           config-name: "release-drafter.yml"
           publish: true
           version: ${{ steps.oci-tag.outputs.tag }}
+          tag: "v${{ steps.oci-tag.outputs.tag }}"
+          name: "Go OCI Release ${{ steps.oci-tag.outputs.tag }}"
 
       - name: Show output
         if: always()

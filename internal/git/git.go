@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
+	"github.com/coopnorge/mage/internal/github"
 	"github.com/magefile/mage/sh"
 )
 
@@ -83,7 +84,7 @@ func DiffToMain() ([]string, error) {
 
 // DiffToTagPattern returns a list of files that have been changed
 // compared to the most recent tags of a certain pattern.
-func DiffToTagPattern(target string) ([]string, error) {
+func DiffToTagPattern(releasePrefix string) ([]string, error) {
 	// git diff
 	// --name-only # only list file names
 	// --no-renames # rename of file is shown as delete and add
@@ -103,9 +104,14 @@ func DiffToTagPattern(target string) ([]string, error) {
 	}
 
 	if onMain {
-		ref, err = latestTag(target)
+		releaseRef, err := github.GetLatestReleaseTagWithPrefix(releasePrefix)
 		if err != nil {
 			return changedFiles, err
+		}
+		// if no relelease is found, compare against main. next release should
+		// create release
+		if releaseRef != "" {
+			ref = releaseRef
 		}
 	}
 
@@ -115,13 +121,6 @@ func DiffToTagPattern(target string) ([]string, error) {
 	}
 	changedFiles = append(changedFiles, strings.Split(gitDiff, "\n")...)
 	return changedFiles, nil
-}
-
-// LatestTag finds the latest tag based on a tag pattern. If tag is not found
-// it will return an error
-func latestTag(pattern string) (string, error) {
-	// add exlucde on "*-*" removes all alpha/beta/rc etc from the list
-	return sh.Output("git", "describe", "--tags", "--abbrev=0", "--match", pattern, "--exclude", "*-*")
 }
 
 // OnMainBranch returns true the current branch is the main branch

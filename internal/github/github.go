@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"slices"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/magefile/mage/sh"
@@ -157,4 +160,132 @@ func validateCommentBody(filename string) error {
 		return fmt.Errorf("body is %d characters which is more than the max of 65536", utf8.RuneCountInString(string(body)))
 	}
 	return nil
+}
+
+type options struct {
+	httpClient *http.Client
+	token      string
+	baseURL    string
+	owner      string
+	repo       string
+}
+
+// Option are options for the github http client
+type Option func(*options)
+
+func defaultOptions() (*options, error) {
+	opts := &options{
+		httpClient: &http.Client{Timeout: 30 * time.Second},
+	}
+
+	// token fallback
+	if t, ok := os.LookupEnv("GITHUB_TOKEN"); ok {
+		opts.token = t
+	} else {
+		return nil, fmt.Errorf("missing GITHUB_TOKEN")
+	}
+
+	// repo fallback
+	repo, err := getRepoInfo()
+	if err != nil && InCI() {
+		return nil, fmt.Errorf("failed to get repo info: %w", err)
+	}
+	opts.owner = repo.Owner
+	opts.repo = repo.Repo
+	opts.baseURL = repo.APIURL
+
+	return opts, nil
+}
+
+// WithHTTPClient overrides the http client for github api requests. Mainly useful
+// when with testing
+func WithHTTPClient(c *http.Client) Option {
+	return func(o *options) {
+		o.httpClient = c
+	}
+}
+
+// GetLatestReleaseTagWithPrefix gets the latest release filtred by a prefix
+// of the release name (not the tag name). It returns the tag and a error. If
+// no release is found the tag will be an empty string.
+func GetLatestReleaseTagWithPrefix(prefix string, opts ...Option) (string, error) {
+	o, err := defaultOptions()
+	if err != nil {
+		return "", err
+	}
+
+	for _, opt := range opts {
+		opt(o)
+	}
+
+	url := fmt.Sprintf("%s/repos/%s/%s/releases", o.baseURL, o.owner, o.repo)
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req.Header.Set("Authorization", "Bearer "+o.token)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := o.httpClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to call GitHub API: %w", err)
+	}
+
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Printf("Failed to close body, ignoring: %s\n", err)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("got status %d, expected is %d", resp.StatusCode, http.StatusOK)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	var releases []ghRelease
+	if err := json.Unmarshal(body, &releases); err != nil {
+		return "", fmt.Errorf("failed to parse: %s\nerr: %w", string(body), err)
+	}
+
+	for _, r := range releases {
+		if strings.HasPrefix(r.Name, prefix) {
+			return r.TagName, nil
+		}
+	}
+	return "", nil
+}
+
+type ghRelease struct {
+	Name       string `json:"name"`
+	TagName    string `json:"tag_name"`
+	Draft      bool   `json:"draft"`
+	Prerelease bool   `json:"prerelease"`
+}
+
+// ghRepo stores information about the repo
+// when running in github actions CI
+type ghRepo struct {
+	Owner  string
+	Repo   string
+	APIURL string
+}
+
+func getRepoInfo() (ghRepo, error) {
+	info := ghRepo{}
+	val, found := os.LookupEnv("GITHUB_REPOSITORY")
+	if !found {
+		return info, fmt.Errorf("environment variable GITHUB_REPOSITORY not found, unable to determine repository info")
+	}
+	url, found := os.LookupEnv("GITHUB_API_URL")
+	if !found {
+		return info, fmt.Errorf("environment variable GITHUB_API_URL not found, unable to determine api url")
+	}
+	info.APIURL = url
+	info.Owner = strings.Split(val, "/")[0]
+	info.Repo = strings.Split(val, "/")[1]
+	return info, nil
 }
