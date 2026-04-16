@@ -180,84 +180,52 @@ need a renovate config. Save this in `.github/renovate.json5`
 
 ```json5
 {
-  "extends": ["github>coopnorge/github-workflow-renovate"],
-  "packageRules": [
+  extends: ["github>coopnorge/github-workflow-renovate"],
+  packageRules: [
     {
-      "matchDatasources": [
-        "helm"
-      ],
-      "automerge": true,
-      "rebaseWhen": "behind-base-branch",
-      "minimumReleaseAge": "0 days",
+      matchDatasources: ["helm"],
+      automerge: true,
+      rebaseWhen: "behind-base-branch",
+      minimumReleaseAge: "0 days",
     },
     {
-      "matchManagers": [
-        "helm-values"
-      ],
-      "matchDatasources": [
-        "docker"
-      ],
-      "rebaseWhen": "behind-base-branch",
-      "prHourlyLimit": 0,
-      "minimumReleaseAge": "0 days",
+      matchManagers: ["helm-values"],
+      matchDatasources: ["docker"],
+      rebaseWhen: "behind-base-branch",
+      prHourlyLimit: 0,
+      minimumReleaseAge: "0 days",
     },
     {
-      "branchPrefix": "helm/dev/",
-      "matchManagers": [
-        "helm-values"
-      ],
-      "matchDatasources": [
-        "docker"
-      ],
-      "automerge": true,
-      "matchFileNames": [
-        "/(^|/)values-dev.yaml$/"
-      ],
-      "addLabels": [
-        "development"
-      ],
-      "prHourlyLimit": 0
+      branchPrefix: "helm/dev/",
+      matchManagers: ["helm-values"],
+      matchDatasources: ["docker"],
+      automerge: true,
+      matchFileNames: ["/(^|/)values-dev.yaml$/"],
+      addLabels: ["development"],
+      prHourlyLimit: 0,
     },
     {
-      "branchPrefix": "helm/staging/",
-      "matchManagers": [
-        "helm-values"
-      ],
-      "matchDatasources": [
-        "docker"
-      ],
-      "automerge": true,
-      "matchFileNames": [
-        "/(^|/)values-staging.yaml$/"
-      ],
-      "addLabels": [
-        "staging"
-      ],
-      "prHourlyLimit": 0
+      branchPrefix: "helm/staging/",
+      matchManagers: ["helm-values"],
+      matchDatasources: ["docker"],
+      automerge: true,
+      matchFileNames: ["/(^|/)values-staging.yaml$/"],
+      addLabels: ["staging"],
+      prHourlyLimit: 0,
     },
     {
-      "branchPrefix": "helm/production/",
-      "matchManagers": [
-        "helm-values"
-      ],
-      "matchDatasources": [
-        "docker"
-      ],
-      "automerge": true,
-      "matchFileNames": [
-        "/(^|/)values-production.yaml$/"
-      ],
-      "addLabels": [
-        "production"
-      ],
-      "prHourlyLimit": 0
-    }
+      branchPrefix: "helm/production/",
+      matchManagers: ["helm-values"],
+      matchDatasources: ["docker"],
+      automerge: true,
+      matchFileNames: ["/(^|/)values-production.yaml$/"],
+      addLabels: ["production"],
+      prHourlyLimit: 0,
+    },
   ],
   "helm-values": {
-    "managerFilePatterns": [
-      "/(^|/)values(-\\w+)?\\.ya?ml$/"
-    ]
-  }
+    managerFilePatterns: ["/(^|/)values(-\\w+)?\\.ya?ml$/"],
+  },
 }
 ```
 
@@ -271,7 +239,6 @@ Save this to `.github/workflows/renovate.yaml`
 > make sure update the values to your own repo settings
 
 ```yaml
-
 on:
   push:
     tags:
