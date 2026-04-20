@@ -109,18 +109,27 @@ func DiffToTagPattern(releasePrefix string) ([]string, error) {
 		if err != nil {
 			return nil, fmt.Errorf("getting releases from github failed: %w", err)
 		}
-		// if no relelease is found, compare against main. next release should
-		// create release
-		if releaseRef != "" {
-			ref = releaseRef
-			currentCommit, err := getTimeStampOfCurrentCommit()
-			if err != nil {
-				return nil, fmt.Errorf("failed to get timetamp of current commit: %w ", err)
-			}
-			if currentCommit.Before(createdAt) || currentCommit.Equal(createdAt) {
-				return nil, fmt.Errorf("current commit creation date (%s) is created before or is equal the most recent release %s (%s)", currentCommit.String(), ref, createdAt.String())
+		// if no relelease is found, use CHANGES from dorny path filter. next release should
+		// create release.
+		// TODO: implement native model to do changes against github api
+		if releaseRef == "" {
+			changedFilesFromEnv, ok := os.LookupEnv("CHANGES")
+			if ok {
+				changedFiles = strings.Split(changedFilesFromEnv, ",")
+				return changedFiles, nil
+			} else {
+				return nil, fmt.Errorf("The env var $CHANGES is required but not found. This is required to detect changes on main")
 			}
 		}
+		ref = releaseRef
+		currentCommit, err := getTimeStampOfCurrentCommit()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get timetamp of current commit: %w ", err)
+		}
+		if currentCommit.Before(createdAt) || currentCommit.Equal(createdAt) {
+			return nil, fmt.Errorf("current commit creation date (%s) is created before or is equal the most recent release %s (%s)", currentCommit.String(), ref, createdAt.String())
+		}
+
 	}
 
 	gitDiff, err := sh.Output("git", "diff", "--name-only", "--no-renames", ref)
