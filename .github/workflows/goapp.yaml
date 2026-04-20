@@ -51,6 +51,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
+      packages: read
     outputs:
       golang: ${{ steps.go.outputs.golang == 'true' || github.event_name == 'workflow_dispatch' }}
       terraform: ${{ steps.terraform.outputs.terraform == 'true' && github.event_name == 'pull_request' }}
@@ -94,6 +95,7 @@ jobs:
           ADDITIONAL_GLOBS_GO: ${{ inputs.additional-globs-go }}
           CHANGES: ${{ steps.filter.outputs.changed_files }}
           TAG_BASED: ${{ inputs.tag-based-diff }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Check for Terraform changes
         id: terraform
         run: echo "terraform=$(go tool mage terraform:changes)" >> $GITHUB_OUTPUT
