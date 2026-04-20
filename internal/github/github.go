@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"slices"
+	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -208,28 +209,28 @@ func WithHTTPClient(c *http.Client) Option {
 // GetLatestReleaseTagWithPrefix gets the latest release filtred by a prefix
 // of the release name (not the tag name). It returns the tag and a error. If
 // no release is found the tag will be an empty string.
-func GetLatestReleaseTagWithPrefix(prefix string, opts ...Option) (string, error) {
+func GetLatestReleaseTagWithPrefix(prefix string, opts ...Option) (string, time.Time, error) {
 	o, err := defaultOptions()
 	if err != nil {
-		return "", err
+		return "", time.Now(), err
 	}
 
 	for _, opt := range opts {
 		opt(o)
 	}
 
-	url := fmt.Sprintf("%s/repos/%s/%s/releases", o.baseURL, o.owner, o.repo)
+	url := fmt.Sprintf("%s/repos/%s/%s/releases?per_page=100", o.baseURL, o.owner, o.repo)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return "", err
+		return "", time.Now(), err
 	}
 
 	req.Header.Set("Authorization", "Bearer "+o.token)
 
 	resp, err := o.httpClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("failed to call GitHub API: %w", err)
+		return "", time.Now(), fmt.Errorf("failed to call GitHub API: %w", err)
 	}
 
 	defer func() {
@@ -240,31 +241,42 @@ func GetLatestReleaseTagWithPrefix(prefix string, opts ...Option) (string, error
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("got status %d, expected is %d", resp.StatusCode, http.StatusOK)
+		return "", time.Now(), fmt.Errorf("got status %d, expected is %d", resp.StatusCode, http.StatusOK)
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return "", time.Now(), err
 	}
 	var releases []ghRelease
 	if err := json.Unmarshal(body, &releases); err != nil {
-		return "", fmt.Errorf("failed to parse: %s\nerr: %w", string(body), err)
+		return "", time.Now(), fmt.Errorf("failed to parse: %s\nerr: %w", string(body), err)
 	}
+	// sort releases, gh does not state ordering of releases
+	sort.Slice(releases, func(i, j int) bool {
+		return releases[i].CreatedAt.After(releases[j].CreatedAt)
+	})
 
 	for _, r := range releases {
+		if r.Draft {
+			continue
+		}
+		if r.Prerelease {
+			continue
+		}
 		if strings.HasPrefix(r.Name, prefix) {
-			return r.TagName, nil
+			return r.TagName, r.CreatedAt, nil
 		}
 	}
-	return "", nil
+	return "", time.Now(), nil
 }
 
 type ghRelease struct {
-	Name       string `json:"name"`
-	TagName    string `json:"tag_name"`
-	Draft      bool   `json:"draft"`
-	Prerelease bool   `json:"prerelease"`
+	Name       string    `json:"name"`
+	TagName    string    `json:"tag_name"`
+	Draft      bool      `json:"draft"`
+	Prerelease bool      `json:"prerelease"`
+	CreatedAt  time.Time `json:"created_at"`
 }
 
 // ghRepo stores information about the repo

@@ -201,7 +201,7 @@ jobs:
         id: oci-tag
         if: ${{ github.ref == 'refs/heads/main' && inputs.tag-based-diff }}
         run: |
-          OCI_TAG=$(cat var/oci-images.json | yq -P | grep tag: | head -1 | yq .tag)
+          OCI_TAG=$(cat var/oci-images.json | yq -P | grep "tag:" | head -1 | yq '.tag')
           if [[ -z "$OCI_TAG" ]]; then
             echo cannot get an OCI TAG, bailing
             exit 1

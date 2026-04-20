@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/github"
@@ -100,18 +101,25 @@ func DiffToTagPattern(releasePrefix string) ([]string, error) {
 	ref := "origin/main"
 	onMain, err := onMainBranch()
 	if err != nil {
-		return changedFiles, err
+		return nil, fmt.Errorf("failed to check if commit is on main branch: %w", err)
 	}
 
 	if onMain {
-		releaseRef, err := github.GetLatestReleaseTagWithPrefix(releasePrefix)
+		releaseRef, createdAt, err := github.GetLatestReleaseTagWithPrefix(releasePrefix)
 		if err != nil {
-			return changedFiles, err
+			return nil, fmt.Errorf("getting releases from github failed: %w", err)
 		}
 		// if no relelease is found, compare against main. next release should
 		// create release
 		if releaseRef != "" {
 			ref = releaseRef
+			currentCommit, err := getTimeStampOfCurrentCommit()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get timetamp of current commit: %w ", err)
+			}
+			if currentCommit.Before(createdAt) || currentCommit.Equal(createdAt) {
+				return nil, fmt.Errorf("current commit creation date (%s) is created before or is equal the most recent release %s (%s)", currentCommit.String(), ref, createdAt.String())
+			}
 		}
 	}
 
@@ -144,6 +152,18 @@ func IsTracked(path string) bool {
 // CurrentBranch returns the current branch
 func CurrentBranch() (string, error) {
 	return sh.Output("git", "rev-parse", "--abbrev-ref", "HEAD")
+}
+
+func getTimeStampOfCurrentCommit() (time.Time, error) {
+	out, err := sh.Output("git", "show", "--no-patch", `--format=%cI`)
+	if err != nil {
+		return time.Unix(0, 0), fmt.Errorf("getting timestamp of commit using git failed: %w", err)
+	}
+	timestamp, err := time.Parse(time.RFC3339, out)
+	if err != nil {
+		return time.Unix(0, 0), fmt.Errorf("failed to parse timestamp %s: %w", out, err)
+	}
+	return timestamp, nil
 }
 
 // Worktree creates a new worktree for the given branch.
