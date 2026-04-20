@@ -191,7 +191,7 @@ jobs:
         id: generate_token
         if: ${{ github.ref == 'refs/heads/main' && inputs.tag-based-diff }}
         # v1.5.1
-        uses: actions/create-github-app-token@v2.2.1
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # pin@v2.2.1
         with:
           app-id: 172868
           private-key: ${{ secrets.WRITEBACK_APP_PRIVATE_KEY_PEM }}
