@@ -223,7 +223,7 @@ jobs:
           name: "Go OCI Release ${{ steps.oci-tag.outputs.tag }}"
           # only used when no releases exists. Initial release might be to long
           # with out limitation
-          initial-commits-since: 2026-03-01T09:09:09Z'
+          initial-commits-since: "2026-03-01T09:09:09Z"
 
       - name: Show output
         if: always()
