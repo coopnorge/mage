@@ -114,12 +114,11 @@ func DiffToTagPattern(releasePrefix string) ([]string, error) {
 		// TODO: implement native model to do changes against github api
 		if releaseRef == "" {
 			changedFilesFromEnv, ok := os.LookupEnv("CHANGES")
-			if ok {
-				changedFiles = strings.Split(changedFilesFromEnv, ",")
-				return changedFiles, nil
-			} else {
-				return nil, fmt.Errorf("The env var $CHANGES is required but not found. This is required to detect changes on main")
+			if !ok {
+				return nil, fmt.Errorf("the environment varariable $CHANGES is required but not found. This is required to detect changes on main")
 			}
+			changedFiles = strings.Split(changedFilesFromEnv, ",")
+			return changedFiles, nil
 		}
 		ref = releaseRef
 		currentCommit, err := getTimeStampOfCurrentCommit()
@@ -129,7 +128,6 @@ func DiffToTagPattern(releasePrefix string) ([]string, error) {
 		if currentCommit.Before(createdAt) || currentCommit.Equal(createdAt) {
 			return nil, fmt.Errorf("current commit creation date (%s) is created before or is equal the most recent release %s (%s)", currentCommit.String(), ref, createdAt.String())
 		}
-
 	}
 
 	gitDiff, err := sh.Output("git", "diff", "--name-only", "--no-renames", ref)

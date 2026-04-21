@@ -176,65 +176,18 @@ mage:
 ## Updating OCI tags after build
 
 You can use renovate to create pull request that update your infrastructure. You
-need a renovate config. Save this in `.github/renovate.json5`
+can find docs [here for how to configure renovate][renovate]. Below is an
+example on how it is used in [helloworld][helloworld]. Note that we need to
+trigger the renovate workflow on push of tags as well.
 
 ```json5
 {
   extends: ["github>coopnorge/github-workflow-renovate"],
-  packageRules: [
-    {
-      matchDatasources: ["helm"],
-      automerge: true,
-      rebaseWhen: "behind-base-branch",
-      minimumReleaseAge: "0 days",
-    },
-    {
-      matchManagers: ["helm-values"],
-      matchDatasources: ["docker"],
-      rebaseWhen: "behind-base-branch",
-      prHourlyLimit: 0,
-      minimumReleaseAge: "0 days",
-    },
-    {
-      branchPrefix: "helm/dev/",
-      matchManagers: ["helm-values"],
-      matchDatasources: ["docker"],
-      automerge: true,
-      matchFileNames: ["/(^|/)values-dev.yaml$/"],
-      addLabels: ["development"],
-      prHourlyLimit: 0,
-    },
-    {
-      branchPrefix: "helm/staging/",
-      matchManagers: ["helm-values"],
-      matchDatasources: ["docker"],
-      automerge: true,
-      matchFileNames: ["/(^|/)values-staging.yaml$/"],
-      addLabels: ["staging"],
-      prHourlyLimit: 0,
-    },
-    {
-      branchPrefix: "helm/production/",
-      matchManagers: ["helm-values"],
-      matchDatasources: ["docker"],
-      automerge: true,
-      matchFileNames: ["/(^|/)values-production.yaml$/"],
-      addLabels: ["production"],
-      prHourlyLimit: 0,
-    },
-  ],
-  "helm-values": {
-    managerFilePatterns: ["/(^|/)values(-\\w+)?\\.ya?ml$/"],
-  },
 }
 ```
 
-> This renovate config is also valid for updating your helm chart dependencies.
-
-For now you also need a GitHub action job for running renovate. In the future
-this might be done by a actual renovate server.
-
-Save this to `.github/workflows/renovate.yaml`
+For now you also need a GitHub action job for running renovate. Save this to
+`.github/workflows/renovate.yaml`
 
 > make sure update the values to your own repo settings
 
@@ -295,3 +248,6 @@ Solution:
 ```shell
   DOCKER_BUILDKIT=1 docker buildx create --use --driver docker-container
 ```
+
+[renovate]: https://inventory.internal.coop/docs/default/component/renovate/
+[helloworld]: https://github.com/coopnorge/helloworld

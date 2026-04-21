@@ -219,7 +219,7 @@ jobs:
           config-name: "release-drafter.yml"
           publish: true
           version: ${{ steps.oci-tag.outputs.tag }}
-          tag: "v${{ steps.oci-tag.outputs.tag }}"
+          tag: ${{ steps.oci-tag.outputs.tag }}
           name: "Go OCI Release ${{ steps.oci-tag.outputs.tag }}"
           # only used when no releases exists. Initial release might be to long
           # with out limitation
