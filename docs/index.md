@@ -223,6 +223,60 @@ jobs:
       gcp-service-account: gh-ap-helloworld@helloworld-shared-0918.iam.gserviceaccount.com
 ```
 
+### Auto merging OCI updates to infrastructure
+
+You can add rules to your `.policy.yml` to automatically merge pull requests
+that update your OCI tags in your infrastructure. Here are example rules from
+`helloworld`
+
+```yaml
+- name: Dev and staging image update update
+  requires:
+    count: 0
+    teams:
+      - "coopnorge/engineering"
+  options:
+    invalidate_on_push: true
+    request_review:
+      enabled: true
+      mode: all-users
+    methods:
+      github_review: true
+      comments: []
+  if:
+    only_has_contributors_in:
+      users:
+        - "renovate-coop-norge[bot]"
+    only_changed_files:
+      paths:
+        - "^infrastructure/kubernetes/helm/helloworld/values-dev.yaml*"
+        - "^infrastructure/kubernetes/helm/helloworld/values-staging.yaml*"
+    has_valid_signatures_by_keys:
+      key_ids: ["B5690EEEBB952194"]
+- name: Prod image update update
+  requires:
+    count: 1
+    teams:
+      - "coopnorge/engineering"
+  options:
+    invalidate_on_push: true
+    request_review:
+      enabled: true
+      mode: all-users
+    methods:
+      github_review: true
+      comments: []
+  if:
+    only_has_contributors_in:
+      users:
+        - "renovate-coop-norge[bot]"
+    only_changed_files:
+      paths:
+        - "^infrastructure/kubernetes/helm/helloworld/values-production.yaml*"
+    has_valid_signatures_by_keys:
+      key_ids: ["B5690EEEBB952194"]
+```
+
 ## Troubleshooting
 
 - During build the command `git status --porcelain` returns the error message
