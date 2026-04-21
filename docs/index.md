@@ -193,6 +193,7 @@ For now you also need a GitHub action job for running renovate. Save this to
 
 ```yaml
 on:
+  ## for OCI updates it is important to trigger on tags
   push:
     tags:
       - "v*"
