@@ -5,8 +5,10 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/coopnorge/mage/internal/core"
+	"github.com/coopnorge/mage/internal/github"
 	"github.com/magefile/mage/sh"
 )
 
@@ -81,6 +83,70 @@ func DiffToMain() ([]string, error) {
 	return changedFiles, nil
 }
 
+// DiffToTagPattern returns a list of files that have been changed
+// compared to the most recent tags of a certain pattern.
+func DiffToTagPattern(releasePrefix string) ([]string, error) {
+	// git diff
+	// --name-only # only list file names
+	// --no-renames # rename of file is shown as delete and add
+
+	changedFiles := []string{}
+
+	changedFilesFromEnv, ok := os.LookupEnv("CHANGED_FILES")
+	if ok {
+		changedFiles = strings.Split(changedFilesFromEnv, ",")
+		return changedFiles, nil
+	}
+
+	ref := "origin/main"
+	onMain, err := onMainBranch()
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if commit is on main branch: %w", err)
+	}
+
+	if onMain {
+		releaseRef, createdAt, err := github.GetLatestReleaseTagWithPrefix(releasePrefix)
+		if err != nil {
+			return nil, fmt.Errorf("getting releases from github failed: %w", err)
+		}
+		// if no relelease is found, use CHANGES from dorny path filter. next release should
+		// create release.
+		// TODO: implement native model to do changes against github api
+		if releaseRef == "" {
+			changedFilesFromEnv, ok := os.LookupEnv("CHANGES")
+			if !ok {
+				return nil, fmt.Errorf("the environment varariable $CHANGES is required but not found. This is required to detect changes on main")
+			}
+			changedFiles = strings.Split(changedFilesFromEnv, ",")
+			return changedFiles, nil
+		}
+		ref = releaseRef
+		currentCommit, err := getTimeStampOfCurrentCommit()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get timetamp of current commit: %w ", err)
+		}
+		if currentCommit.Before(createdAt) || currentCommit.Equal(createdAt) {
+			return nil, fmt.Errorf("current commit creation date (%s) is created before or is equal the most recent release %s (%s)", currentCommit.String(), ref, createdAt.String())
+		}
+	}
+
+	gitDiff, err := sh.Output("git", "diff", "--name-only", "--no-renames", ref)
+	if err != nil {
+		return changedFiles, err
+	}
+	changedFiles = append(changedFiles, strings.Split(gitDiff, "\n")...)
+	return changedFiles, nil
+}
+
+// OnMainBranch returns true the current branch is the main branch
+func onMainBranch() (bool, error) {
+	branch, err := sh.Output("git", "rev-parse", "--abbrev-ref", "HEAD")
+	if err != nil {
+		return false, err
+	}
+	return branch == "main", nil
+}
+
 func checkBranch(branch string) error {
 	return sh.Run("git", "rev-parse", "--verify", branch)
 }
@@ -93,6 +159,18 @@ func IsTracked(path string) bool {
 // CurrentBranch returns the current branch
 func CurrentBranch() (string, error) {
 	return sh.Output("git", "rev-parse", "--abbrev-ref", "HEAD")
+}
+
+func getTimeStampOfCurrentCommit() (time.Time, error) {
+	out, err := sh.Output("git", "show", "--no-patch", `--format=%cI`)
+	if err != nil {
+		return time.Unix(0, 0), fmt.Errorf("getting timestamp of commit using git failed: %w", err)
+	}
+	timestamp, err := time.Parse(time.RFC3339, out)
+	if err != nil {
+		return time.Unix(0, 0), fmt.Errorf("failed to parse timestamp %s: %w", out, err)
+	}
+	return timestamp, nil
 }
 
 // Worktree creates a new worktree for the given branch.

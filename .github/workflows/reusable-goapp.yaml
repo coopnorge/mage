@@ -25,6 +25,11 @@ on:
         type: string
         default: "docker"
         description: Run mage go related tasks in "docker" (default) or local
+      tag-based-diff:
+        type: boolean
+        default: true
+        required: false
+        description: If true it will create a github release based on the tag of the OCI
     outputs:
       oci-images:
         value: ${{ jobs.go-build.outputs.oci-images }}
@@ -100,7 +105,7 @@ jobs:
       - go-test
     runs-on: ubuntu-24.04
     permissions:
-      contents: read
+      contents: write
       id-token: write
       packages: read
     outputs:
@@ -181,6 +186,45 @@ jobs:
           else
             echo "images={}" >> $GITHUB_OUTPUT
           fi
+
+      - name: Generate token for release
+        id: generate_token
+        if: ${{ github.ref == 'refs/heads/main' && inputs.tag-based-diff }}
+        # v1.5.1
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # pin@v2.2.1
+        with:
+          app-id: 172868
+          private-key: ${{ secrets.WRITEBACK_APP_PRIVATE_KEY_PEM }}
+          owner: coopnorge
+
+      - name: Get tag of the build OCI
+        id: oci-tag
+        if: ${{ github.ref == 'refs/heads/main' && inputs.tag-based-diff }}
+        run: |
+          OCI_TAG=$(cat var/oci-images.json | yq -P | grep "tag:" | head -1 | yq '.tag')
+          if [[ -z "$OCI_TAG" ]]; then
+            echo cannot get an OCI TAG, bailing
+            exit 1
+          fi
+          echo "tag=$(echo $OCI_TAG)" >> $GITHUB_OUTPUT
+
+      - uses: release-drafter/release-drafter@5de93583980a40bd78603b6dfdcda5b4df377b32 # pin@v7.2.0
+        name: Create release
+        id: make-release
+        if: ${{ github.ref == 'refs/heads/main' && inputs.tag-based-diff }}
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+        with:
+          commitish: main
+          config-name: "release-drafter.yml"
+          publish: true
+          version: ${{ steps.oci-tag.outputs.tag }}
+          tag: ${{ steps.oci-tag.outputs.tag }}
+          name: "Go OCI Release ${{ steps.oci-tag.outputs.tag }}"
+          # only used when no releases exists. Initial release might be to long
+          # with out limitation
+          initial-commits-since: "2026-03-01T09:09:09Z"
+
       - name: Show output
         if: always()
         run: tree var/
