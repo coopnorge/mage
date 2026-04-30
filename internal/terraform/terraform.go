@@ -12,6 +12,8 @@ import (
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/devtool"
 	"github.com/coopnorge/mage/internal/git"
+	"github.com/coopnorge/mage/internal/github"
+	"github.com/magefile/mage/mg"
 )
 
 var (
@@ -28,6 +30,10 @@ func IsTerraformProject(p string, d fs.DirEntry) bool {
 	}
 	// skip the examples dir form validation this could be more advanced
 	if filepath.Base(p) == "examples" {
+		return false
+	}
+	// skip fi skip ci dir is found
+	if core.FileExists(filepath.Join(p, ".terraform-validation-skip")) {
 		return false
 	}
 	files, err := filepath.Glob(p + "/*.tf")
@@ -78,11 +84,10 @@ func HasChanges(terraformProjects []string) (bool, error) {
 	return core.CompareChangesToPaths(changedFiles, terraformProjects, additionalGlobs)
 }
 
-// Test automates testing the packages named by the import paths, see also: go
-// test.
+// Test runs terraform validate on a terraform project
 func Test(directory string) error {
-	return devtoolTerraform.Run(nil, directory, "validate")
-	// return DevtoolTerraform(nil, directory, "validate")
+	stdout, _, err := devtoolTerraform.Run(nil, directory, "validate")
+	return handleTerraformOutput(fmt.Sprintf("Terraform Validate - %s", directory), stdout, err)
 }
 
 // Lint runs the linters
@@ -92,17 +97,18 @@ func Lint(directory, tfLintCfg string) error {
 		return err
 	}
 	defer cleanup()
-	err = devtoolTerraform.Run(nil, directory, "fmt", "-diff", "-check")
+	stdout, _, err := devtoolTerraform.Run(nil, directory, "fmt", "-diff", "-check")
+	err = handleTerraformOutput(fmt.Sprintf("Terraform fmt check - %s", directory), stdout, err)
 	if err != nil {
-		return err
+		return fmt.Errorf("Terraform formattig check failed for %s", directory, err)
 	}
 	err = devtoolTFLint.Run(nil, directory, "--init", "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
 	if err != nil {
-		return err
+		return fmt.Errorf("Init of TFlint failed for %s", directory, err)
 	}
 	err = devtoolTFLint.Run(nil, directory, "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
 	if err != nil {
-		return err
+		return fmt.Errorf("TFlint failed for %s", directory, err)
 	}
 
 	return nil
@@ -116,19 +122,20 @@ func LintFix(directory, tfLintCfg string) error {
 	}
 	defer cleanup()
 
-	err = devtoolTerraform.Run(nil, directory, "fmt", "-diff")
+	stdout, _, err := devtoolTerraform.Run(nil, directory, "fmt", "-diff")
+	err = handleTerraformOutput(fmt.Sprintf("Terraform fmt check - %s", directory), stdout, err)
 	if err != nil {
-		return err
+		return fmt.Errorf("Terraform formattig fix failed for %s", directory, err)
 	}
 
 	err = devtoolTFLint.Run(nil, directory, "--init", "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
 	if err != nil {
-		return err
+		return fmt.Errorf("Init of TFlint failed for %s", directory, err)
 	}
 
 	err = devtoolTFLint.Run(nil, directory, "--fix", "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
 	if err != nil {
-		return err
+		return fmt.Errorf("TFlint fix failed for %s", directory, err)
 	}
 
 	return nil
@@ -137,14 +144,15 @@ func LintFix(directory, tfLintCfg string) error {
 // Init downloads Terraform modules locally
 func Init(directory string) error {
 	log.Printf("Running terraform init for  %q", directory)
-
-	return devtoolTerraform.Run(nil, directory, "init")
+	stdout, _, err := devtoolTerraform.Run(nil, directory, "init")
+	return handleTerraformOutput(fmt.Sprintf("Terraform init - %s", directory), stdout, err)
 }
 
 // InitUpgrade downloads and updates Terraform modules locally
 func InitUpgrade(directory string) error {
 	log.Printf("Running terraform init -upgrade for  %q", directory)
-	return devtoolTerraform.Run(nil, directory, "init", "-upgrade")
+	stdout, _, err := devtoolTerraform.Run(nil, directory, "init", "-upgrade")
+	return handleTerraformOutput(fmt.Sprintf("Terraform init upgrade - %s", directory), stdout, err)
 }
 
 // CheckLock checks that the lockfile exists
@@ -191,13 +199,14 @@ func CheckLock(directory string) error {
 // os architecures
 func ProviderLock(directory string) error {
 	log.Printf("Running terraform provider lock  %q", directory)
-	return devtoolTerraform.Run(nil, directory, "providers", "lock",
+	stdout, _, err := devtoolTerraform.Run(nil, directory, "providers", "lock",
 		"-platform=linux_arm64",
 		"-platform=linux_amd64",
 		"-platform=darwin_amd64",
 		"-platform=darwin_arm64",
 		"-platform=windows_amd64",
 	)
+	return handleTerraformOutput(fmt.Sprintf("Terraform provider lock - %s", directory), stdout, err)
 }
 
 // Clean cache in a terraform directory
@@ -218,7 +227,11 @@ func Clean(directory string) error {
 // Security validates security of the terraform project
 // config --exit-code 1 --misconfig-scanners=terraform
 func Security(directory string) error {
-	return devtoolTrivy.Run(nil, directory, "config", "--exit-code", "1", "--misconfig-scanners=terraform", "./")
+	err := devtoolTrivy.Run(nil, directory, "config", "--exit-code", "1", "--misconfig-scanners=terraform", "./")
+	if err != nil {
+		return fmt.Errorf("Trivy failed for %s", directory, err)
+	}
+	return nil
 }
 
 // HasTerraformDocsConfig checks whether the given directory
@@ -278,7 +291,11 @@ func Docs(directory string) error {
 		return nil
 	}
 
-	return devtoolTFDocs.Run(nil, directory, ".", "-c", "terraform-docs.yml", "--output-check")
+	err := devtoolTFDocs.Run(nil, directory, ".", "-c", "terraform-docs.yml", "--output-check")
+	if err != nil {
+		return fmt.Errorf("Terraform-docs validate failed for %s", filepath.Join(directory, "terraform-docs.yaml"), err)
+	}
+	return nil
 }
 
 // DocsFix updates the README to the configuration of the module
@@ -287,5 +304,24 @@ func DocsFix(directory string) error {
 		return nil
 	}
 
-	return devtoolTFDocs.Run(nil, directory, ".", "-c", "terraform-docs.yml")
+	err := devtoolTFDocs.Run(nil, directory, ".", "-c", "terraform-docs.yml")
+	if err != nil {
+		return fmt.Errorf("Terraform-docs fix failed for %s", filepath.Join(directory, "terraform-docs.yaml"), err)
+	}
+	return nil
+}
+
+func handleTerraformOutput(title, stdout string, err error) error {
+	if !mg.Verbose() {
+		github.StartLogGroup(title)
+		fmt.Println(stdout)
+		github.EndLogGroup()
+	}
+	if err != nil {
+		if github.InCI() {
+			github.PrintActionMessage("error", title, err.Error())
+		}
+		return fmt.Errorf("%s - failed : %w", title, err)
+	}
+	return nil
 }
