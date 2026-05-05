@@ -59,7 +59,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: coopnorge/mage
-          ref: ${{ github.workflow_sha }}
+          ref: go-cli
           path: .coop-mage
       - name: Build coop-mage CLI
         run: go build -C .coop-mage -o /tmp/coop-mage ./cmd/coop-mage
@@ -89,7 +89,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: coopnorge/mage
-          ref: ${{ github.workflow_sha }}
+          ref: go-cli
           path: .coop-mage
       - name: Build coop-mage CLI
         run: go build -C .coop-mage -o /tmp/coop-mage ./cmd/coop-mage
@@ -157,7 +157,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: coopnorge/mage
-          ref: ${{ github.workflow_sha }}
+          ref: go-cli
           path: .coop-mage
       - name: Build coop-mage CLI
         run: go build -C .coop-mage -o /tmp/coop-mage ./cmd/coop-mage
