@@ -23,9 +23,16 @@ jobs:
           go-version: "stable"
           cache-dependency-path: "**/go.sum"
 
-      - name: Install go Tools
-        run: go install tool
+      - name: Checkout coop-mage
+        uses: actions/checkout@v6
+        with:
+          repository: coopnorge/mage
+          ref: go-cli
+          path: .coop-mage
+
+      - name: Build coop-mage CLI
+        run: go build -C .coop-mage -o /tmp/coop-mage ./cmd/coop-mage
 
       - name: Catalog Info Validation
         id: validate
-        run: go tool mage catalogInfo:validate
+        run: /tmp/coop-mage catalogInfo:validate

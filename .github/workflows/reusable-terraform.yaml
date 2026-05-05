@@ -36,12 +36,19 @@ jobs:
         with:
           go-version: "stable"
           cache-dependency-path: "**/go.sum"
-      - name: Install go Tools
-        run: go install tool
+      - name: Checkout coop-mage
+        uses: actions/checkout@v6
+        with:
+          repository: coopnorge/mage
+          ref: go-cli
+          path: .coop-mage
+
+      - name: Build coop-mage CLI
+        run: go build -C .coop-mage -o /tmp/coop-mage ./cmd/coop-mage
 
       - name: Code Validation
         id: validate
-        run: go tool mage terraform:validate
+        run: /tmp/coop-mage terraform:validate
         env:
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
 

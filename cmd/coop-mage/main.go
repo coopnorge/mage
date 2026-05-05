@@ -30,10 +30,11 @@ import (
 	"github.com/coopnorge/mage/internal/docker"
 	"github.com/coopnorge/mage/internal/git"
 	"github.com/coopnorge/mage/internal/golang"
-	kubernetesInternal "github.com/coopnorge/mage/internal/kubernetes"
 	"github.com/coopnorge/mage/internal/pallets"
 	"github.com/coopnorge/mage/internal/policybot"
 	"github.com/coopnorge/mage/internal/terraform"
+	kubernetesTargets "github.com/coopnorge/mage/internal/targets/kubernetes"
+	terraformTargets "github.com/coopnorge/mage/internal/targets/terraform"
 )
 
 const (
@@ -71,19 +72,26 @@ func main() {
 
 func commands() map[string]func(context.Context) error {
 	return map[string]func(context.Context) error{
-		"git:listChanges":         gitListChanges,
-		"go:changes":              goChanges,
-		"go:downloadModules":      goDownloadModules,
-		"go:lint":                 goLint,
-		"go:test":                 goTest,
-		"go:buildBinaries":        goBuildBinaries,
-		"docker:buildImages":      dockerBuildImages,
-		"docker:buildAndPush":     dockerBuildAndPush,
-		"terraform:changes":       terraformChanges,
-		"policyBotConfig:changes": policyBotChanges,
-		"pallets:changes":         palletsChanges,
-		"catalogInfo:changes":     catalogInfoChanges,
-		"k8s:changes":             k8sChanges,
+		"git:listChanges":           gitListChanges,
+		"go:changes":                goChanges,
+		"go:downloadModules":        goDownloadModules,
+		"go:lint":                   goLint,
+		"go:test":                   goTest,
+		"go:buildBinaries":          goBuildBinaries,
+		"docker:buildImages":        dockerBuildImages,
+		"docker:buildAndPush":       dockerBuildAndPush,
+		"terraform:changes":         terraformChanges,
+		"terraform:validate":        terraformValidate,
+		"policyBotConfig:changes":   policyBotChanges,
+		"policyBotConfig:validate":  policyBotValidate,
+		"pallets:changes":           palletsChanges,
+		"pallets:validate":          palletsValidate,
+		"catalogInfo:changes":       catalogInfoChanges,
+		"catalogInfo:validate":      catalogInfoValidate,
+		"k8s:changes":               k8sChanges,
+		"k8s:list":                  k8sList,
+		"k8s:validate":              k8sValidate,
+		"k8s:diff":                  k8sDiff,
 	}
 }
 
@@ -252,6 +260,31 @@ func terraformChanges(_ context.Context) error {
 	return nil
 }
 
+func terraformValidate(_ context.Context) error {
+	dirs, err := terraform.FindTerraformProjects(".")
+	if err != nil {
+		return err
+	}
+	for _, dir := range dirs {
+		if err := terraform.CheckLock(dir); err != nil {
+			return err
+		}
+		if err := terraform.Init(dir); err != nil {
+			return err
+		}
+		if err := terraform.Test(dir); err != nil {
+			return err
+		}
+		if err := terraform.Lint(dir, terraformTargets.TFlintCfg); err != nil {
+			return err
+		}
+		if err := terraform.Security(dir); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // --- policybot ---
 
 func policyBotChanges(_ context.Context) error {
@@ -265,6 +298,10 @@ func policyBotChanges(_ context.Context) error {
 		fmt.Println("false")
 	}
 	return nil
+}
+
+func policyBotValidate(_ context.Context) error {
+	return policybot.Validate()
 }
 
 // --- pallets ---
@@ -282,6 +319,10 @@ func palletsChanges(_ context.Context) error {
 	return nil
 }
 
+func palletsValidate(_ context.Context) error {
+	return pallets.Validate()
+}
+
 // --- catalog-info ---
 
 func catalogInfoChanges(_ context.Context) error {
@@ -297,19 +338,26 @@ func catalogInfoChanges(_ context.Context) error {
 	return nil
 }
 
+func catalogInfoValidate(_ context.Context) error {
+	return cataloginfoInternal.Validate()
+}
+
 // --- kubernetes ---
 
-func k8sChanges(_ context.Context) error {
-	changes, err := kubernetesInternal.HasChanges()
-	if err != nil {
-		return err
-	}
-	if changes {
-		fmt.Println("true")
-	} else {
-		fmt.Println("false")
-	}
-	return nil
+func k8sChanges(ctx context.Context) error {
+	return kubernetesTargets.Changes(ctx)
+}
+
+func k8sList(ctx context.Context) error {
+	return kubernetesTargets.List(ctx)
+}
+
+func k8sValidate(ctx context.Context) error {
+	return kubernetesTargets.Validate(ctx)
+}
+
+func k8sDiff(ctx context.Context) error {
+	return kubernetesTargets.Diff(ctx)
 }
 
 // --- build helpers ---
