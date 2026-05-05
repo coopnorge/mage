@@ -29,6 +29,8 @@ go.work
 coverage.out
 var/
 
+/coop-mage
+
 .vale/
 site/
 mkdocs.yml

@@ -2,7 +2,6 @@ package goapp
 
 import (
 	"context"
-	_ "embed"
 	"encoding/json"
 	"os"
 	"path"
@@ -14,9 +13,6 @@ import (
 
 	"github.com/magefile/mage/mg"
 )
-
-//go:embed app.Dockerfile
-var dockerfile string
 
 // Docker is the magefile namespace to group Docker commands
 type Docker mg.Namespace
@@ -141,7 +137,7 @@ func buildAndPush(_ context.Context, app, binary string, shouldPush bool) error 
 	imagePath := imagePath(app, binary)
 	metadataPath := metadataPath(app, binary)
 
-	return docker.BuildAndPush(dockerfile, golang.DockerPlatforms(), imageName, ".", imagePath, metadataPath, app, binary, shouldPush)
+	return docker.BuildAndPush(docker.DefaultDockerfile, golang.DockerPlatforms(), imageName, ".", imagePath, metadataPath, app, binary, shouldPush)
 }
 
 func writeImageMetadata() error {
@@ -163,7 +159,7 @@ func writeImageMetadata() error {
 
 // Validate Dockerfiles
 func (Docker) Validate(_ context.Context) error {
-	return docker.Validate(dockerfile)
+	return docker.Validate(docker.DefaultDockerfile)
 }
 
 func imageDir(app, binary string) string {

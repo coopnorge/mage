@@ -1,6 +1,7 @@
 package docker
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,6 +16,11 @@ import (
 
 	"github.com/magefile/mage/sh"
 )
+
+// DefaultDockerfile is the default Dockerfile for Go applications built by coop-mage.
+//
+//go:embed app.Dockerfile
+var DefaultDockerfile string
 
 const (
 	imageBaseEnv          = "OCI_IMAGE_BASE"

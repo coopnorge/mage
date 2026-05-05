@@ -75,21 +75,27 @@ jobs:
           filters: |
             changed:
               - '**'
-      - name: Install go Tools
-        run: go install tool
+      - name: Checkout coop-mage
+        uses: actions/checkout@v6
+        with:
+          repository: coopnorge/mage
+          ref: ${{ github.workflow_sha }}
+          path: .coop-mage
+      - name: Build coop-mage CLI
+        run: go build -C .coop-mage -o /tmp/coop-mage ./cmd/coop-mage
       - name: List changes
         id: list
-        run: go tool mage git:listChanges
+        run: /tmp/coop-mage git:listChanges
       - name: Check for Go changes (pr event based)
         id: go
         run: |
           if [[ "$TAG_BASED" == "true" ]]  ; then
             echo "Running with tag based diff"
-            echo "golang=$(go tool mage go:changes)" >> $GITHUB_OUTPUT
+            echo "golang=$(/tmp/coop-mage go:changes)" >> $GITHUB_OUTPUT
           else
             echo "Running with pr event based diff"
             export CHANGED_FILES="$CHANGES"
-            echo "golang=$(go tool mage go:changes)" >> $GITHUB_OUTPUT
+            echo "golang=$(/tmp/coop-mage go:changes)" >> $GITHUB_OUTPUT
           fi
         env:
           ADDITIONAL_GLOBS_GO: ${{ inputs.additional-globs-go }}
@@ -98,28 +104,28 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Check for Terraform changes
         id: terraform
-        run: echo "terraform=$(go tool mage terraform:changes)" >> $GITHUB_OUTPUT
+        run: echo "terraform=$(/tmp/coop-mage terraform:changes)" >> $GITHUB_OUTPUT
         env:
           ADDITIONAL_GLOBS_TERRAFORM: ${{ inputs.additional-globs-terraform }}
           CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
       - name: Check for PolicyBot changes
         id: policy-bot
-        run: echo "policy_bot=$(go tool mage policyBotConfig:changes)" >> $GITHUB_OUTPUT
+        run: echo "policy_bot=$(/tmp/coop-mage policyBotConfig:changes)" >> $GITHUB_OUTPUT
         env:
           CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
       - name: Check for Pallet changes
         id: pallets
-        run: echo "pallets=$(go tool mage pallets:changes)" >> $GITHUB_OUTPUT
+        run: echo "pallets=$(/tmp/coop-mage pallets:changes)" >> $GITHUB_OUTPUT
         env:
           CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
       - name: Check for Catalog-info changes
         id: catalog-info
-        run: echo "catalog_info=$(go tool mage catalogInfo:changes)" >> $GITHUB_OUTPUT
+        run: echo "catalog_info=$(/tmp/coop-mage catalogInfo:changes)" >> $GITHUB_OUTPUT
         env:
           CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
       - name: Check for Kubernetes changes
         id: kubernetes
-        run: echo "kubernetes=$(go tool mage k8s:changes)" >> $GITHUB_OUTPUT
+        run: echo "kubernetes=$(/tmp/coop-mage k8s:changes)" >> $GITHUB_OUTPUT
         env:
           CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
 
