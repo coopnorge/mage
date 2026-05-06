@@ -20,8 +20,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Add Safedir
-        run: git config --global --add safe.directory "/tmp"
+      - name: Fetch the main branch as well
+        run: git fetch origin $GITHUB_BASE_REF:$GITHUB_BASE_REF
 
       - name: Set up Go
         uses: actions/setup-go@v6
