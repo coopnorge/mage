@@ -90,7 +90,7 @@ func RenderTemplates(chart HelmChart, dest string, try bool) error {
 	if err != nil {
 		return fmt.Errorf("failed to check dependencies. Please remove all contents %s/charts. Error: %s", chart.path, err)
 	}
-	if strings.Contains(depstatus, "missing") {
+	if !depStatusOK(depstatus) {
 		_, _, err := helm.Run(nil, path, "dep", "up", ".")
 		if err != nil {
 			return err
@@ -102,6 +102,29 @@ func RenderTemplates(chart HelmChart, dest string, try bool) error {
 		return os.WriteFile(dest, []byte(out), 0o644)
 	}
 	return err
+}
+
+func depStatusOK(input string) bool {
+	lines := strings.Split(strings.TrimSpace(input), "\n")
+	for i, line := range lines {
+		if i == 0 {
+			// skip header
+			continue
+		}
+
+		fields := strings.Fields(line)
+		if len(fields) != 3 {
+			// cheap check if the command produces a sensible result
+			return false
+		}
+
+		status := fields[len(fields)-1]
+		if status != "ok" {
+			return false
+		}
+	}
+
+	return true
 }
 
 // DiffTemplates will create a diff of the rendered templates of a helmchart
