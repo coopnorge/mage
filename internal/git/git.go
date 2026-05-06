@@ -190,7 +190,7 @@ func Worktree(branch string) (string, func(), error) {
 
 	// We use git worktree remove which cleans up the admin files and the directory.
 	cleanup := func() {
-		err = sh.Run("git", "worktree", "remove", targetDir)
+		err = sh.Run("git", "worktree", "remove", "--force", targetDir)
 		if err != nil {
 			fmt.Printf("Failed to delete %s, error %s", targetDir, err)
 		}
