@@ -41,7 +41,7 @@ jobs:
 
       - name: Kubernetes diff
         id: diff
-        run: go tool mage -v k8s:diff
+        run: go tool mage k8s:diff
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
