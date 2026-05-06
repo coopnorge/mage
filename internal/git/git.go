@@ -183,7 +183,7 @@ func Worktree(branch string) (string, func(), error) {
 		return targetDir, cleanupDir, err
 	}
 	// Execute 'git worktree add <path> <branch>'
-	err = sh.Run("git", "worktree", "add", targetDir, branch)
+	err = sh.Run("git", "worktree", "add", targetDir, "--detach", branch)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to create worktree for branch %s: %w", branch, err)
 	}
