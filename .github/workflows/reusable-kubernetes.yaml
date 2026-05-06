@@ -20,6 +20,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Add Safedir
+        run: git config --global --add safe.directory "/tmp"
+
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
