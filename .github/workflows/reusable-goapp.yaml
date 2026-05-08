@@ -208,7 +208,7 @@ jobs:
           fi
           echo "tag=$(echo $OCI_TAG)" >> $GITHUB_OUTPUT
 
-      - uses: release-drafter/release-drafter@3052ee00309feb828889940f8ea4fb642ff57f4e # pin@v7.2.0
+      - uses: release-drafter/release-drafter@c2e2804cc59f45f57076a99af580d0fedb697927 # pin@v7.2.0
         name: Create release
         id: make-release
         if: ${{ github.ref == 'refs/heads/main' && inputs.tag-based-diff }}
