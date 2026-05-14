@@ -1,0 +1,108 @@
+concurrency:
+  group: infrastucture-repo-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+on:
+  workflow_call:
+    secrets: {}
+    inputs:
+      additional-globs-terraform:
+        type: string
+        default: ""
+        description: A comma separated list of Globs which triggers terraform ci
+      skip-terraform-if-dir-has-no-changes:
+        type: boolean
+        default: false
+        description: |
+          Skip terraform validation if a found terraform directory does not contain
+          any changes. If there is a chnage in a workfow in mage ci will be run in all
+          cases. If you are using terraform modules with filebased source you should set
+          this to false
+jobs:
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      terraform: ${{ steps.terraform.outputs.terraform == 'true' && github.event_name == 'pull_request' }}
+      policy-bot: ${{ steps.policy-bot.outputs.policy_bot == 'true' && github.event_name == 'pull_request' }}
+      pallets: ${{ steps.pallets.outputs.pallets == 'true' && github.event_name == 'pull_request' }}
+      catalog-info: ${{ steps.catalog-info.outputs.catalog_info == 'true' && github.event_name == 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "stable"
+          cache-dependency-path: "**/go.sum"
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
+        id: filter
+        with:
+          list-files: csv
+          filters: |
+            changed:
+              - '**'
+      - name: Install go Tools
+        run: go install tool
+      - name: List changes
+        id: list
+        run: go tool mage git:listChanges
+      - name: Check for Terraform changes
+        id: terraform
+        run: echo "terraform=$(go tool mage terraform:changes)" >> $GITHUB_OUTPUT
+        env:
+          ADDITIONAL_GLOBS_TERRAFORM: ${{ inputs.additional-globs-terraform }}
+          CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
+      - name: Check for PolicyBot changes
+        id: policy-bot
+        run: echo "policy_bot=$(go tool mage policyBotConfig:changes)" >> $GITHUB_OUTPUT
+        env:
+          CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
+      - name: Check for Pallet changes
+        id: pallets
+        run: echo "pallets=$(go tool mage pallets:changes)" >> $GITHUB_OUTPUT
+        env:
+          CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
+      - name: Check for Catalog-info changes
+        id: catalog-info
+        run: echo "catalog_info=$(go tool mage catalogInfo:changes)" >> $GITHUB_OUTPUT
+        env:
+          CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
+
+  terraform:
+    name: Terraform
+    needs: ["detect-changes"]
+    if: ${{  needs.detect-changes.outputs.terraform == 'true'  }}
+    uses: ./.github/workflows/reusable-terraform.yaml
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+      packages: read
+      checks: read
+    secrets: inherit
+
+  policy-bot:
+    name: Policy-bot
+    needs: ["detect-changes"]
+    if: ${{  needs.detect-changes.outputs.policy-bot == 'true'  }}
+    uses: ./.github/workflows/reusable-policy-bot.yaml
+
+  pallets:
+    name: Pallets
+    needs: ["detect-changes"]
+    if: ${{  needs.detect-changes.outputs.pallets == 'true'  }}
+    uses: ./.github/workflows/reusable-pallets.yaml
+
+  catalog-info:
+    name: Catalog Info
+    needs: ["detect-changes"]
+    if: ${{  needs.detect-changes.outputs.catalog-info == 'true'  }}
+    uses: ./.github/workflows/reusable-catalog-info.yaml
+    permissions:
+      contents: read
+      pull-requests: read
+    secrets: inherit
