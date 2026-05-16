@@ -1,5 +1,5 @@
 FROM docker.io/library/golang:1.26.2@sha256:b54cbf583d390341599d7bcbc062425c081105cc5ef6d170ced98ef9d047c716 AS golang
-FROM golangci/golangci-lint:v2.11.4@sha256:67dfc9eeeb0eb13fc1a36329c2c378197dc561f1edf1a7792e3f771606bb0e15 AS golangci-lint
+FROM golangci/golangci-lint:v2.12.1@sha256:c9843d374ca80ecbac86081ec4dd7fe2bb6187b03224f59a0cc2f80759e1845b AS golangci-lint
 FROM ghcr.io/yannh/kubeconform:v0.7.0@sha256:85dbef6b4b312b99133decc9c6fc9495e9fc5f92293d4ff3b7e1b30f5611823c AS kubeconform
 FROM docker.io/palantirtechnologies/policy-bot:1.41.1@sha256:1babe4d474db1ed7184146fbd2d332138c30121b2f860451347d9dbb825f5a20 AS policy-bot-version-tracker
 FROM docker.io/hashicorp/terraform:1.5.7@sha256:9fc0d70fb0f858b0af1fadfcf8b7510b1b61e8b35e7a4bb9ff39f7f6568c321d AS terraform
