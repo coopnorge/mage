@@ -138,6 +138,7 @@ jobs:
       push-oci-image: ${{ inputs.push-oci-image }}
       workload-identity-provider: ${{ inputs.workload-identity-provider }}
       service-account: ${{ inputs.service-account }}
+      artifact-registry-location: ${{ inputs.artifact-registry-location }}
       tag-based-diff: ${{ inputs.tag-based-diff }}
 
   terraform:
