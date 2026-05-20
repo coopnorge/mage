@@ -9,7 +9,7 @@ on:
 jobs:
   validate-catalog-info:
     name: Catalog info validator
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     permissions:
       contents: read
       pull-requests: read
