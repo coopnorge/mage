@@ -9,7 +9,7 @@ on:
 jobs:
   setup:
     name: Setup
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-slim
     outputs:
       run-golang-ci: ${{ steps.changes.outputs.golang == 'true' }}
       run-kubernetes-ci: ${{ steps.changes.outputs.pallet == 'true' && github.event_name == 'pull_request' }}
@@ -87,15 +87,9 @@ jobs:
       - kubernetes-ci
       - mage
       - techdocs
-    if: always()
-    runs-on: ubuntu-latest
+    if: failure() || cancelled()
+    runs-on: ubuntu-slim
     permissions: {}
     steps:
       - run: exit 1
         name: "Catch errors"
-        if: |
-          needs.kubernetes-ci.result == 'failure' ||
-          needs.techdocs.result == 'failure' ||
-          needs.mage.result == 'failure' ||
-          needs.policy-bot.result == 'failure' ||
-          needs.policy-bot.result == 'cancelled'
