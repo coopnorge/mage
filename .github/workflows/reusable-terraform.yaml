@@ -56,7 +56,7 @@ jobs:
   check-for-spacelift-proposed:
     permissions:
       contents: read
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     env:
       GH_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
       PALLET_FILE_PATH: .pallet/gitconfig.yaml
@@ -126,7 +126,7 @@ jobs:
       checks: read
       contents: read
       pull-requests: write
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-slim
     needs: ['validate-terraform']
     steps:
       #- uses: actions/checkout@v6
