@@ -67,6 +67,7 @@ jobs:
       contents: read
       id-token: write
       packages: read
+      pull-requests: write
     secrets: inherit
     with:
       go-runtime: local
