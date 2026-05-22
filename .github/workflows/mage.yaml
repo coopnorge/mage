@@ -36,6 +36,7 @@ jobs:
       contents: read
       id-token: write
       packages: read
+      pull-requests: write
     outputs:
       oci-images: ${{ steps.oci-images.outputs.images }}
     steps:
@@ -105,6 +106,29 @@ jobs:
           PUSH_IMAGE: ${{ inputs.push-oci-image }}
           GO_RUNTIME: ${{ inputs.go-runtime }}
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
+      - name: Install gcov2lcov
+        if: ${{ always() && github.event_name == 'pull_request' && hashFiles('var/**/coverage.out') != '' }}
+        run: go install github.com/jandelgado/gcov2lcov@latest
+      - name: Convert Go coverage to lcov
+        if: ${{ always() && github.event_name == 'pull_request' && hashFiles('var/**/coverage.out') != '' }}
+        run: |
+          set -eu
+          GOROOT="$(go env GOROOT)"
+          export GOROOT
+          while IFS= read -r coverage_file; do
+            output_file="${coverage_file%.out}.lcov"
+            echo "Converting ${coverage_file} -> ${output_file}"
+            gcov2lcov -infile="${coverage_file}" -outfile="${output_file}"
+          done < <(find var -type f -name coverage.out)
+      - name: Comment uncovered lines with reviewdog
+        if: ${{ always() && github.event_name == 'pull_request' && hashFiles('var/**/*.lcov') != '' }}
+        uses: aki77/reviewdog-action-code-coverage@v2
+        with:
+          lcov_path: var/**/*.lcov
+          reporter: github-pr-review
+          filter_mode: added
+          fail_level: none
+          tool_name: mage-go-coverage
       - id: oci-images
         name: Output OCI images references
         run: |
