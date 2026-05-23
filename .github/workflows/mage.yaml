@@ -121,18 +121,19 @@ jobs:
         run: |
           set -eu
           command -v gcov2lcov
+          mkdir -p var/lcov
           GOROOT="$(go env GOROOT)"
           export GOROOT
           while IFS= read -r coverage_file; do
-            output_file="${coverage_file%.out}.lcov"
+            output_file="var/lcov/${coverage_file//\//_}.lcov"
             echo "Converting ${coverage_file} -> ${output_file}"
             gcov2lcov -infile="${coverage_file}" -outfile="${output_file}"
           done < <(find var -type f -name coverage.out)
       - name: Comment uncovered lines with reviewdog
-        if: ${{ always() && github.event_name == 'pull_request' && hashFiles('var/**/*.lcov') != '' }}
+        if: ${{ always() && github.event_name == 'pull_request' && hashFiles('var/lcov/*.lcov') != '' }}
         uses: aki77/reviewdog-action-code-coverage@v2
         with:
-          lcov_path: var/**/*.lcov
+          lcov_path: var/lcov/*.lcov
           reporter: github-pr-review
           filter_mode: added
           fail_level: none
