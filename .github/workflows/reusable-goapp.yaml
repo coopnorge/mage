@@ -74,6 +74,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -97,6 +98,12 @@ jobs:
         run: "go tool mage -v go:test"
         env:
           GO_RUNTIME: ${{ inputs.go-runtime }}
+
+      - name: Comment uncovered lines with reviewdog
+        if: ${{ always() && github.event_name == 'pull_request' && hashFiles('var/**/coverage.out') != '' }}
+        uses: ./.github/actions/go-coverage-reviewdog
+        with:
+          github_token: ${{ github.token }}
 
   go-build:
     name: Go build

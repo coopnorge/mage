@@ -36,6 +36,7 @@ jobs:
       contents: read
       id-token: write
       packages: read
+      pull-requests: write
     outputs:
       oci-images: ${{ steps.oci-images.outputs.images }}
     steps:
@@ -105,6 +106,11 @@ jobs:
           PUSH_IMAGE: ${{ inputs.push-oci-image }}
           GO_RUNTIME: ${{ inputs.go-runtime }}
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
+      - name: Comment uncovered lines with reviewdog
+        if: ${{ always() && github.event_name == 'pull_request' && hashFiles('var/**/coverage.out') != '' }}
+        uses: ./.github/actions/go-coverage-reviewdog
+        with:
+          github_token: ${{ github.token }}
       - id: oci-images
         name: Output OCI images references
         run: |

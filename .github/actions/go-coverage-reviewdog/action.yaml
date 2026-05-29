@@ -1,0 +1,62 @@
+name: Go coverage with reviewdog
+description: Convert Go coverage profiles to lcov and comment uncovered lines in PRs
+inputs:
+  github_token:
+    description: GitHub token for reviewdog API calls
+    required: false
+    default: ${{ github.token }}
+  reporter:
+    description: reviewdog reporter type
+    required: false
+    default: github-pr-review
+  filter_mode:
+    description: reviewdog filter mode
+    required: false
+    default: added
+  fail_level:
+    description: reviewdog fail level
+    required: false
+    default: none
+  tool_name:
+    description: reviewdog tool name
+    required: false
+    default: mage-go-coverage
+
+runs:
+  using: composite
+  steps:
+    - name: Install gcov2lcov
+      shell: bash
+      env:
+        GOBIN: ${{ runner.temp }}/bin
+        GOMODCACHE: ${{ runner.temp }}/go-mod-cache
+        GOCACHE: ${{ runner.temp }}/go-build-cache
+      run: |
+        set -eu
+        mkdir -p "$GOBIN" "$GOMODCACHE" "$GOCACHE"
+        echo "$GOBIN" >> "$GITHUB_PATH"
+        go install github.com/jandelgado/gcov2lcov@v1.1.1
+
+    - name: Convert Go coverage to lcov
+      shell: bash
+      run: |
+        set -eu
+        command -v gcov2lcov
+        mkdir -p var/lcov
+        GOROOT="$(go env GOROOT)"
+        export GOROOT
+        while IFS= read -r coverage_file; do
+          output_file="var/lcov/${coverage_file//\//_}.lcov"
+          echo "Converting ${coverage_file} -> ${output_file}"
+          gcov2lcov -infile="${coverage_file}" -outfile="${output_file}"
+        done < <(find var -type f -name coverage.out)
+
+    - name: Comment uncovered lines with reviewdog
+      uses: aki77/reviewdog-action-code-coverage@v2
+      with:
+        github_token: ${{ inputs.github_token }}
+        lcov_path: var/lcov/*.lcov
+        reporter: ${{ inputs.reporter }}
+        filter_mode: ${{ inputs.filter_mode }}
+        fail_level: ${{ inputs.fail_level }}
+        tool_name: ${{ inputs.tool_name }}

@@ -234,3 +234,13 @@ func GetAbsWorkDir(workdir string) string {
 	}
 	return filepath.Join(cwd, workdir)
 }
+
+// NormalizeWhitespace trims leading/trailing whitespace and collapses all
+// internal whitespace to a single space.
+func NormalizeWhitespace(input string) string {
+	parts := strings.Fields(input)
+	if len(parts) == 0 {
+		return ""
+	}
+	return strings.Join(parts, " ")
+}

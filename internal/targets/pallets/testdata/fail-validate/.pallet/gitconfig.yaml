@@ -1,5 +1,5 @@
 apiVersion: github.coop.no/v1alpha1
-kind: RepositoryConfig
+kind: RepositoryConfigTypo
 metadata:
   name: helloworld
 spec:
