@@ -25,6 +25,10 @@ on:
         type: string
         default: "docker"
         description: Run mage go related tasks in "docker" (default) or local
+      opentofu-version:
+        type: string
+        default: ""
+        description: If set, install this version of OpenTofu and set USE_TOFU=1 so mage uses the tofu devtool instead of terraform.
     outputs:
       oci-images:
         value: ${{ jobs.mage.outputs.oci-images }}
@@ -98,6 +102,12 @@ jobs:
           cache-dependency-path: "**/go.sum"
       - name: Install go Tools
         run: go install tool
+      - name: Install OpenTofu
+        if: ${{ inputs.opentofu-version != '' }}
+        uses: opentofu/setup-opentofu@12f4debbf681675350b6cd1f0ff8ecfbda62027b # v1
+        with:
+          tofu_version: ${{ inputs.opentofu-version }}
+          tofu_wrapper: false
       - name: Build
         run: "go tool mage -v build"
         env:
@@ -105,6 +115,7 @@ jobs:
           PUSH_IMAGE: ${{ inputs.push-oci-image }}
           GO_RUNTIME: ${{ inputs.go-runtime }}
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
+          USE_TOFU: ${{ inputs.opentofu-version != '' && 'true' || '' }}
       - id: oci-images
         name: Output OCI images references
         run: |

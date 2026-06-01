@@ -14,11 +14,29 @@ import (
 	"github.com/coopnorge/mage/internal/git"
 )
 
+// iacRunner is implemented by both devtool.Terraform and devtool.Tofu
+type iacRunner interface {
+	Run(env map[string]string, workdir string, args ...string) error
+}
+
+// useTofu returns true when the USE_TOFU environment variable is set to "true".
+func useTofu() bool {
+	return os.Getenv("USE_TOFU") == "true"
+}
+
+// getIaCRunner returns the OpenTofu devtool when USE_TOFU=true, otherwise
+// the Terraform devtool.
+func getIaCRunner() iacRunner {
+	if useTofu() {
+		return devtool.Tofu{}
+	}
+	return devtool.Terraform{}
+}
+
 var (
-	devtoolTerraform devtool.Terraform
-	devtoolTFLint    devtool.TFLint
-	devtoolTrivy     devtool.Trivy
-	devtoolTFDocs    devtool.TerraformDocs
+	devtoolTFLint devtool.TFLint
+	devtoolTrivy  devtool.Trivy
+	devtoolTFDocs devtool.TerraformDocs
 )
 
 // IsTerraformProject returns true if a directory contains a go module.
@@ -81,7 +99,7 @@ func HasChanges(terraformProjects []string) (bool, error) {
 // Test automates testing the packages named by the import paths, see also: go
 // test.
 func Test(directory string) error {
-	return devtoolTerraform.Run(nil, directory, "validate")
+	return getIaCRunner().Run(nil, directory, "validate")
 	// return DevtoolTerraform(nil, directory, "validate")
 }
 
@@ -92,7 +110,7 @@ func Lint(directory, tfLintCfg string) error {
 		return err
 	}
 	defer cleanup()
-	err = devtoolTerraform.Run(nil, directory, "fmt", "-diff", "-check")
+	err = getIaCRunner().Run(nil, directory, "fmt", "-diff", "-check")
 	if err != nil {
 		return err
 	}
@@ -116,7 +134,7 @@ func LintFix(directory, tfLintCfg string) error {
 	}
 	defer cleanup()
 
-	err = devtoolTerraform.Run(nil, directory, "fmt", "-diff")
+	err = getIaCRunner().Run(nil, directory, "fmt", "-diff")
 	if err != nil {
 		return err
 	}
@@ -138,13 +156,13 @@ func LintFix(directory, tfLintCfg string) error {
 func Init(directory string) error {
 	log.Printf("Running terraform init for  %q", directory)
 
-	return devtoolTerraform.Run(nil, directory, "init")
+	return getIaCRunner().Run(nil, directory, "init")
 }
 
 // InitUpgrade downloads and updates Terraform modules locally
 func InitUpgrade(directory string) error {
 	log.Printf("Running terraform init -upgrade for  %q", directory)
-	return devtoolTerraform.Run(nil, directory, "init", "-upgrade")
+	return getIaCRunner().Run(nil, directory, "init", "-upgrade")
 }
 
 // CheckLock checks that the lockfile exists
@@ -191,7 +209,7 @@ func CheckLock(directory string) error {
 // os architecures
 func ProviderLock(directory string) error {
 	log.Printf("Running terraform provider lock  %q", directory)
-	return devtoolTerraform.Run(nil, directory, "providers", "lock",
+	return getIaCRunner().Run(nil, directory, "providers", "lock",
 		"-platform=linux_arm64",
 		"-platform=linux_amd64",
 		"-platform=darwin_amd64",
