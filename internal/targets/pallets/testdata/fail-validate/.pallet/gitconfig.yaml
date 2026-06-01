@@ -4,8 +4,13 @@ metadata:
   name: helloworld
 spec:
   description: "No description provided"
-  branche:
-    default: main
+  branches:
+    default:
+      - this
+      - should
+      - be
+      - a
+      - string
     protection:
       - id: main
         pattern: main
