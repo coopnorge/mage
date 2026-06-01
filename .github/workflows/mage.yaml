@@ -104,7 +104,7 @@ jobs:
         run: go install tool
       - name: Install OpenTofu
         if: ${{ inputs.opentofu-version != '' }}
-        uses: opentofu/setup-opentofu@12f4debbf681675350b6cd1f0ff8ecfbda62027b # v1
+        uses: opentofu/setup-opentofu@9d84900f3238fab8cd84ce47d658d25dd008be2f # v1
         with:
           tofu_version: ${{ inputs.opentofu-version }}
           tofu_wrapper: false
