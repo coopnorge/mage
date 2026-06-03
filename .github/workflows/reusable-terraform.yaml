@@ -49,7 +49,7 @@ jobs:
 
       - name: Code Validation
         id: validate
-        run: go tool mage terraform:validate
+        run: go tool mage -v terraform:validate
         env:
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
           TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
