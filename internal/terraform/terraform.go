@@ -227,6 +227,11 @@ func Clean(directory string) error {
 // Security validates security of the terraform project
 // config --exit-code 1 --misconfig-scanners=terraform
 func Security(directory string) error {
+	// Skip tf sec if file exists
+	if core.FileExistsInDirectory(directory, ".tfsec-ignore") {
+		log.Printf("Skiping security check in %s because %s exists", directory, ".tfsec-ignore")
+		return nil
+	}
 	err := devtoolTrivy.Run(nil, directory, "config", "--exit-code", "1", "--misconfig-scanners=terraform", "./")
 	if err != nil {
 		return fmt.Errorf("Trivy failed for %s", directory, err)
