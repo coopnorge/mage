@@ -129,7 +129,7 @@ func (tf Terraform) runInDocker(env map[string]string, workdir string, args ...s
 	// return err
 	//
 	outs := setupStdOutErr(false)
-	_, err = core.Exec(env, outs.StdOut, outs.StdErr, "terraform", args...)
+	_, err = core.Exec(env, outs.StdOut, outs.StdErr, "docker", runArgs...)
 
 	return outs.printOut(), outs.printErr(), err
 }
