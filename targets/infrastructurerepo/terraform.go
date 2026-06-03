@@ -66,6 +66,13 @@ func (Terraform) Security(ctx context.Context) error {
 	return nil
 }
 
+// LockProviders pdates the locks.terraform.lock.hcl file. Run this when a provider has
+// changed.
+func (Terraform) LockProviders(ctx context.Context) error {
+	mg.CtxDeps(ctx, terraformTargets.LockProviders)
+	return nil
+}
+
 // Changes returns the string true or false depending on the fact that
 // the current branch contains changes compared to the main branch.
 func (Terraform) Changes(ctx context.Context) error {
