@@ -11,7 +11,7 @@ on:
         description: A comma separated list of Globs which triggers terraform ci
       skip-terraform-if-dir-has-no-changes:
         type: boolean
-        default: false
+        default: true
         description: |
           Skip terraform validation if a found terraform directory does not contain
           any changes. If there is a chnage in a workfow in mage ci will be run in all
@@ -77,6 +77,8 @@ jobs:
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.terraform == 'true'  }}
     uses: ./.github/workflows/reusable-terraform.yaml
+    with:
+      skip-terraform-if-dir-has-no-changes: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
     permissions:
       contents: read
       pull-requests: write
