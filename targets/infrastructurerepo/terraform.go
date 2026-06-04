@@ -13,8 +13,7 @@ type Terraform mg.Namespace
 
 // Validate validates all terraform projects
 func (Terraform) Validate(ctx context.Context) error {
-	mg.CtxDeps(ctx, Terraform.Test, Terraform.Lint)
-	mg.CtxDeps(ctx, Terraform.Security)
+	mg.CtxDeps(ctx, Terraform.Test, Terraform.Lint, Terraform.Security)
 	return nil
 }
 
