@@ -34,9 +34,9 @@ func Test(ctx context.Context) error {
 		checkLocks = append(checkLocks, mg.F(checkLock, workDir))
 	}
 
-	mg.SerialCtxDeps(ctx, checkLocks...)
-	mg.SerialCtxDeps(ctx, Init)
-	mg.SerialCtxDeps(ctx, testDirs...)
+	mg.CtxDeps(ctx, checkLocks...)
+	mg.CtxDeps(ctx, Init)
+	mg.CtxDeps(ctx, testDirs...)
 	return nil
 }
 
@@ -50,7 +50,7 @@ func checkLock(_ context.Context, workingDirectory string) error {
 
 // Lint runs the linters
 func Lint(ctx context.Context) error {
-	mg.SerialCtxDeps(ctx, Init)
+	mg.CtxDeps(ctx, Init)
 	directories, err := terraform.FindTerraformProjects(".")
 	if err != nil {
 		return err
@@ -74,7 +74,7 @@ func lint(_ context.Context, workingDirectory string) error {
 
 // LintFix fixes found issues (if it's supported by the linters)
 func LintFix(ctx context.Context) error {
-	mg.SerialCtxDeps(ctx, Init)
+	mg.CtxDeps(ctx, Init)
 	directories, err := terraform.FindTerraformProjects(".")
 	if err != nil {
 		return err
@@ -113,7 +113,7 @@ func Init(ctx context.Context) error {
 		modules = append(modules, mg.F(initTerraform, workDir))
 	}
 
-	mg.SerialCtxDeps(ctx, modules...)
+	mg.CtxDeps(ctx, modules...)
 	return nil
 }
 
@@ -137,7 +137,7 @@ func InitUpgrade(ctx context.Context) error {
 		modules = append(modules, mg.F(initUpgrade, workDir))
 	}
 
-	mg.SerialCtxDeps(ctx, modules...)
+	mg.CtxDeps(ctx, modules...)
 	return nil
 }
 
@@ -159,7 +159,7 @@ func LockProviders(ctx context.Context) error {
 		modules = append(modules, mg.F(lockProviders, workDir))
 	}
 
-	mg.SerialCtxDeps(ctx, modules...)
+	mg.CtxDeps(ctx, modules...)
 	return nil
 }
 
@@ -201,7 +201,7 @@ func Security(ctx context.Context) error {
 		modules = append(modules, mg.F(security, workDir))
 	}
 
-	mg.SerialCtxDeps(ctx, modules...)
+	mg.CtxDeps(ctx, modules...)
 	return nil
 }
 
@@ -227,7 +227,7 @@ func DocsValidate(ctx context.Context) error {
 		modules = append(modules, mg.F(terraformDocs, workDir))
 	}
 
-	mg.SerialCtxDeps(ctx, modules...)
+	mg.CtxDeps(ctx, modules...)
 	return nil
 }
 
