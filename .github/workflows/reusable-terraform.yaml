@@ -69,9 +69,30 @@ jobs:
       - name: Install go Tools
         run: go install tool
 
-      - name: Code Validation
-        id: validate
-        run: go tool mage -v terraform:validate
+      - name: Terraform Init
+        id: init
+        run: go tool mage -v terraform:init
+        env:
+          GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
+          TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
+
+      - name: Code Lint
+        id: lint
+        run: go tool mage -v terraform:lint
+        env:
+          GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
+          TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
+
+      - name: Code Test
+        id: test
+        run: go tool mage -v terraform:test
+        env:
+          GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
+          TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
+
+      - name: Code Security
+        id: security
+        run: go tool mage -v terraform:security
         env:
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
           TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
