@@ -112,8 +112,8 @@ func FindGoSourceCodeFolders(base string) ([]string, error) {
 
 // HasChanges checks if the current branch has any Go changes compared
 // to the main branch
-func HasChanges(goSourceCodeFolders []string) (bool, error) {
-	changedFiles, err := git.DiffToMain()
+func HasChanges(goSourceCodeFolders []string, pattern string) (bool, error) {
+	changedFiles, err := git.DiffToTagPattern(pattern)
 	if err != nil {
 		return false, err
 	}

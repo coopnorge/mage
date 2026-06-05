@@ -25,6 +25,10 @@ on:
         type: string
         default: "docker"
         description: Run mage go related tasks in "docker" (default) or local
+      opentofu-version:
+        type: string
+        default: ""
+        description: If set, install this version of OpenTofu and set USE_TOFU=1 so mage uses the tofu devtool instead of terraform.
     outputs:
       oci-images:
         value: ${{ jobs.mage.outputs.oci-images }}
@@ -42,11 +46,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4
+        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -67,7 +71,7 @@ jobs:
       #   run: gcloud auth print-access-token | docker login https://${{ inputs.artifact-registry-location }}-docker.pkg.dev -u oauth2accesstoken --password-stdin
       - name: Login to Google Cloud Artifact Registry
         if: ${{ inputs.push-oci-image }}
-        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4
         with:
           registry: ${{ inputs.artifact-registry-location }}-docker.pkg.dev
           username: oauth2accesstoken
@@ -98,6 +102,12 @@ jobs:
           cache-dependency-path: "**/go.sum"
       - name: Install go Tools
         run: go install tool
+      - name: Install OpenTofu
+        if: ${{ inputs.opentofu-version != '' }}
+        uses: opentofu/setup-opentofu@847eaa4afeb791b06daa46e8eafa8b1b68d7cfb4 # v2
+        with:
+          tofu_version: ${{ inputs.opentofu-version }}
+          tofu_wrapper: false
       - name: Build
         run: "go tool mage -v build"
         env:
@@ -105,6 +115,7 @@ jobs:
           PUSH_IMAGE: ${{ inputs.push-oci-image }}
           GO_RUNTIME: ${{ inputs.go-runtime }}
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
+          USE_TOFU: ${{ inputs.opentofu-version != '' && 'true' || '' }}
       - id: oci-images
         name: Output OCI images references
         run: |

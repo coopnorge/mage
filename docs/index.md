@@ -148,6 +148,7 @@ go-app:
     push-oci-image: ${{ github.ref == 'refs/heads/main' }}
     workload-identity-provider: ${{ vars.PALLET_WORKLOAD_IDENTITY_PROVIDER }}
     service-account: ${{ vars.PALLET_SERVICE_ACCOUNT }}
+    tag-based-diff: true
 ```
 
 If you did not create a system through inventory you have to hard-code the
@@ -170,6 +171,111 @@ mage:
     id-token: write
     packages: read
   secrets: inherit
+```
+
+## Updating OCI tags after build
+
+You can use renovate to create pull request that update your infrastructure. You
+can find docs [here for how to configure renovate][renovate]. Below is an
+example on how it is used in [helloworld][helloworld]. Note that we need to
+trigger the renovate workflow on push of tags as well.
+
+```json5
+{
+  extends: ["github>coopnorge/github-workflow-renovate"],
+}
+```
+
+For now you also need a GitHub action job for running renovate. Save this to
+`.github/workflows/renovate.yaml`
+
+> make sure update the values to your own repo settings
+
+```yaml
+on:
+  ## for OCI updates it is important to trigger on tags
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      log-level:
+        description: "Override default log level"
+        required: false
+        default: "debug"
+        type: string
+  schedule:
+    # At 07:30 AM and 12:30 PM, every day
+    - cron: "30 7,12 * * *"
+
+jobs:
+  renovate:
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+      issues: write
+    uses: coopnorge/github-workflow-renovate/.github/workflows/renovate.yaml@v0
+    secrets: inherit
+    with:
+      config-file: ".github/renovate.json5"
+      log-level: ${{ inputs.log-level }}
+      gcp-workload-identity-provider: projects/889992792607/locations/global/workloadIdentityPools/github-actions/providers/github-actions-provider
+      gcp-service-account: gh-ap-helloworld@helloworld-shared-0918.iam.gserviceaccount.com
+```
+
+### Auto merging OCI updates to infrastructure
+
+You can add rules to your `.policy.yml` to automatically merge pull requests
+that update your OCI tags in your infrastructure. Here are example rules from
+`helloworld`
+
+```yaml
+- name: Dev and staging image update update
+  requires:
+    count: 0
+    teams:
+      - "coopnorge/engineering"
+  options:
+    invalidate_on_push: true
+    request_review:
+      enabled: true
+      mode: all-users
+    methods:
+      github_review: true
+      comments: []
+  if:
+    only_has_contributors_in:
+      users:
+        - "renovate-coop-norge[bot]"
+    only_changed_files:
+      paths:
+        - "^infrastructure/kubernetes/helm/helloworld/values-dev.yaml*"
+        - "^infrastructure/kubernetes/helm/helloworld/values-staging.yaml*"
+    has_valid_signatures_by_keys:
+      key_ids: ["B5690EEEBB952194"]
+- name: Prod image update update
+  requires:
+    count: 1
+    teams:
+      - "coopnorge/engineering"
+  options:
+    invalidate_on_push: true
+    request_review:
+      enabled: true
+      mode: all-users
+    methods:
+      github_review: true
+      comments: []
+  if:
+    only_has_contributors_in:
+      users:
+        - "renovate-coop-norge[bot]"
+    only_changed_files:
+      paths:
+        - "^infrastructure/kubernetes/helm/helloworld/values-production.yaml*"
+    has_valid_signatures_by_keys:
+      key_ids: ["B5690EEEBB952194"]
 ```
 
 ## Troubleshooting
@@ -197,3 +303,6 @@ Solution:
 ```shell
   DOCKER_BUILDKIT=1 docker buildx create --use --driver docker-container
 ```
+
+[renovate]: https://inventory.internal.coop/docs/default/component/renovate/
+[helloworld]: https://github.com/coopnorge/helloworld

@@ -71,28 +71,28 @@ jobs:
 
       - name: Terraform Init
         id: init
-        run: go tool mage -v terraform:init
+        run: go tool mage terraform:init
         env:
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
           TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
 
       - name: Code Lint
         id: lint
-        run: go tool mage -v terraform:lint
+        run: go tool mage terraform:lint
         env:
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
           TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
 
       - name: Code Test
         id: test
-        run: go tool mage -v terraform:test
+        run: go tool mage terraform:test
         env:
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
           TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
 
       - name: Code Security
         id: security
-        run: go tool mage -v terraform:security
+        run: go tool mage terraform:security
         env:
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
           TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
@@ -108,7 +108,7 @@ jobs:
   check-for-spacelift-proposed:
     permissions:
       contents: read
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     env:
       GH_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
       PALLET_FILE_PATH: .pallet/gitconfig.yaml
@@ -178,7 +178,7 @@ jobs:
       checks: read
       contents: read
       pull-requests: write
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-slim
     needs: ["validate-terraform"]
     steps:
       #- uses: actions/checkout@v6

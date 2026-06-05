@@ -16,11 +16,29 @@ import (
 	"github.com/magefile/mage/mg"
 )
 
+// iacRunner is implemented by both devtool.Terraform and devtool.Tofu
+type iacRunner interface {
+	Run(env map[string]string, workdir string, args ...string) (string, string, error)
+}
+
+// useTofu returns true when the USE_TOFU environment variable is set to "true".
+func useTofu() bool {
+	return os.Getenv("USE_TOFU") == "true"
+}
+
+// getIaCRunner returns the OpenTofu devtool when USE_TOFU=true, otherwise
+// the Terraform devtool.
+func getIaCRunner() iacRunner {
+	if useTofu() {
+		return devtool.Tofu{}
+	}
+	return devtool.Terraform{}
+}
+
 var (
-	devtoolTerraform devtool.Terraform
-	devtoolTFLint    devtool.TFLint
-	devtoolTrivy     devtool.Trivy
-	devtoolTFDocs    devtool.TerraformDocs
+	devtoolTFLint devtool.TFLint
+	devtoolTrivy  devtool.Trivy
+	devtoolTFDocs devtool.TerraformDocs
 )
 
 // IsTerraformProject returns true if a directory contains a go module.
@@ -86,7 +104,7 @@ func HasChanges(terraformProjects []string) (bool, error) {
 
 // Test runs terraform validate on a terraform project
 func Test(directory string) error {
-	stdout, _, err := devtoolTerraform.Run(nil, directory, "validate")
+	stdout, _, err := getIaCRunner().Run(nil, directory, "validate")
 	return handleTerraformOutput(fmt.Sprintf("Terraform Validate - %s", directory), stdout, err)
 }
 
@@ -97,7 +115,7 @@ func Lint(directory, tfLintCfg string) error {
 		return err
 	}
 	defer cleanup()
-	stdout, _, err := devtoolTerraform.Run(nil, directory, "fmt", "-diff", "-check")
+	stdout, _, err := getIaCRunner().Run(nil, directory, "fmt", "-diff", "-check")
 	err = handleTerraformOutput(fmt.Sprintf("Terraform fmt check - %s", directory), stdout, err)
 	if err != nil {
 		return fmt.Errorf("Terraform formattig check failed for %s", directory, err)
@@ -122,7 +140,7 @@ func LintFix(directory, tfLintCfg string) error {
 	}
 	defer cleanup()
 
-	stdout, _, err := devtoolTerraform.Run(nil, directory, "fmt", "-diff")
+	stdout, _, err := getIaCRunner().Run(nil, directory, "fmt", "-diff")
 	err = handleTerraformOutput(fmt.Sprintf("Terraform fmt check - %s", directory), stdout, err)
 	if err != nil {
 		return fmt.Errorf("Terraform formattig fix failed for %s", directory, err)
@@ -144,14 +162,14 @@ func LintFix(directory, tfLintCfg string) error {
 // Init downloads Terraform modules locally
 func Init(directory string) error {
 	log.Printf("Running terraform init for  %q", directory)
-	stdout, _, err := devtoolTerraform.Run(nil, directory, "init")
+	stdout, _, err := getIaCRunner().Run(nil, directory, "init")
 	return handleTerraformOutput(fmt.Sprintf("Terraform init - %s", directory), stdout, err)
 }
 
 // InitUpgrade downloads and updates Terraform modules locally
 func InitUpgrade(directory string) error {
 	log.Printf("Running terraform init -upgrade for  %q", directory)
-	stdout, _, err := devtoolTerraform.Run(nil, directory, "init", "-upgrade")
+	stdout, _, err := getIaCRunner().Run(nil, directory, "init", "-upgrade")
 	return handleTerraformOutput(fmt.Sprintf("Terraform init upgrade - %s", directory), stdout, err)
 }
 
@@ -199,7 +217,7 @@ func CheckLock(directory string) error {
 // os architecures
 func ProviderLock(directory string) error {
 	log.Printf("Running terraform provider lock  %q", directory)
-	stdout, _, err := devtoolTerraform.Run(nil, directory, "providers", "lock",
+	stdout, _, err := getIaCRunner().Run(nil, directory, "providers", "lock",
 		"-platform=linux_arm64",
 		"-platform=linux_amd64",
 		"-platform=darwin_amd64",

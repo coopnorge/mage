@@ -1,15 +1,7 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
     "extends": [
-        "config:recommended",
-    ],
-    "rebaseWhen": "conflicted",
-    "labels": ["dependencies", "renovate"],
-    "automerge": true,
-    "automergeStrategy": "squash",
-    "postUpdateOptions": [
-        "gomodTidy",
-        "gomodUpdateImportPaths",
+        "github>coopnorge/github-workflow-renovate",
     ],
     "customManagers": [
         // backstage entity validator version in Dockerfile
