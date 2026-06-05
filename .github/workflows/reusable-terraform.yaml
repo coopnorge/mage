@@ -129,10 +129,6 @@ jobs:
         if: always()
         run: rm -fr $HOME/.terraform.d/credentials.tfrc.json || true
 
-    permissions:
-      contents: read
-      pull-requests: read
-
   check-for-spacelift-proposed:
     permissions:
       contents: read
