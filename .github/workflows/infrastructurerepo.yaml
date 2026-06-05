@@ -17,6 +17,15 @@ on:
           any changes. If there is a chnage in a workfow in mage ci will be run in all
           cases. If you are using terraform modules with filebased source you should set
           this to false
+      suggest-formatting-fixes:
+        type: boolean
+        default: true
+        description: Create Github Pull Request review suggestions with fixes for formatting.
+      cleanup-diskspace:
+        type: boolean
+        default: false
+        description: Cleanup diskspace before init. This is useful for very large projects, but add 1 minute extra job time.
+
 jobs:
   detect-changes:
     name: Detect Changes
@@ -79,6 +88,8 @@ jobs:
     uses: ./.github/workflows/reusable-terraform.yaml
     with:
       skip-terraform-if-dir-has-no-changes: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
+      suggest-formatting-fixes: ${{ inputs.suggest-formatting-fixes }}
+      cleanup-diskspace: ${{ inputs.cleanup-diskspace }}
     permissions:
       contents: read
       pull-requests: write
