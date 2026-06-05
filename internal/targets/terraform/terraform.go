@@ -35,7 +35,6 @@ func Test(ctx context.Context) error {
 	}
 
 	mg.SerialCtxDeps(ctx, checkLocks...)
-	mg.SerialCtxDeps(ctx, Init)
 	mg.SerialCtxDeps(ctx, testDirs...)
 	return nil
 }
@@ -50,7 +49,6 @@ func checkLock(_ context.Context, workingDirectory string) error {
 
 // Lint runs the linters
 func Lint(ctx context.Context) error {
-	mg.SerialCtxDeps(ctx, Init)
 	directories, err := terraform.FindTerraformProjects(".")
 	if err != nil {
 		return err
@@ -74,7 +72,6 @@ func lint(_ context.Context, workingDirectory string) error {
 
 // LintFix fixes found issues (if it's supported by the linters)
 func LintFix(ctx context.Context) error {
-	mg.SerialCtxDeps(ctx, Init)
 	directories, err := terraform.FindTerraformProjects(".")
 	if err != nil {
 		return err
