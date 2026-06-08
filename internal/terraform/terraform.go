@@ -335,8 +335,8 @@ func DocsFix(directory string) error {
 }
 
 func handleTerraformOutput(title, stdout string, err error) error {
+	loginFailedMsg := "spacelift.io: error looking up module versions: 401 Unauthorized"
 	// spacelift.io: error looking up module versions: 401 Unauthorized
-
 	if !mg.Verbose() {
 		github.StartLogGroup(title)
 		fmt.Println(stdout)
@@ -346,7 +346,11 @@ func handleTerraformOutput(title, stdout string, err error) error {
 		if github.InCI() {
 			github.PrintActionMessage("error", title, err.Error())
 		}
-		return fmt.Errorf("%s - failed : %w", title, err)
+		help := ""
+		if strings.Contains(stdout, loginFailedMsg) {
+			help = "Downloading modules failed due to no access. Please use 'terraform login spacelift.io' to gain accces"
+		}
+		return fmt.Errorf("%s - failed : %w. %s", title, err, help)
 	}
 	return nil
 }
