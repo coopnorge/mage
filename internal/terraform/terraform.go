@@ -347,7 +347,7 @@ func handleTerraformOutput(title, stdout string, err error) error {
 			github.PrintActionMessage("error", title, err.Error())
 		}
 		help := ""
-		if strings.Contains(stdout, loginFailedMsg) {
+		if strings.Contains(strings.ReplaceAll(err.Error(), "\n", ""), loginFailedMsg) {
 			help = "Downloading modules failed due to no access. Please use 'terraform login spacelift.io' to gain accces"
 		}
 		return fmt.Errorf("%s - failed : %w. %s", title, err, help)
