@@ -119,7 +119,7 @@ func PrintActionMessage(level, title, message string) {
 	if !slices.Contains(allowedLevels, level) {
 		PrintActionMessage(
 			"error",
-			"Unkown GHA log level",
+			"Unknown GHA log level",
 			fmt.Sprintf("Supplied loglevel %s is not allowed, should be any of %s. Defaulting to 'error' ",
 				level,
 				strings.Join(allowedLevels, ","),
@@ -127,7 +127,6 @@ func PrintActionMessage(level, title, message string) {
 		level = "error"
 	}
 	fmt.Printf("::%s title=%s::%s", level, gitHubActionsEscape(title), gitHubActionsEscape(message))
-	return
 }
 
 func gitHubActionsEscape(s string) string {

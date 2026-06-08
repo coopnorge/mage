@@ -118,11 +118,11 @@ func Lint(directory, tfLintCfg string) error {
 	stdout, _, err := getIaCRunner().Run(nil, directory, "fmt", "-diff", "-check")
 	err = handleTerraformOutput(fmt.Sprintf("Terraform fmt check - %s", directory), stdout, err)
 	if err != nil {
-		return fmt.Errorf("Terraform formattig check failed for %s, %w", directory, err)
+		return fmt.Errorf("terraform formattig check failed for %s, %w", directory, err)
 	}
 	err = devtoolTFLint.Run(nil, directory, "--init", "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
 	if err != nil {
-		return fmt.Errorf("Init of TFlint failed for %s, %w", directory, err)
+		return fmt.Errorf("init of TFlint failed for %s, %w", directory, err)
 	}
 	err = devtoolTFLint.Run(nil, directory, "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
 	if err != nil {
@@ -143,17 +143,17 @@ func LintFix(directory, tfLintCfg string) error {
 	stdout, _, err := getIaCRunner().Run(nil, directory, "fmt", "-diff")
 	err = handleTerraformOutput(fmt.Sprintf("Terraform fmt check - %s", directory), stdout, err)
 	if err != nil {
-		return fmt.Errorf("Terraform formattig fix failed for %s", directory, err)
+		return fmt.Errorf("terraform formattig fix failed for %s, %w", directory, err)
 	}
 
 	err = devtoolTFLint.Run(nil, directory, "--init", "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
 	if err != nil {
-		return fmt.Errorf("Init of TFlint failed for %s", directory, err)
+		return fmt.Errorf("init of TFlint failed for %s, %w", directory, err)
 	}
 
 	err = devtoolTFLint.Run(nil, directory, "--fix", "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
 	if err != nil {
-		return fmt.Errorf("TFlint fix failed for %s", directory, err)
+		return fmt.Errorf("TFlint fix failed for %s, %w", directory, err)
 	}
 
 	return nil
@@ -252,7 +252,7 @@ func Security(directory string) error {
 	}
 	err := devtoolTrivy.Run(nil, directory, "config", "--exit-code", "1", "--misconfig-scanners=terraform", "./")
 	if err != nil {
-		return fmt.Errorf("Trivy failed for %s", directory, err)
+		return fmt.Errorf("trivy failed for %s, %w", directory, err)
 	}
 	return nil
 }
@@ -316,7 +316,7 @@ func Docs(directory string) error {
 
 	err := devtoolTFDocs.Run(nil, directory, ".", "-c", "terraform-docs.yml", "--output-check")
 	if err != nil {
-		return fmt.Errorf("Terraform-docs validate failed for %s", filepath.Join(directory, "terraform-docs.yaml"), err)
+		return fmt.Errorf("terraform-docs validate failed for %s, %w", filepath.Join(directory, "terraform-docs.yaml"), err)
 	}
 	return nil
 }
@@ -329,7 +329,7 @@ func DocsFix(directory string) error {
 
 	err := devtoolTFDocs.Run(nil, directory, ".", "-c", "terraform-docs.yml")
 	if err != nil {
-		return fmt.Errorf("Terraform-docs fix failed for %s", filepath.Join(directory, "terraform-docs.yaml"), err)
+		return fmt.Errorf("terraform-docs fix failed for %s, %w", filepath.Join(directory, "terraform-docs.yaml"), err)
 	}
 	return nil
 }
