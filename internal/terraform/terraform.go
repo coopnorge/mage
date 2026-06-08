@@ -118,15 +118,15 @@ func Lint(directory, tfLintCfg string) error {
 	stdout, _, err := getIaCRunner().Run(nil, directory, "fmt", "-diff", "-check")
 	err = handleTerraformOutput(fmt.Sprintf("Terraform fmt check - %s", directory), stdout, err)
 	if err != nil {
-		return fmt.Errorf("Terraform formattig check failed for %s", directory, err)
+		return fmt.Errorf("Terraform formattig check failed for %s, %w", directory, err)
 	}
 	err = devtoolTFLint.Run(nil, directory, "--init", "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
 	if err != nil {
-		return fmt.Errorf("Init of TFlint failed for %s", directory, err)
+		return fmt.Errorf("Init of TFlint failed for %s, %w", directory, err)
 	}
 	err = devtoolTFLint.Run(nil, directory, "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
 	if err != nil {
-		return fmt.Errorf("TFlint failed for %s", directory, err)
+		return fmt.Errorf("TFlint failed for %s, %w", directory, err)
 	}
 
 	return nil
@@ -335,6 +335,8 @@ func DocsFix(directory string) error {
 }
 
 func handleTerraformOutput(title, stdout string, err error) error {
+	// spacelift.io: error looking up module versions: 401 Unauthorized
+
 	if !mg.Verbose() {
 		github.StartLogGroup(title)
 		fmt.Println(stdout)
