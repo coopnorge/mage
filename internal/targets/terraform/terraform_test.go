@@ -33,7 +33,7 @@ func TestTargets(t *testing.T) {
 		{
 			name:        "Terraform Test target should succeed",
 			testProject: "testdata/success",
-			targets:     []string{"goapp:terraform:test"},
+			targets:     []string{"goapp:terraform:init", "goapp:terraform:test"},
 			wantErr:     false,
 		},
 		{
@@ -75,13 +75,13 @@ func TestTargets(t *testing.T) {
 		{
 			name:        "Terraform Security target should succeed",
 			testProject: "testdata/success",
-			targets:     []string{"goapp:terraform:security"},
+			targets:     []string{"goapp:terraform:init", "goapp:terraform:security"},
 			wantErr:     false,
 		},
 		{
 			name:        "Terraform Security target should fail",
 			testProject: "testdata/fail-security",
-			targets:     []string{"goapp:terraform:security"},
+			targets:     []string{"goapp:terraform:init", "goapp:terraform:security"},
 			wantErr:     true,
 		},
 		{
@@ -93,7 +93,7 @@ func TestTargets(t *testing.T) {
 		{
 			name:        "Terraform LockProviders target should succeed",
 			testProject: "testdata/success",
-			targets:     []string{"goapp:terraform:lockproviders"},
+			targets:     []string{"goapp:terraform:init", "goapp:terraform:lockproviders"},
 			wantErr:     false,
 		},
 		{
