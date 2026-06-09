@@ -104,8 +104,8 @@ func HasChanges(terraformProjects []string) (bool, error) {
 
 // Test runs terraform validate on a terraform project
 func Test(directory string) error {
-	stdout, _, err := getIaCRunner().Run(nil, directory, "validate")
-	return handleTerraformOutput(fmt.Sprintf("Terraform Validate - %s", directory), stdout, err)
+	stdout, stderr, err := getIaCRunner().Run(nil, directory, "validate")
+	return handleTerraformOutput(fmt.Sprintf("Terraform Validate - %s", directory), stdout, stderr, err)
 }
 
 // Lint runs the linters
@@ -115,8 +115,8 @@ func Lint(directory, tfLintCfg string) error {
 		return err
 	}
 	defer cleanup()
-	stdout, _, err := getIaCRunner().Run(nil, directory, "fmt", "-diff", "-check")
-	err = handleTerraformOutput(fmt.Sprintf("Terraform fmt check - %s", directory), stdout, err)
+	stdout, stderr, err := getIaCRunner().Run(nil, directory, "fmt", "-diff", "-check")
+	err = handleTerraformOutput(fmt.Sprintf("Terraform fmt check - %s", directory), stdout, stderr, err)
 	if err != nil {
 		return fmt.Errorf("terraform formattig check failed for %s, %w", directory, err)
 	}
@@ -140,8 +140,8 @@ func LintFix(directory, tfLintCfg string) error {
 	}
 	defer cleanup()
 
-	stdout, _, err := getIaCRunner().Run(nil, directory, "fmt", "-diff")
-	err = handleTerraformOutput(fmt.Sprintf("Terraform fmt check - %s", directory), stdout, err)
+	stdout, stderr, err := getIaCRunner().Run(nil, directory, "fmt", "-diff")
+	err = handleTerraformOutput(fmt.Sprintf("Terraform fmt check - %s", directory), stdout, stderr, err)
 	if err != nil {
 		return fmt.Errorf("terraform formattig fix failed for %s, %w", directory, err)
 	}
@@ -162,15 +162,15 @@ func LintFix(directory, tfLintCfg string) error {
 // Init downloads Terraform modules locally
 func Init(directory string) error {
 	log.Printf("Running terraform init for  %q", directory)
-	stdout, _, err := getIaCRunner().Run(nil, directory, "init")
-	return handleTerraformOutput(fmt.Sprintf("Terraform init - %s", directory), stdout, err)
+	stdout, stderr, err := getIaCRunner().Run(nil, directory, "init")
+	return handleTerraformOutput(fmt.Sprintf("Terraform init - %s", directory), stdout, stderr, err)
 }
 
 // InitUpgrade downloads and updates Terraform modules locally
 func InitUpgrade(directory string) error {
 	log.Printf("Running terraform init -upgrade for  %q", directory)
-	stdout, _, err := getIaCRunner().Run(nil, directory, "init", "-upgrade")
-	return handleTerraformOutput(fmt.Sprintf("Terraform init upgrade - %s", directory), stdout, err)
+	stdout, stderr, err := getIaCRunner().Run(nil, directory, "init", "-upgrade")
+	return handleTerraformOutput(fmt.Sprintf("Terraform init upgrade - %s", directory), stdout, stderr, err)
 }
 
 // CheckLock checks that the lockfile exists
@@ -217,14 +217,14 @@ func CheckLock(directory string) error {
 // os architecures
 func ProviderLock(directory string) error {
 	log.Printf("Running terraform provider lock  %q", directory)
-	stdout, _, err := getIaCRunner().Run(nil, directory, "providers", "lock",
+	stdout, stderr, err := getIaCRunner().Run(nil, directory, "providers", "lock",
 		"-platform=linux_arm64",
 		"-platform=linux_amd64",
 		"-platform=darwin_amd64",
 		"-platform=darwin_arm64",
 		"-platform=windows_amd64",
 	)
-	return handleTerraformOutput(fmt.Sprintf("Terraform provider lock - %s", directory), stdout, err)
+	return handleTerraformOutput(fmt.Sprintf("Terraform provider lock - %s", directory), stdout, stderr, err)
 }
 
 // Clean cache in a terraform directory
@@ -334,9 +334,8 @@ func DocsFix(directory string) error {
 	return nil
 }
 
-func handleTerraformOutput(title, stdout string, err error) error {
+func handleTerraformOutput(title, stdout, stderr string, err error) error {
 	// loginFailedMsg := "spacelift.io: error looking up module versions: 401 Unauthorized"
-	loginFailedMsg := "Unauthorized"
 	// spacelift.io: error looking up module versions: 401 Unauthorized
 	if !mg.Verbose() {
 		github.StartLogGroup(title)
@@ -345,13 +344,9 @@ func handleTerraformOutput(title, stdout string, err error) error {
 	}
 	if err != nil {
 		if github.InCI() {
-			github.PrintActionMessage("error", title, err.Error())
+			github.PrintActionMessage("error", title, stderr+err.Error())
 		}
-		help := ""
-		if strings.Contains(strings.ReplaceAll(err.Error(), "\r\n", ""), loginFailedMsg) {
-			help = "Downloading modules failed due to no access. Please use 'terraform login spacelift.io' to gain accces"
-		}
-		return fmt.Errorf("%s - failed : %w. %s", title, err, help)
+		return fmt.Errorf("%s - failed: %w", title, err)
 	}
 	return nil
 }
