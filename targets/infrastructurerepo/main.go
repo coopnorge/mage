@@ -14,24 +14,29 @@
 //
 //	import (
 //		//mage:import
-//		_ "github.com/coopnorge/mage/targets/infrastucturerepo"
+//		_ "github.com/coopnorge/mage/targets/infrastructurerepo"
 //	)
 //
 // In the repository add a GitHub Actions Workflow
 //
-//	on:
-//	  pull_request: {}
-//	  push:
-//	    branches:
-//	      - main
-//	jobs:
-//	  cicd:
-//	    uses: coopnorge/mage/.github/workflows/mage.yaml@v0 # Use the latest available version
-//	    permissions:
-//	      contents: read
-//	      id-token: write
-//	      packages: read
-//	    secrets: inherit
+//		on:
+//		  pull_request: {}
+//		  push:
+//		    branches:
+//		      - main
+//		jobs:
+//		  cicd:
+//		    uses: coopnorge/mage/.github/workflows/infrastructurerepo.yaml@main # Use the latest available version
+//
+//
+//	     permissions:
+//	       contents: read
+//	       pull-requests: write
+//	       issues: write
+//	       id-token: write
+//	       packages: read
+//	       checks: read
+//		    secrets: inherit
 //
 // [mage targets]: https://magefile.org/targets/
 //

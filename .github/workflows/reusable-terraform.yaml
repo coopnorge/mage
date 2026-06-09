@@ -32,7 +32,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Cleanup Disk Space
-        if: ${{ inputs.cleanup-diskpace == true }}
+        if: ${{ inputs.cleanup-diskspace == true }}
         run: |
           echo "=== Disk space before cleanup ==="
           df -h
