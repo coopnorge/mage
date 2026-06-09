@@ -23,7 +23,7 @@ provider "random" {
 ## Requirements
 
 | Name | Version |
-| ---- | ------- |
+|------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | ~> 1.0 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | 3.7.2 |
 
@@ -38,7 +38,7 @@ No outputs.
 ## Modules
 
 | Name | Source | Version |
-| ---- | ------ | ------- |
+|------|--------|---------|
 | <a name="module_sub1"></a> [sub1](#module\_sub1) | ./submodule | n/a |
 
 ## Resources
