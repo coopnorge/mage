@@ -12,11 +12,13 @@ import (
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/devtool"
 	"github.com/coopnorge/mage/internal/git"
+	"github.com/coopnorge/mage/internal/github"
+	"github.com/magefile/mage/mg"
 )
 
 // iacRunner is implemented by both devtool.Terraform and devtool.Tofu
 type iacRunner interface {
-	Run(env map[string]string, workdir string, args ...string) error
+	Run(env map[string]string, workdir string, args ...string) (string, string, error)
 }
 
 // useTofu returns true when the USE_TOFU environment variable is set to "true".
@@ -46,6 +48,10 @@ func IsTerraformProject(p string, d fs.DirEntry) bool {
 	}
 	// skip the examples dir form validation this could be more advanced
 	if filepath.Base(p) == "examples" {
+		return false
+	}
+	// skip fi skip ci dir is found
+	if core.FileExists(filepath.Join(p, ".terraform-validation-skip")) {
 		return false
 	}
 	files, err := filepath.Glob(p + "/*.tf")
@@ -96,11 +102,10 @@ func HasChanges(terraformProjects []string) (bool, error) {
 	return core.CompareChangesToPaths(changedFiles, terraformProjects, additionalGlobs)
 }
 
-// Test automates testing the packages named by the import paths, see also: go
-// test.
+// Test runs terraform validate on a terraform project
 func Test(directory string) error {
-	return getIaCRunner().Run(nil, directory, "validate")
-	// return DevtoolTerraform(nil, directory, "validate")
+	stdout, stderr, err := getIaCRunner().Run(nil, directory, "validate")
+	return handleTerraformOutput(fmt.Sprintf("Terraform Validate - %s", directory), stdout, stderr, err)
 }
 
 // Lint runs the linters
@@ -110,17 +115,18 @@ func Lint(directory, tfLintCfg string) error {
 		return err
 	}
 	defer cleanup()
-	err = getIaCRunner().Run(nil, directory, "fmt", "-diff", "-check")
+	stdout, stderr, err := getIaCRunner().Run(nil, directory, "fmt", "-diff", "-check")
+	err = handleTerraformOutput(fmt.Sprintf("Terraform fmt check - %s", directory), stdout, stderr, err)
 	if err != nil {
-		return err
+		return fmt.Errorf("terraform formattig check failed for %s, %w", directory, err)
 	}
 	err = devtoolTFLint.Run(nil, directory, "--init", "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
 	if err != nil {
-		return err
+		return fmt.Errorf("init of TFlint failed for %s, %w", directory, err)
 	}
 	err = devtoolTFLint.Run(nil, directory, "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
 	if err != nil {
-		return err
+		return fmt.Errorf("TFlint failed for %s, %w", directory, err)
 	}
 
 	return nil
@@ -134,19 +140,20 @@ func LintFix(directory, tfLintCfg string) error {
 	}
 	defer cleanup()
 
-	err = getIaCRunner().Run(nil, directory, "fmt", "-diff")
+	stdout, stderr, err := getIaCRunner().Run(nil, directory, "fmt", "-diff")
+	err = handleTerraformOutput(fmt.Sprintf("Terraform fmt check - %s", directory), stdout, stderr, err)
 	if err != nil {
-		return err
+		return fmt.Errorf("terraform formattig fix failed for %s, %w", directory, err)
 	}
 
 	err = devtoolTFLint.Run(nil, directory, "--init", "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
 	if err != nil {
-		return err
+		return fmt.Errorf("init of TFlint failed for %s, %w", directory, err)
 	}
 
 	err = devtoolTFLint.Run(nil, directory, "--fix", "--color", fmt.Sprintf("--config=%s", filepath.Base(lintCfg)))
 	if err != nil {
-		return err
+		return fmt.Errorf("TFlint fix failed for %s, %w", directory, err)
 	}
 
 	return nil
@@ -155,14 +162,15 @@ func LintFix(directory, tfLintCfg string) error {
 // Init downloads Terraform modules locally
 func Init(directory string) error {
 	log.Printf("Running terraform init for  %q", directory)
-
-	return getIaCRunner().Run(nil, directory, "init")
+	stdout, stderr, err := getIaCRunner().Run(nil, directory, "init")
+	return handleTerraformOutput(fmt.Sprintf("Terraform init - %s", directory), stdout, stderr, err)
 }
 
 // InitUpgrade downloads and updates Terraform modules locally
 func InitUpgrade(directory string) error {
 	log.Printf("Running terraform init -upgrade for  %q", directory)
-	return getIaCRunner().Run(nil, directory, "init", "-upgrade")
+	stdout, stderr, err := getIaCRunner().Run(nil, directory, "init", "-upgrade")
+	return handleTerraformOutput(fmt.Sprintf("Terraform init upgrade - %s", directory), stdout, stderr, err)
 }
 
 // CheckLock checks that the lockfile exists
@@ -209,13 +217,14 @@ func CheckLock(directory string) error {
 // os architecures
 func ProviderLock(directory string) error {
 	log.Printf("Running terraform provider lock  %q", directory)
-	return getIaCRunner().Run(nil, directory, "providers", "lock",
+	stdout, stderr, err := getIaCRunner().Run(nil, directory, "providers", "lock",
 		"-platform=linux_arm64",
 		"-platform=linux_amd64",
 		"-platform=darwin_amd64",
 		"-platform=darwin_arm64",
 		"-platform=windows_amd64",
 	)
+	return handleTerraformOutput(fmt.Sprintf("Terraform provider lock - %s", directory), stdout, stderr, err)
 }
 
 // Clean cache in a terraform directory
@@ -236,7 +245,16 @@ func Clean(directory string) error {
 // Security validates security of the terraform project
 // config --exit-code 1 --misconfig-scanners=terraform
 func Security(directory string) error {
-	return devtoolTrivy.Run(nil, directory, "config", "--exit-code", "1", "--misconfig-scanners=terraform", "./")
+	// Skip tf sec if file exists
+	if core.FileExistsInDirectory(directory, ".tfsec-ignore") {
+		log.Printf("Skiping security check in %s because %s exists", directory, ".tfsec-ignore")
+		return nil
+	}
+	err := devtoolTrivy.Run(nil, directory, "config", "--exit-code", "1", "--misconfig-scanners=terraform", "./")
+	if err != nil {
+		return fmt.Errorf("trivy failed for %s, %w", directory, err)
+	}
+	return nil
 }
 
 // HasTerraformDocsConfig checks whether the given directory
@@ -296,7 +314,11 @@ func Docs(directory string) error {
 		return nil
 	}
 
-	return devtoolTFDocs.Run(nil, directory, ".", "-c", "terraform-docs.yml", "--output-check")
+	err := devtoolTFDocs.Run(nil, directory, ".", "-c", "terraform-docs.yml", "--output-check")
+	if err != nil {
+		return fmt.Errorf("terraform-docs validate failed for %s, %w", filepath.Join(directory, "terraform-docs.yaml"), err)
+	}
+	return nil
 }
 
 // DocsFix updates the README to the configuration of the module
@@ -305,5 +327,26 @@ func DocsFix(directory string) error {
 		return nil
 	}
 
-	return devtoolTFDocs.Run(nil, directory, ".", "-c", "terraform-docs.yml")
+	err := devtoolTFDocs.Run(nil, directory, ".", "-c", "terraform-docs.yml")
+	if err != nil {
+		return fmt.Errorf("terraform-docs fix failed for %s, %w", filepath.Join(directory, "terraform-docs.yaml"), err)
+	}
+	return nil
+}
+
+func handleTerraformOutput(title, stdout, stderr string, err error) error {
+	// loginFailedMsg := "spacelift.io: error looking up module versions: 401 Unauthorized"
+	// spacelift.io: error looking up module versions: 401 Unauthorized
+	if !mg.Verbose() {
+		github.StartLogGroup(title)
+		fmt.Println(stdout)
+		github.EndLogGroup()
+	}
+	if err != nil {
+		if github.InCI() {
+			github.PrintActionMessage("error", title, stderr+err.Error())
+		}
+		return fmt.Errorf("%s - failed: %w", title, err)
+	}
+	return nil
 }

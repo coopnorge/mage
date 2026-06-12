@@ -114,13 +114,19 @@ func CreateCommentInPR(filename string) error {
 // second is the is the title and the third the message
 // level can be debug, notice, warning, error. It will return a error if the
 // level is not allowed.
-func PrintActionMessage(level, title, message string) error {
+func PrintActionMessage(level, title, message string) {
 	allowedLevels := []string{"debug", "notice", "warning", "error"}
 	if !slices.Contains(allowedLevels, level) {
-		return fmt.Errorf("supplied level %s is not in the list %s", level, strings.Join(allowedLevels, ","))
+		PrintActionMessage(
+			"error",
+			"Unknown GHA log level",
+			fmt.Sprintf("Supplied loglevel %s is not allowed, should be any of %s. Defaulting to 'error' ",
+				level,
+				strings.Join(allowedLevels, ","),
+			))
+		level = "error"
 	}
 	fmt.Printf("::%s title=%s::%s", level, gitHubActionsEscape(title), gitHubActionsEscape(message))
-	return nil
 }
 
 func gitHubActionsEscape(s string) string {

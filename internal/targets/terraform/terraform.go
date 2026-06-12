@@ -4,6 +4,8 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"os"
+	"strconv"
 
 	"github.com/coopnorge/mage/internal/terraform"
 	"github.com/magefile/mage/mg"
@@ -25,13 +27,15 @@ func Test(ctx context.Context) error {
 	var testDirs []any
 	var checkLocks []any
 	for _, workDir := range directories {
+		if skipIfNoChanges(workDir) {
+			continue
+		}
 		testDirs = append(testDirs, mg.F(test, workDir))
 		checkLocks = append(checkLocks, mg.F(checkLock, workDir))
 	}
 
-	mg.CtxDeps(ctx, checkLocks...)
-	mg.CtxDeps(ctx, Init)
-	mg.CtxDeps(ctx, testDirs...)
+	mg.SerialCtxDeps(ctx, checkLocks...)
+	mg.SerialCtxDeps(ctx, testDirs...)
 	return nil
 }
 
@@ -45,7 +49,6 @@ func checkLock(_ context.Context, workingDirectory string) error {
 
 // Lint runs the linters
 func Lint(ctx context.Context) error {
-	mg.CtxDeps(ctx, Init)
 	directories, err := terraform.FindTerraformProjects(".")
 	if err != nil {
 		return err
@@ -53,6 +56,9 @@ func Lint(ctx context.Context) error {
 
 	lintDirs := []any{}
 	for _, workDir := range directories {
+		if skipIfNoChanges(workDir) {
+			continue
+		}
 		lintDirs = append(lintDirs, mg.F(lint, workDir))
 	}
 
@@ -66,7 +72,6 @@ func lint(_ context.Context, workingDirectory string) error {
 
 // LintFix fixes found issues (if it's supported by the linters)
 func LintFix(ctx context.Context) error {
-	mg.CtxDeps(ctx, Init)
 	directories, err := terraform.FindTerraformProjects(".")
 	if err != nil {
 		return err
@@ -74,6 +79,9 @@ func LintFix(ctx context.Context) error {
 
 	lintDirs := []any{}
 	for _, workDir := range directories {
+		if skipIfNoChanges(workDir) {
+			continue
+		}
 		lintDirs = append(lintDirs, mg.F(lintFix, workDir))
 	}
 
@@ -95,6 +103,9 @@ func Init(ctx context.Context) error {
 	}
 	modules := []any{}
 	for _, workDir := range directories {
+		if skipIfNoChanges(workDir) {
+			continue
+		}
 		fmt.Println("adding dep initTerraform", workDir)
 		modules = append(modules, mg.F(initTerraform, workDir))
 	}
@@ -117,6 +128,9 @@ func InitUpgrade(ctx context.Context) error {
 	}
 	modules := []any{}
 	for _, workDir := range directories {
+		if skipIfNoChanges(workDir) {
+			continue
+		}
 		modules = append(modules, mg.F(initUpgrade, workDir))
 	}
 
@@ -136,6 +150,9 @@ func LockProviders(ctx context.Context) error {
 	}
 	modules := []any{}
 	for _, workDir := range directories {
+		if skipIfNoChanges(workDir) {
+			continue
+		}
 		modules = append(modules, mg.F(lockProviders, workDir))
 	}
 
@@ -175,6 +192,9 @@ func Security(ctx context.Context) error {
 	}
 	modules := []any{}
 	for _, workDir := range directories {
+		if skipIfNoChanges(workDir) {
+			continue
+		}
 		modules = append(modules, mg.F(security, workDir))
 	}
 
@@ -198,6 +218,9 @@ func DocsValidate(ctx context.Context) error {
 	}
 	modules := []any{}
 	for _, workDir := range directories {
+		if skipIfNoChanges(workDir) {
+			continue
+		}
 		modules = append(modules, mg.F(terraformDocs, workDir))
 	}
 
@@ -221,6 +244,9 @@ func DocsValidateFix(ctx context.Context) error {
 	}
 	modules := []any{}
 	for _, workDir := range directories {
+		if skipIfNoChanges(workDir) {
+			continue
+		}
 		modules = append(modules, mg.F(terraformDocsFix, workDir))
 	}
 
@@ -257,4 +283,24 @@ func Changes(_ context.Context) error {
 	}
 	fmt.Println("false")
 	return nil
+}
+
+// skipIfNoChanges will check if the supplied directory has changes compared to
+// the git diff. Will retuyrn true if it can be skipped.
+func skipIfNoChanges(directory string) bool {
+	// try to fetch from env far
+	terraformSkipEnv := os.Getenv("TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR")
+	onlyOnChangesInDir, err := strconv.ParseBool(terraformSkipEnv)
+	// if set to false or err != nil (env var not set, or invalid value)
+	if !onlyOnChangesInDir || err != nil {
+		return false
+	}
+	changes, err := terraform.HasChanges([]string{directory})
+	if err != nil {
+		return false
+	}
+	if !changes {
+		fmt.Printf("Skipping because TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR=%s and non changes in dir %s\n", terraformSkipEnv, directory)
+	}
+	return !changes
 }

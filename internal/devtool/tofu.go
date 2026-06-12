@@ -15,7 +15,7 @@ import (
 type Tofu struct{}
 
 // Run runs the OpenTofu devtool
-func (t Tofu) Run(env map[string]string, workdir string, args ...string) error {
+func (t Tofu) Run(env map[string]string, workdir string, args ...string) (string, string, error) {
 	if !isCommandAvailable("tofu") {
 		fmt.Println("tofu binary not found. Falling back to running the docker version")
 		return t.runInDocker(env, workdir, args...)
@@ -52,42 +52,36 @@ func (t Tofu) versionOK() error {
 	return nil
 }
 
-func (t Tofu) runNative(env map[string]string, workdir string, args ...string) error {
-	if env == nil {
-		env = map[string]string{}
-	}
+func (t Tofu) runNative(env map[string]string, workdir string, args ...string) (string, string, error) {
+	outs := setupStdOutErr(false)
+	_, err := core.ExecAt(env, outs.StdOut, outs.StdErr, workdir, "tofu", args...)
 
-	if core.Verbose() {
-		return core.RunAtWith(env, core.GetAbsWorkDir(workdir), "tofu", args...)
-	}
-	out, err := core.OutputAtWith(env, core.GetAbsWorkDir(workdir), "tofu", args...)
-	if err != nil {
-		fmt.Println(out)
-		return err
-	}
-	return err
+	return outs.printOut(), outs.printErr(), err
 }
 
-func (t Tofu) runInDocker(env map[string]string, workdir string, args ...string) error {
+func (t Tofu) runInDocker(env map[string]string, workdir string, args ...string) (string, string, error) {
 	devtool, err := getTool(ToolsDockerfile, "tofu")
 	if err != nil {
-		return err
+		return "", "", err
 	}
 
 	path, err := os.Getwd()
 	if err != nil {
-		return err
+		return "", "", err
 	}
 
 	dockerArgs := []string{
-		"--volume", fmt.Sprintf("%s:/app", path),
-		"--workdir", filepath.Join("/app", workdir),
-		"--volume", "$HOME/.terraform.d:/root/.terraform.d",
+		"--volume", fmt.Sprintf("%s:/app", path), // Mount the source code
+		"--workdir", filepath.Join("/app", workdir), // set workdir to where we want to run
+		"--volume", "$HOME/.terraform.d:/root/.terraform.d", // mount credentials and cache
 	}
 
 	if env == nil {
 		env = map[string]string{}
 	}
+	// set cache
+	// skip for now
+	// env["TF_PLUGIN_CACHE_DIR"] = "$HOME/.terraform.d/plugin-cache"
 	for k, v := range env {
 		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("%s=%s", k, v))
 	}
@@ -100,13 +94,8 @@ func (t Tofu) runInDocker(env map[string]string, workdir string, args ...string)
 	runArgs = append(runArgs, devtool.image)
 	runArgs = append(runArgs, args...)
 
-	if core.Verbose() {
-		return sh.RunWith(env, "docker", runArgs...)
-	}
-	out, err := sh.OutputWith(env, "docker", runArgs...)
-	if err != nil {
-		fmt.Println(out)
-		return err
-	}
-	return err
+	outs := setupStdOutErr(false)
+	_, err = core.Exec(env, outs.StdOut, outs.StdErr, "docker", runArgs...)
+
+	return outs.printOut(), outs.printErr(), err
 }

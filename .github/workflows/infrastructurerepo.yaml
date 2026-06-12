@@ -1,46 +1,15 @@
 concurrency:
-  group: goapp-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  group: infrastucture-repo-${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 on:
   workflow_call:
     secrets: {}
     inputs:
-      oci-image-base:
-        type: string
-        required: true
-      push-oci-image:
-        type: boolean
-        required: false
-        default: false
-      workload-identity-provider:
-        type: string
-        required: true
-      service-account:
-        type: string
-      artifact-registry-location:
-        type: string
-        default: "europe"
-        description: Artifact registry region name (e.g. "europe", "europe-north1").
-      go-runtime:
-        type: string
-        default: "docker"
-        description: Run mage go related tasks in "docker" (default) or local
-      additional-globs-go:
-        type: string
-        default: ""
-        description: A comma separated list of Globs which triggers golang ci
       additional-globs-terraform:
         type: string
         default: ""
         description: A comma separated list of Globs which triggers terraform ci
-      tag-based-diff:
-        type: boolean
-        default: true
-        description: |
-          When set to true use git tags to calucate when certain build steps are required. When
-          set to false, the github event data will be used. This event might get lost when runs are
-          canceled etc.
-      terraform-skip-if-dir-has-no-changes:
+      skip-terraform-if-dir-has-no-changes:
         type: boolean
         default: true
         description: |
@@ -50,17 +19,13 @@ on:
           this to false
       terraform-suggest-formatting-fixes:
         type: boolean
-        default: false
+        default: true
         description: Create Github Pull Request review suggestions with fixes for formatting.
       terraform-cleanup-diskspace:
         type: boolean
         default: false
         description: Cleanup diskspace before init. This is useful for very large projects, but add 1 minute extra job time.
 
-    outputs:
-      oci-images:
-        value: ${{ jobs.goapp.outputs.oci-images }}
-        description: OCI image references.
 jobs:
   detect-changes:
     name: Detect Changes
@@ -68,14 +33,11 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-      packages: read
     outputs:
-      golang: ${{ steps.go.outputs.golang == 'true' || github.event_name == 'workflow_dispatch' }}
       terraform: ${{ steps.terraform.outputs.terraform == 'true' && github.event_name == 'pull_request' }}
       policy-bot: ${{ steps.policy-bot.outputs.policy_bot == 'true' && github.event_name == 'pull_request' }}
       pallets: ${{ steps.pallets.outputs.pallets == 'true' && github.event_name == 'pull_request' }}
       catalog-info: ${{ steps.catalog-info.outputs.catalog_info == 'true' && github.event_name == 'pull_request' }}
-      kubernetes: ${{ steps.kubernetes.outputs.kubernetes == 'true' && github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -97,22 +59,6 @@ jobs:
       - name: List changes
         id: list
         run: go tool mage git:listChanges
-      - name: Check for Go changes (pr event based)
-        id: go
-        run: |
-          if [[ "$TAG_BASED" == "true" ]]  ; then
-            echo "Running with tag based diff"
-            echo "golang=$(go tool mage go:changes)" >> $GITHUB_OUTPUT
-          else
-            echo "Running with pr event based diff"
-            export CHANGED_FILES="$CHANGES"
-            echo "golang=$(go tool mage go:changes)" >> $GITHUB_OUTPUT
-          fi
-        env:
-          ADDITIONAL_GLOBS_GO: ${{ inputs.additional-globs-go }}
-          CHANGES: ${{ steps.filter.outputs.changed_files }}
-          TAG_BASED: ${{ inputs.tag-based-diff }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Check for Terraform changes
         id: terraform
         run: echo "terraform=$(go tool mage terraform:changes)" >> $GITHUB_OUTPUT
@@ -134,29 +80,6 @@ jobs:
         run: echo "catalog_info=$(go tool mage catalogInfo:changes)" >> $GITHUB_OUTPUT
         env:
           CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
-      - name: Check for Kubernetes changes
-        id: kubernetes
-        run: echo "kubernetes=$(go tool mage k8s:changes)" >> $GITHUB_OUTPUT
-        env:
-          CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
-
-  goapp:
-    name: Go application
-    needs: ["detect-changes"]
-    if: ${{  needs.detect-changes.outputs.golang == 'true'  }}
-    uses: ./.github/workflows/reusable-goapp.yaml
-    permissions:
-      contents: write
-      id-token: write
-      packages: read
-    secrets: inherit
-    with:
-      oci-image-base: ${{ inputs.oci-image-base }}
-      push-oci-image: ${{ inputs.push-oci-image }}
-      workload-identity-provider: ${{ inputs.workload-identity-provider }}
-      service-account: ${{ inputs.service-account }}
-      artifact-registry-location: ${{ inputs.artifact-registry-location }}
-      tag-based-diff: ${{ inputs.tag-based-diff }}
 
   terraform:
     name: Terraform
@@ -197,13 +120,3 @@ jobs:
       contents: read
       pull-requests: read
     secrets: inherit
-
-  kubernetes:
-    name: Kubernetes
-    needs: ["detect-changes"]
-    if: ${{  needs.detect-changes.outputs.kubernetes == 'true'  }}
-    uses: ./.github/workflows/reusable-kubernetes.yaml
-    permissions:
-      contents: read
-      pull-requests: write
-      issues: write

@@ -3,16 +3,61 @@ concurrency:
   cancel-in-progress: true
 on:
   workflow_call:
-    inputs: {}
+    inputs:
+      skip-terraform-if-dir-has-no-changes:
+        type: boolean
+        default: false
+        description: |
+          Skip terraform validation if a found terraform directory does not contain
+          any changes. If there is a chnage in a workfow in mage ci will be run in all
+          cases. If you are using terraform modules with filebased source you should set
+          this to false
+      suggest-formatting-fixes:
+        type: boolean
+        default: false
+        description: Create Github Pull Request review suggestions with fixes for formatting.
+      cleanup-diskspace:
+        type: boolean
+        default: false
+        description: Cleanup diskspace before init. This is useful for very large projects, but add 1 minute extra job time.
     secrets: {}
 
 jobs:
   validate-terraform:
     name: Terraform CI
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     steps:
+      - name: Cleanup Disk Space
+        if: ${{ inputs.cleanup-diskspace == true }}
+        run: |
+          echo "=== Disk space before cleanup ==="
+          df -h
+
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /root/.cargo
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+
+          echo "=== Cleaning apt packages ==="
+          sudo apt-get clean
+          sudo apt-get autoremove -y
+
+          echo "=== Disk space after cleanup ==="
+          df -h
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_wrapper: false
+          terraform_version: "1.5.7"
 
       - name: "Setup Spacelift Credentials"
         run: |
@@ -39,19 +84,50 @@ jobs:
       - name: Install go Tools
         run: go install tool
 
-      - name: Code Validation
-        id: validate
-        run: go tool mage terraform:validate
+      - name: Terraform Init
+        id: init
+        run: go tool mage terraform:init
         env:
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
+          TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
+
+      - name: Terraform Lint fix
+        if: ${{ inputs.suggest-formatting-fixes == true }}
+        id: lint-fix
+        continue-on-error: true
+        run: go tool mage terraform:lintFix
+
+      - name: Add review suggestions
+        if: ${{ inputs.suggest-formatting-fixes == true }}
+        uses: reviewdog/action-suggester@aa38384ceb608d00f84b4690cacc83a5aba307ff # v1.24.0
+        with:
+          tool_name: terraform-fmt
+          cleanup: true
+
+      - name: Code Lint
+        id: lint
+        run: go tool mage terraform:lint
+        env:
+          GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
+          TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
+
+      - name: Code Test
+        id: test
+        run: go tool mage terraform:test
+        env:
+          GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
+          TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
+
+      - name: Code Security
+        id: security
+        run: go tool mage terraform:security
+        env:
+          GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
+          TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
 
       - name: Cleanup
         if: always()
         run: rm -fr $HOME/.terraform.d/credentials.tfrc.json || true
-
-    permissions:
-      contents: read
-      pull-requests: read
 
   check-for-spacelift-proposed:
     permissions:
@@ -127,7 +203,7 @@ jobs:
       contents: read
       pull-requests: write
     runs-on: ubuntu-slim
-    needs: ['validate-terraform']
+    needs: ["validate-terraform"]
     steps:
       #- uses: actions/checkout@v6
       - name: Waiting for checks suites to populate

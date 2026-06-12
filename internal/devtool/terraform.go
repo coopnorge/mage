@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
@@ -15,13 +16,18 @@ import (
 type Terraform struct{}
 
 // Run runs the terraform devtool
-func (tf Terraform) Run(env map[string]string, workdir string, args ...string) error {
+func (tf Terraform) Run(env map[string]string, workdir string, args ...string) (string, string, error) {
+	forceDocker, err := strconv.ParseBool(os.Getenv("TERRAFORM_DOCKER"))
+	if forceDocker && err == nil {
+		fmt.Println("Running in terraform in docker forced by env var")
+		return tf.runInDocker(env, workdir, args...)
+	}
 	if !isCommandAvailable("terraform") {
 		fmt.Println("terraform binary not found. Falling back to running the docker version")
 		return tf.runInDocker(env, workdir, args...)
 	}
 
-	err := tf.versionOK()
+	err = tf.versionOK()
 	if err != nil {
 		fmt.Printf("terraform does not meet version constraints. Falling back to docker version\n error: %s\n", err)
 		return tf.runInDocker(env, workdir, args...)
@@ -53,34 +59,39 @@ func (tf Terraform) versionOK() error {
 	return nil
 }
 
-func (tf Terraform) runNative(env map[string]string, workdir string, args ...string) error {
-	if env == nil {
-		env = map[string]string{}
-	}
-	// set cache
-	// skip for now
-	// env["TF_PLUGIN_CACHE_DIR"] = "$HOME/.terraform.d/plugin-cache"
+func (tf Terraform) runNative(env map[string]string, workdir string, args ...string) (string, string, error) {
+	// if env == nil {
+	// 	env = map[string]string{}
+	// }
+	// // set cache
+	// // skip for now
+	// // env["TF_PLUGIN_CACHE_DIR"] = "$HOME/.terraform.d/plugin-cache"
+	//
+	// if core.Verbose() {
+	// 	return core.RunAtWith(env, core.GetAbsWorkDir(workdir), "terraform", args...)
+	// }
+	// out, err := core.OutputAtWith(env, core.GetAbsWorkDir(workdir), "terraform", args...)
+	// if err != nil {
+	// 	fmt.Println(out)
+	// 	return err
+	// }
+	// return err
 
-	if core.Verbose() {
-		return core.RunAtWith(env, core.GetAbsWorkDir(workdir), "terraform", args...)
-	}
-	out, err := core.OutputAtWith(env, core.GetAbsWorkDir(workdir), "terraform", args...)
-	if err != nil {
-		fmt.Println(out)
-		return err
-	}
-	return err
+	outs := setupStdOutErr(false)
+	_, err := core.ExecAt(env, outs.StdOut, outs.StdErr, workdir, "terraform", args...)
+
+	return outs.printOut(), outs.printErr(), err
 }
 
-func (tf Terraform) runInDocker(env map[string]string, workdir string, args ...string) error {
+func (tf Terraform) runInDocker(env map[string]string, workdir string, args ...string) (string, string, error) {
 	devtool, err := getTool(ToolsDockerfile, "terraform")
 	if err != nil {
-		return err
+		return "", "", err
 	}
 
 	path, err := os.Getwd()
 	if err != nil {
-		return err
+		return "", "", err
 	}
 
 	dockerArgs := []string{
@@ -107,13 +118,18 @@ func (tf Terraform) runInDocker(env map[string]string, workdir string, args ...s
 	runArgs = append(runArgs, devtool.image)
 	runArgs = append(runArgs, args...)
 
-	if core.Verbose() {
-		return sh.RunWith(env, "docker", runArgs...)
-	}
-	out, err := sh.OutputWith(env, "docker", runArgs...)
-	if err != nil {
-		fmt.Println(out)
-		return err
-	}
-	return err
+	// if core.Verbose() {
+	// 	return sh.RunWith(env, "docker", runArgs...)
+	// }
+	// out, err := sh.OutputWith(env, "docker", runArgs...)
+	// if err != nil {
+	// 	fmt.Println(out)
+	// 	return err
+	// }
+	// return err
+	//
+	outs := setupStdOutErr(false)
+	_, err = core.Exec(env, outs.StdOut, outs.StdErr, "docker", runArgs...)
+
+	return outs.printOut(), outs.printErr(), err
 }

@@ -1,4 +1,4 @@
-package terraformmodule
+package infrastructurerepo
 
 import (
 	"context"
@@ -26,32 +26,32 @@ func (Terraform) Fix(ctx context.Context) error {
 
 // Test tests all terraform projects
 func (Terraform) Test(ctx context.Context) error {
-	mg.CtxDeps(ctx, mg.F(terraformTargets.Test))
+	mg.SerialCtxDeps(ctx, mg.F(terraformTargets.Test))
 	return nil
 }
 
 // Lint lints all terraform projects
 func (Terraform) Lint(ctx context.Context) error {
-	mg.CtxDeps(ctx, terraformTargets.Lint, terraformTargets.DocsValidate)
+	mg.SerialCtxDeps(ctx, terraformTargets.Lint)
 	return nil
 }
 
 // LintFix tries to fix linting issues
 func (Terraform) LintFix(ctx context.Context) error {
-	mg.CtxDeps(ctx, terraformTargets.LintFix, terraformTargets.DocsValidateFix)
+	mg.CtxDeps(ctx, terraformTargets.LintFix)
 	return nil
 }
 
 // Init initializes a terraform projects
 func (Terraform) Init(ctx context.Context) error {
-	mg.CtxDeps(ctx, terraformTargets.Init)
+	mg.SerialCtxDeps(ctx, terraformTargets.Init)
 	return nil
 }
 
 // InitUpgrade upgrades the terraform projects within their version
 // constraints.
 func (Terraform) InitUpgrade(ctx context.Context) error {
-	mg.CtxDeps(ctx, terraformTargets.InitUpgrade)
+	mg.SerialCtxDeps(ctx, terraformTargets.InitUpgrade)
 	return nil
 }
 
@@ -63,18 +63,20 @@ func (Terraform) Clean(ctx context.Context) error {
 
 // Security scans the security posture of the terraform projects
 func (Terraform) Security(ctx context.Context) error {
-	mg.CtxDeps(ctx, terraformTargets.Security)
+	mg.SerialCtxDeps(ctx, terraformTargets.Security)
 	return nil
 }
 
-// DocsValidate checks if the README is up to date with content of the module
-func (Terraform) DocsValidate(ctx context.Context) error {
-	mg.CtxDeps(ctx, terraformTargets.DocsValidate)
+// LockProviders pdates the locks.terraform.lock.hcl file. Run this when a provider has
+// changed.
+func (Terraform) LockProviders(ctx context.Context) error {
+	mg.CtxDeps(ctx, terraformTargets.LockProviders)
 	return nil
 }
 
-// DocsValidateFix tries to fix the README according to terraform-docs.yml.
-func (Terraform) DocsValidateFix(ctx context.Context) error {
-	mg.CtxDeps(ctx, terraformTargets.DocsValidateFix)
+// Changes returns the string true or false depending on the fact that
+// the current branch contains changes compared to the main branch.
+func (Terraform) Changes(ctx context.Context) error {
+	mg.CtxDeps(ctx, terraformTargets.Changes)
 	return nil
 }
