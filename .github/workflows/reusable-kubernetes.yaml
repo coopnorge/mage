@@ -8,7 +8,7 @@ on:
 
 jobs:
   validate-kubernetes:
-    name: Validate Kuberenetes
+    name: Validate Kubernetes
     runs-on: ubuntu-latest
     permissions:
       contents: read
