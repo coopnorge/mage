@@ -50,7 +50,7 @@ jobs:
           echo "=== Disk space after cleanup ==="
           df -h
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -140,7 +140,7 @@ jobs:
       GIT_REV: ${{ github.event.pull_request.head.sha }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: check if spacelift/proposed exists as a required check in branch protection
         shell: bash
         run: |
