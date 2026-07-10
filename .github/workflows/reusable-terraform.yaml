@@ -42,7 +42,7 @@ jobs:
       - name: Install go Tools
         run: go install tool
       - name: Generate Matrix for Terraform
-        run: echo "$(go tool mage terraform:gitHubActionsJobMatrix)" >> $GITHUB_OUTPUT
+        run: echo "matrix=$(go tool mage terraform:gitHubActionsJobMatrix)" >> $GITHUB_OUTPUT
         id: set-matrix
 
   validate-terraform:
