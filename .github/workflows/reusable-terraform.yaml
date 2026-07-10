@@ -23,32 +23,59 @@ on:
     secrets: {}
 
 jobs:
+  setup-terraform-matrix:
+    name: Terraform Matrix Setup
+    runs-on: ubuntu-slim
+    permissions:
+      contents: read
+    outputs:
+      matrix-config: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "stable"
+          cache-dependency-path: "**/go.sum"
+      - name: Install go Tools
+        run: go install tool
+      - name: Generate Matrix for Terraform
+        run: echo "$(go tool mage terraform:gitHubActionsJobMatrix)" >> $GITHUB_OUTPUT
+        id: set-matrix
+
   validate-terraform:
     name: Terraform CI
     runs-on: ubuntu-24.04
+    needs: setup-terraform-matrix
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.setup-terraform-matrix.outputs.matrix-config) }}
+    if: ${{ needs.setup-terraform-matrix.outputs.matrix-config != '' && needs.setup-terraform-matrix.outputs.matrix-config != '{"directory":[]}' }}
     permissions:
       contents: read
       issues: write
       pull-requests: write
+    env:
+      CHANGED_FILES: ${{ matrix.directory }}
+      TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: true
     steps:
-      - name: Cleanup Disk Space
-        if: ${{ inputs.cleanup-diskspace == true }}
-        run: |
-          echo "=== Disk space before cleanup ==="
-          df -h
-
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /root/.cargo
-          sudo rm -rf /opt/hostedtoolcache/CodeQL
-
-          echo "=== Cleaning apt packages ==="
-          sudo apt-get clean
-          sudo apt-get autoremove -y
-
-          echo "=== Disk space after cleanup ==="
-          df -h
+      # - name: Cleanup Disk Space
+      #   if: ${{ inputs.cleanup-diskspace == true }}
+      #   run: |
+      #     echo "=== Disk space before cleanup ==="
+      #     df -h
+      #
+      #     sudo rm -rf /usr/share/dotnet
+      #     sudo rm -rf /usr/local/lib/android
+      #     sudo rm -rf /opt/ghc
+      #     sudo rm -rf /root/.cargo
+      #     sudo rm -rf /opt/hostedtoolcache/CodeQL
+      #
+      #     echo "=== Cleaning apt packages ==="
+      #     sudo apt-get clean
+      #     sudo apt-get autoremove -y
+      #
+      #     echo "=== Disk space after cleanup ==="
+      #     df -h
       - name: Checkout
         uses: actions/checkout@v6
         with:
@@ -89,7 +116,6 @@ jobs:
         run: go tool mage terraform:init
         env:
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
-          TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
 
       - name: Terraform Lint fix
         if: ${{ inputs.suggest-formatting-fixes == true }}
@@ -109,21 +135,18 @@ jobs:
         run: go tool mage terraform:lint
         env:
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
-          TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
 
       - name: Code Test
         id: test
         run: go tool mage terraform:test
         env:
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
-          TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
 
       - name: Code Security
         id: security
         run: go tool mage terraform:security
         env:
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
-          TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
 
       - name: Cleanup
         if: always()
