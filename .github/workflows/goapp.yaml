@@ -77,7 +77,7 @@ jobs:
       catalog-info: ${{ steps.catalog-info.outputs.catalog_info == 'true' && github.event_name == 'pull_request' }}
       kubernetes: ${{ steps.kubernetes.outputs.kubernetes == 'true' && github.event_name == 'pull_request' }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Set up Go
