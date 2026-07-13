@@ -13,6 +13,7 @@ linters:
     - staticcheck
     - unused
     - whitespace
+    - reassign
   settings:
     errcheck:
       check-type-assertions: true
@@ -26,7 +27,7 @@ linters:
         text: Potential file inclusion via variable
       - linters:
           - revive
-        text: 'package-comments: .*'
+        text: "package-comments: .*"
     paths:
       - third_party$
       - builtin$
