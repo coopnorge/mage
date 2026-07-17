@@ -7,5 +7,5 @@ FROM ghcr.io/opentofu/opentofu:1.12.0@sha256:ddb4aac816fdacb621b665908a0e914dce9
 FROM ghcr.io/terraform-linters/tflint:v0.63.1@sha256:890e37827d7b5e400f26137c5189c7efa581365fe9299b5b9814e5148d5978b9 AS tflint
 FROM docker.io/aquasec/trivy:0.71.0@sha256:016eae51fdcf989332a5404af7e8f625cd5d95d7c0907a221d080a996f556500 AS trivy
 FROM quay.io/terraform-docs/terraform-docs:0.20.0@sha256:37329e2dc2518e7f719a986a3954b10771c3fe000f50f83fd4d98d489df2eae2 AS terraform-docs
-FROM docker.io/alpine/helm:3.21.2@sha256:d3e563902595dbfa058aa820d516557d12fcbace1332027a6e513632e2c08539 as helm
+FROM docker.io/alpine/helm:3.21.3@sha256:35da09ba0716fc7c3cd63b6b31ee380a9c7662e95f29ab0e4ae962420afd315b as helm
 FROM docker.io/zegl/kube-score:v1.20.0@sha256:ac4c43ad560af905d66f6bf57b0937c591332e6dbf2167c31193a13b4695ab97 as kube-score
