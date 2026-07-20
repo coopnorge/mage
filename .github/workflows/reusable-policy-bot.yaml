@@ -11,7 +11,7 @@ jobs:
     name: Policy-bot config check
     runs-on:
       group: ubuntu-latest-large-pool
-      labels: ubuntu-latest-16core
+      labels: ubuntu-latest-4core
     permissions:
       contents: read
       pull-requests: read
