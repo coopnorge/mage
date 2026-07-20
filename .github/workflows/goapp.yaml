@@ -65,8 +65,8 @@ jobs:
   detect-changes:
     name: Detect Changes
     runs-on:
-      group: larger-runners
-      labels: ubuntu-latest-8-cores
+      group: ubuntu-latest-large-pool
+      labels: ubuntu-latest-16core
     permissions:
       contents: read
       pull-requests: read

@@ -10,8 +10,8 @@ jobs:
   validate-policy-bot-config:
     name: Policy-bot config check
     runs-on:
-      group: larger-runners
-      labels: ubuntu-latest-8-cores
+      group: ubuntu-latest-large-pool
+      labels: ubuntu-latest-16core
     permissions:
       contents: read
       pull-requests: read
