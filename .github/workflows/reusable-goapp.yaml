@@ -38,7 +38,9 @@ on:
 jobs:
   go-lint:
     name: Go Lint
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: larger-runners
+      labels: ubuntu-latest-8-cores
     permissions:
       contents: read
     steps:
@@ -69,7 +71,9 @@ jobs:
 
   go-test:
     name: Go Test
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: larger-runners
+      labels: ubuntu-latest-8-cores
     permissions:
       contents: read
     steps:
@@ -99,7 +103,9 @@ jobs:
     needs:
       - go-lint
       - go-test
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: larger-runners
+      labels: ubuntu-latest-8-cores
     permissions:
       contents: write
       id-token: write

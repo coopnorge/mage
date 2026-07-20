@@ -25,7 +25,9 @@ on:
 jobs:
   validate-terraform:
     name: Terraform CI
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: larger-runners
+      labels: ubuntu-latest-8-cores
     permissions:
       contents: read
       issues: write
