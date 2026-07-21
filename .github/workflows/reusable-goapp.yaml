@@ -30,6 +30,10 @@ on:
         default: true
         required: false
         description: If true it will create a github release based on the tag of the OCI
+      runner-cores:
+        type: number
+        default: 2
+        description: Number of cores to use. supported values is dependendent on runner configurations in https://github.com/organizations/coopnorge/settings/actions/runner-groups/6
     outputs:
       oci-images:
         value: ${{ jobs.go-build.outputs.oci-images }}
@@ -40,7 +44,7 @@ jobs:
     name: Go Lint
     runs-on:
       group: ubuntu-latest-large-pool
-      labels: ubuntu-latest-4core
+      labels: ubuntu-latest-${{ inputs.runner-cores }}core
     permissions:
       contents: read
     steps:
@@ -73,7 +77,7 @@ jobs:
     name: Go Test
     runs-on:
       group: ubuntu-latest-large-pool
-      labels: ubuntu-latest-4core
+      labels: ubuntu-latest-${{ inputs.runner-cores }}core
     permissions:
       contents: read
     steps:
@@ -105,7 +109,7 @@ jobs:
       - go-test
     runs-on:
       group: ubuntu-latest-large-pool
-      labels: ubuntu-latest-4core
+      labels: ubuntu-latest-${{ inputs.runner-cores }}core
     permissions:
       contents: write
       id-token: write

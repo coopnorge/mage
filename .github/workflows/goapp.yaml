@@ -56,6 +56,10 @@ on:
         type: boolean
         default: false
         description: Cleanup diskspace before init. This is useful for very large projects, but add 1 minute extra job time.
+      runner-cores:
+        type: number
+        default: 2
+        description: Number of cores to use. supported values is dependendent on runner configurations in https://github.com/organizations/coopnorge/settings/actions/runner-groups/6
 
     outputs:
       oci-images:
@@ -66,7 +70,7 @@ jobs:
     name: Detect Changes
     runs-on:
       group: ubuntu-latest-large-pool
-      labels: ubuntu-latest-4core
+      labels: ubuntu-latest-${{ inputs.runner-cores }}core
     permissions:
       contents: read
       pull-requests: read
@@ -157,6 +161,7 @@ jobs:
       service-account: ${{ inputs.service-account }}
       artifact-registry-location: ${{ inputs.artifact-registry-location }}
       tag-based-diff: ${{ inputs.tag-based-diff }}
+      runner-cores: ${{ inputs.runner-cores }}
 
   terraform:
     name: Terraform
@@ -167,6 +172,7 @@ jobs:
       skip-terraform-if-dir-has-no-changes: ${{ inputs.terraform-skip-if-dir-has-no-changes }}
       suggest-formatting-fixes: ${{ inputs.terraform-suggest-formatting-fixes }}
       cleanup-diskspace: ${{ inputs.terraform-cleanup-diskspace }}
+      runner-cores: ${{ inputs.runner-cores }}
     permissions:
       contents: read
       pull-requests: write
@@ -181,12 +187,16 @@ jobs:
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.policy-bot == 'true'  }}
     uses: ./.github/workflows/reusable-policy-bot.yaml
+    with:
+      runner-cores: ${{ inputs.runner-cores }}
 
   pallets:
     name: Pallets
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.pallets == 'true'  }}
     uses: ./.github/workflows/reusable-pallets.yaml
+    with:
+      runner-cores: ${{ inputs.runner-cores }}
 
   catalog-info:
     name: Catalog Info
@@ -197,6 +207,8 @@ jobs:
       contents: read
       pull-requests: read
     secrets: inherit
+    with:
+      runner-cores: ${{ inputs.runner-cores }}
 
   kubernetes:
     name: Kubernetes
@@ -207,3 +219,5 @@ jobs:
       contents: read
       pull-requests: write
       issues: write
+    with:
+      runner-cores: ${{ inputs.runner-cores }}

@@ -29,13 +29,19 @@ on:
         type: string
         default: ""
         description: If set, install this version of OpenTofu and set USE_TOFU=1 so mage uses the tofu devtool instead of terraform.
+      runner-cores:
+        type: number
+        default: 2
+        description: Number of cores to use. supported values is dependendent on runner configurations in https://github.com/organizations/coopnorge/settings/actions/runner-groups/6
     outputs:
       oci-images:
         value: ${{ jobs.mage.outputs.oci-images }}
         description: OCI image references.
 jobs:
   mage:
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: ubuntu-latest-large-pool
+      labels: ubuntu-latest-${{ inputs.runner-cores }}core
     permissions:
       contents: read
       id-token: write

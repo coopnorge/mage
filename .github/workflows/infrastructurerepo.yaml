@@ -25,11 +25,17 @@ on:
         type: boolean
         default: false
         description: Cleanup diskspace before init. This is useful for very large projects, but add 1 minute extra job time.
+      runner-cores:
+        type: number
+        default: 2
+        description: Number of cores to use. supported values is dependendent on runner configurations in https://github.com/organizations/coopnorge/settings/actions/runner-groups/6
 
 jobs:
   detect-changes:
     name: Detect Changes
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: ubuntu-latest-large-pool
+      labels: ubuntu-latest-${{ inputs.runner-cores }}core
     permissions:
       contents: read
       pull-requests: read
@@ -88,6 +94,7 @@ jobs:
       skip-terraform-if-dir-has-no-changes: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
       suggest-formatting-fixes: ${{ inputs.terraform-suggest-formatting-fixes }}
       cleanup-diskspace: ${{ inputs.terraform-cleanup-diskspace }}
+      runner-cores: ${{ inputs.runner-cores }}
     permissions:
       contents: read
       pull-requests: write
@@ -102,12 +109,16 @@ jobs:
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.policy-bot == 'true'  }}
     uses: ./.github/workflows/reusable-policy-bot.yaml
+    with:
+      runner-cores: ${{ inputs.runner-cores }}
 
   pallets:
     name: Pallets
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.pallets == 'true'  }}
     uses: ./.github/workflows/reusable-pallets.yaml
+    with:
+      runner-cores: ${{ inputs.runner-cores }}
 
   catalog-info:
     name: Catalog Info
@@ -118,3 +129,5 @@ jobs:
       contents: read
       pull-requests: read
     secrets: inherit
+    with:
+      runner-cores: ${{ inputs.runner-cores }}
