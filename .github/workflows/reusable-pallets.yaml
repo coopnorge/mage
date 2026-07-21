@@ -22,8 +22,6 @@ jobs:
         with:
           go-version: "stable"
           cache-dependency-path: "**/go.sum"
-      - name: Install go Tools
-        run: go install tool
 
       - name: Pallet config validation
         id: validate

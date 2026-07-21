@@ -28,8 +28,6 @@ jobs:
         with:
           go-version: "stable"
           cache-dependency-path: "**/go.sum"
-      - name: Install go Tools
-        run: go install tool
 
       - name: Kubernetes List Detected charts
         id: list

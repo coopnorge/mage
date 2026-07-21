@@ -92,8 +92,6 @@ jobs:
           filters: |
             changed:
               - '**'
-      - name: Install go Tools
-        run: go install tool
       - name: List changes
         id: list
         run: go tool mage git:listChanges
