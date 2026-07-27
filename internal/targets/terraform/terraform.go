@@ -323,7 +323,7 @@ func GitHubActionsJobMatrix() error {
 			changedDirs = append(changedDirs, dir)
 		}
 	}
-	payload := MatrixConfig{
+	payload := matrixConfig{
 		Directory: changedDirs,
 	}
 	jsonData, err := json.Marshal(payload)
@@ -334,6 +334,6 @@ func GitHubActionsJobMatrix() error {
 	return nil
 }
 
-type MatrixConfig struct {
+type matrixConfig struct {
 	Directory []string `json:"directory"`
 }

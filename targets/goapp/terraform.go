@@ -80,3 +80,10 @@ func (Terraform) Changes(ctx context.Context) error {
 	mg.CtxDeps(ctx, terraformTargets.Changes)
 	return nil
 }
+
+// GitHubActionsJobMatrix returns a matrix which is used to calculate the
+// matrix
+func (Terraform) GitHubActionsJobMatrix(ctx context.Context) error {
+	mg.CtxDeps(ctx, terraformTargets.GitHubActionsJobMatrix)
+	return nil
+}
