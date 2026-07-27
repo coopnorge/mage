@@ -32,7 +32,7 @@ on:
         description: If true it will create a github release based on the tag of the OCI
     outputs:
       oci-images:
-        value: ${{ jobs.go-build-and-push.outputs.oci-images }}
+        value: ${{ jobs.go-build-and-push.outputs.oci-images || '{}' }}
         description: OCI image references.
 
 jobs:
