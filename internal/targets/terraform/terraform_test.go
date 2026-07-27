@@ -247,6 +247,7 @@ func TestGHAMatrix(t *testing.T) {
 			require.NoError(t, w.Close())
 			out, err := io.ReadAll(r)
 			require.NoError(t, err)
+			require.NoError(t, r.Close())
 			output := string(out)
 
 			if tt.wantErr {
