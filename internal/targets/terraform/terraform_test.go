@@ -230,7 +230,10 @@ func TestGHAMatrix(t *testing.T) {
 			t.Setenv("CHANGED_FILES", tt.changedFilesEnv)
 
 			// setup capure of stdout
-			r, w, _ := os.Pipe()
+			origStdout := os.Stdout
+			r, w, err := os.Pipe()
+			require.NoError(t, err)
+			t.Cleanup(func() { os.Stdout = origStdout })
 			os.Stdout = w
 			gotErr := GitHubActionsJobMatrix()
 			// fetch stdout
