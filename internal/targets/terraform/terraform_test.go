@@ -1,6 +1,7 @@
 package terraform
 
 import (
+	"io"
 	"os"
 	"testing"
 
@@ -188,6 +189,62 @@ func TestTargets(t *testing.T) {
 			} else {
 				assert.NoError(t, gotErr)
 			}
+		})
+	}
+}
+
+func TestGHAMatrix(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		workdir         string
+		changedFilesEnv string
+		want            string
+		wantErr         bool
+	}{
+		{
+			name:            "Should show changes on all folders",
+			workdir:         "testdata/multi-terraform",
+			changedFilesEnv: "terraform-1/main.tf,terraform-2/main.tf",
+			want:            "{\"directory\":[\"terraform-1\",\"terraform-2\"]}\n",
+			wantErr:         false,
+		},
+		{
+			name:            "Should show changes on a selected folder",
+			workdir:         "testdata/multi-terraform",
+			changedFilesEnv: "terraform-2/main.tf",
+			want:            "{\"directory\":[\"terraform-2\"]}\n",
+			wantErr:         false,
+		},
+		{
+			name:            "Should show empty directory array",
+			workdir:         "testdata/multi-terraform",
+			changedFilesEnv: "terraform-3/main.tf",
+			want:            "{\"directory\":[]}\n",
+			wantErr:         false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Chdir(tt.workdir)
+			t.Setenv("CHANGED_FILES", tt.changedFilesEnv)
+
+			// setup capure of stdout
+			r, w, _ := os.Pipe()
+			os.Stdout = w
+			gotErr := GitHubActionsJobMatrix()
+			// fetch stdout
+			w.Close()
+			out, _ := io.ReadAll(r)
+			output := string(out)
+
+			if tt.wantErr {
+				assert.Error(t, gotErr)
+			} else {
+				assert.NoError(t, gotErr)
+			}
+
+			assert.Equal(t, tt.want, output)
 		})
 	}
 }
