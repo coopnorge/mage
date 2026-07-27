@@ -28,7 +28,7 @@ on:
       opentofu-version:
         type: string
         default: ""
-        description: If set, install this version of OpenTofu and set USE_TOFU=1 so mage uses the tofu devtool instead of terraform.
+        description: If set, install this version of OpenTofu and set USE_TOFU=true so mage uses the tofu devtool instead of terraform.
     outputs:
       oci-images:
         value: ${{ jobs.mage.outputs.oci-images }}
