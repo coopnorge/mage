@@ -306,10 +306,10 @@ func skipIfNoChanges(directory string) bool {
 	return !changes
 }
 
-// GitHubActionsJobMatrix returns a matrix which is used in github ations to
-// Generate a matrix for parallel jobs
+// GitHubActionsJobMatrix returns a matrix which is used in Github Ations to
+// generate a matrix for parallel jobs
 func GitHubActionsJobMatrix() error {
-	var changedDirs []string
+	changedDirs := []string{}
 	directories, err := terraform.FindTerraformProjects(".")
 	if err != nil {
 		return err

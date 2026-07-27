@@ -4,14 +4,6 @@ concurrency:
 on:
   workflow_call:
     inputs:
-      skip-terraform-if-dir-has-no-changes:
-        type: boolean
-        default: false
-        description: |
-          Skip terraform validation if a found terraform directory does not contain
-          any changes. If there is a chnage in a workfow in mage ci will be run in all
-          cases. If you are using terraform modules with filebased source you should set
-          this to false
       suggest-formatting-fixes:
         type: boolean
         default: false
@@ -35,7 +27,7 @@ jobs:
     outputs:
       matrix-config: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Set up Go
@@ -66,24 +58,6 @@ jobs:
       TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: true
       USE_TOFU: ${{ inputs.opentofu-version != '' && 'true' || '' }}
     steps:
-      # - name: Cleanup Disk Space
-      #   if: ${{ inputs.cleanup-diskspace == true }}
-      #   run: |
-      #     echo "=== Disk space before cleanup ==="
-      #     df -h
-      #
-      #     sudo rm -rf /usr/share/dotnet
-      #     sudo rm -rf /usr/local/lib/android
-      #     sudo rm -rf /opt/ghc
-      #     sudo rm -rf /root/.cargo
-      #     sudo rm -rf /opt/hostedtoolcache/CodeQL
-      #
-      #     echo "=== Cleaning apt packages ==="
-      #     sudo apt-get clean
-      #     sudo apt-get autoremove -y
-      #
-      #     echo "=== Disk space after cleanup ==="
-      #     df -h
       - name: Checkout
         uses: actions/checkout@v7
         with:

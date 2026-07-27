@@ -80,7 +80,7 @@ func (Terraform) DocsValidateFix(ctx context.Context) error {
 }
 
 // GitHubActionsJobMatrix returns a matrix which is used to calculate the
-// matrix
+// job matrix
 func (Terraform) GitHubActionsJobMatrix(ctx context.Context) error {
 	mg.CtxDeps(ctx, terraformTargets.GitHubActionsJobMatrix)
 	return nil
