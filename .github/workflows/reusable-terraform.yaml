@@ -34,6 +34,8 @@ jobs:
       contents: read
       issues: write
       pull-requests: write
+    env:
+      USE_TOFU: ${{ inputs.opentofu-version != '' && 'true' || '' }}
     steps:
       - name: Cleanup Disk Space
         if: ${{ inputs.cleanup-diskspace == true }}
@@ -99,15 +101,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
           TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
-          USE_TOFU: ${{ inputs.opentofu-version != '' && 'true' || '' }}
 
       - name: Terraform Lint fix
         if: ${{ inputs.suggest-formatting-fixes == true }}
         id: lint-fix
         continue-on-error: true
         run: go tool mage terraform:lintFix
-        env:
-          USE_TOFU: ${{ inputs.opentofu-version != '' && 'true' || '' }}
 
       - name: Add review suggestions
         if: ${{ inputs.suggest-formatting-fixes == true }}
@@ -122,7 +121,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
           TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
-          USE_TOFU: ${{ inputs.opentofu-version != '' && 'true' || '' }}
 
       - name: Code Test
         id: test
@@ -130,7 +128,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
           TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
-          USE_TOFU: ${{ inputs.opentofu-version != '' && 'true' || '' }}
 
       - name: Code Security
         id: security
@@ -138,7 +135,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
           TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
-          USE_TOFU: ${{ inputs.opentofu-version != '' && 'true' || '' }}
 
       - name: Cleanup
         if: always()
