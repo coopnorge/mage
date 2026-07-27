@@ -306,7 +306,7 @@ func skipIfNoChanges(directory string) bool {
 	return !changes
 }
 
-// GitHubActionsJobMatrix returns a matrix which is used in Github Ations to
+// GitHubActionsJobMatrix returns a matrix which is used in Github Actions to
 // generate a matrix for parallel jobs
 func GitHubActionsJobMatrix() error {
 	changedDirs := []string{}

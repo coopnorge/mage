@@ -9,14 +9,6 @@ on:
         type: string
         default: ""
         description: A comma separated list of Globs which triggers terraform ci
-      skip-terraform-if-dir-has-no-changes:
-        type: boolean
-        default: true
-        description: |
-          Skip terraform validation if a found terraform directory does not contain
-          any changes. If there is a chnage in a workfow in mage ci will be run in all
-          cases. If you are using terraform modules with filebased source you should set
-          this to false
       terraform-suggest-formatting-fixes:
         type: boolean
         default: true
