@@ -4,6 +4,10 @@ concurrency:
 on:
   workflow_call:
     inputs:
+      additional-globs-terraform:
+        type: string
+        default: ""
+        description: A comma separated list of Globs which triggers terraform ci
       suggest-formatting-fixes:
         type: boolean
         default: false
@@ -40,6 +44,8 @@ jobs:
       - name: Generate Matrix for Terraform
         run: echo "matrix=$(go tool mage terraform:gitHubActionsJobMatrix)" >> $GITHUB_OUTPUT
         id: set-matrix
+        env:
+          ADDITIONAL_GLOBS_TERRAFORM: ${{ inputs.additional-globs-terraform }}
 
   validate-terraform:
     name: Terraform CI
@@ -56,6 +62,7 @@ jobs:
     env:
       CHANGED_FILES: ${{ matrix.directory }}
       TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: true
+      ADDITIONAL_GLOBS_TERRAFORM: ${{ inputs.additional-globs-terraform }}
       USE_TOFU: ${{ inputs.opentofu-version != '' && 'true' || '' }}
     steps:
       - name: Checkout

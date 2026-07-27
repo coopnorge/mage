@@ -169,6 +169,7 @@ jobs:
       suggest-formatting-fixes: ${{ inputs.terraform-suggest-formatting-fixes }}
       cleanup-diskspace: ${{ inputs.terraform-cleanup-diskspace }}
       opentofu-version: ${{ inputs.opentofu-version }}
+      additional-globs-terraform: ${{ inputs.additional-globs-terraform }}
     permissions:
       contents: read
       pull-requests: write
