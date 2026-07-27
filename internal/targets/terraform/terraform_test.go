@@ -237,8 +237,9 @@ func TestGHAMatrix(t *testing.T) {
 			os.Stdout = w
 			gotErr := GitHubActionsJobMatrix()
 			// fetch stdout
-			w.Close()
-			out, _ := io.ReadAll(r)
+			require.NoError(t, w.Close())
+			out, err := io.ReadAll(r)
+			require.NoError(t, err)
 			output := string(out)
 
 			if tt.wantErr {
