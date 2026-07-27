@@ -28,7 +28,7 @@ on:
       opentofu-version:
         type: string
         default: ""
-        description: If set, install this version of OpenTofu and set USE_TOFU=1 so mage uses the tofu devtool instead of terraform.
+        description: If set, install this version of OpenTofu and set USE_TOFU=true so mage uses the tofu devtool instead of terraform.
     outputs:
       oci-images:
         value: ${{ jobs.mage.outputs.oci-images }}
@@ -44,7 +44,7 @@ jobs:
       oci-images: ${{ steps.oci-images.outputs.images }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Set up QEMU
         uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4
       - name: Set up Docker Buildx
@@ -100,8 +100,6 @@ jobs:
         with:
           go-version: "stable"
           cache-dependency-path: "**/go.sum"
-      - name: Install go Tools
-        run: go install tool
       - name: Install OpenTofu
         if: ${{ inputs.opentofu-version != '' }}
         uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2

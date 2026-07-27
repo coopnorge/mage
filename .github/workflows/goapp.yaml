@@ -56,6 +56,10 @@ on:
         type: boolean
         default: false
         description: Cleanup diskspace before init. This is useful for very large projects, but add 1 minute extra job time.
+      opentofu-version:
+        type: string
+        default: ""
+        description: If set, install this version of OpenTofu and set USE_TOFU=true so mage uses the tofu devtool instead of terraform.
 
     outputs:
       oci-images:
@@ -77,7 +81,7 @@ jobs:
       catalog-info: ${{ steps.catalog-info.outputs.catalog_info == 'true' && github.event_name == 'pull_request' }}
       kubernetes: ${{ steps.kubernetes.outputs.kubernetes == 'true' && github.event_name == 'pull_request' }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Set up Go
@@ -92,8 +96,6 @@ jobs:
           filters: |
             changed:
               - '**'
-      - name: Install go Tools
-        run: go install tool
       - name: List changes
         id: list
         run: go tool mage git:listChanges
@@ -167,6 +169,7 @@ jobs:
       skip-terraform-if-dir-has-no-changes: ${{ inputs.terraform-skip-if-dir-has-no-changes }}
       suggest-formatting-fixes: ${{ inputs.terraform-suggest-formatting-fixes }}
       cleanup-diskspace: ${{ inputs.terraform-cleanup-diskspace }}
+      opentofu-version: ${{ inputs.opentofu-version }}
     permissions:
       contents: read
       pull-requests: write

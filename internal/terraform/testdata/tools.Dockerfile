@@ -1,4 +1,4 @@
-FROM ghcr.io/terraform-linters/tflint:v0.61.0 AS tflint
+FROM ghcr.io/terraform-linters/tflint:v0.63.1@sha256:890e37827d7b5e400f26137c5189c7efa581365fe9299b5b9814e5148d5978b9 AS tflint
 FROM docker.io/hashicorp/terraform:1.5.7@sha256:9fc0d70fb0f858b0af1fadfcf8b7510b1b61e8b35e7a4bb9ff39f7f6568c321d AS terraform
 FROM ghcr.io/opentofu/opentofu:1.12.0@sha256:ddb4aac816fdacb621b665908a0e914dce9964a33f4aa7d9fdd27c23d7c2310e AS tofu
 FROM docker.io/aquasec/trivy:0.69.1@sha256:1c78ed1ef824ab8bb05b04359d186e4c1229d0b3e67005faacb54a7d71974f73 AS trivy

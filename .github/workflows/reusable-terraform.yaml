@@ -20,6 +20,10 @@ on:
         type: boolean
         default: false
         description: Cleanup diskspace before init. This is useful for very large projects, but add 1 minute extra job time.
+      opentofu-version:
+        type: string
+        default: ""
+        description: If set, install this version of OpenTofu and set USE_TOFU=true so mage uses the tofu devtool instead of terraform.
     secrets: {}
 
 jobs:
@@ -60,6 +64,7 @@ jobs:
     env:
       CHANGED_FILES: ${{ matrix.directory }}
       TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: true
+      USE_TOFU: ${{ inputs.opentofu-version != '' && 'true' || '' }}
     steps:
       # - name: Cleanup Disk Space
       #   if: ${{ inputs.cleanup-diskspace == true }}
@@ -80,14 +85,21 @@ jobs:
       #     echo "=== Disk space after cleanup ==="
       #     df -h
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: hashicorp/setup-terraform@v4
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4
         with:
           terraform_wrapper: false
           terraform_version: "1.5.7"
+
+      - name: Install OpenTofu
+        if: ${{ inputs.opentofu-version != '' }}
+        uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2
+        with:
+          tofu_version: ${{ inputs.opentofu-version }}
+          tofu_wrapper: false
 
       - name: "Setup Spacelift Credentials"
         run: |
@@ -111,8 +123,6 @@ jobs:
         with:
           go-version: "stable"
           cache-dependency-path: "**/go.sum"
-      - name: Install go Tools
-        run: go install tool
 
       - name: Terraform Init
         id: init
@@ -128,7 +138,7 @@ jobs:
 
       - name: Add review suggestions
         if: ${{ inputs.suggest-formatting-fixes == true }}
-        uses: reviewdog/action-suggester@aa38384ceb608d00f84b4690cacc83a5aba307ff # v1.24.0
+        uses: reviewdog/action-suggester@2558ba17e65a9039e73764a73009fc05fef28a46 # v1.24.3
         with:
           tool_name: terraform-fmt
           cleanup: true
@@ -166,7 +176,7 @@ jobs:
       GIT_REV: ${{ github.event.pull_request.head.sha }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: check if spacelift/proposed exists as a required check in branch protection
         shell: bash
         run: |
