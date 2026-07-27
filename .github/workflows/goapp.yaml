@@ -56,6 +56,10 @@ on:
         type: boolean
         default: false
         description: Cleanup diskspace before init. This is useful for very large projects, but add 1 minute extra job time.
+      opentofu-version:
+        type: string
+        default: ""
+        description: If set, install this version of OpenTofu and set USE_TOFU=1 so mage uses the tofu devtool instead of terraform.
 
     outputs:
       oci-images:
@@ -165,6 +169,7 @@ jobs:
       skip-terraform-if-dir-has-no-changes: ${{ inputs.terraform-skip-if-dir-has-no-changes }}
       suggest-formatting-fixes: ${{ inputs.terraform-suggest-formatting-fixes }}
       cleanup-diskspace: ${{ inputs.terraform-cleanup-diskspace }}
+      opentofu-version: ${{ inputs.opentofu-version }}
     permissions:
       contents: read
       pull-requests: write

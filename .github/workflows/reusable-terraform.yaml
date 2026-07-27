@@ -20,12 +20,18 @@ on:
         type: boolean
         default: false
         description: Cleanup diskspace before init. This is useful for very large projects, but add 1 minute extra job time.
+      opentofu-version:
+        type: string
+        default: ""
+        description: If set, install this version of OpenTofu and set USE_TOFU=1 so mage uses the tofu devtool instead of terraform.  
     secrets: {}
 
 jobs:
   validate-terraform:
     name: Terraform CI
     runs-on: ubuntu-24.04
+    env:
+      USE_TOFU: ${{ inputs.opentofu-version != '' && 'true' || '' }}
     permissions:
       contents: read
       issues: write
@@ -54,7 +60,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install OpenTofu
+        if: ${{ inputs.opentofu-version != '' }}
+        uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2
+        with:
+          tofu_version: ${{ inputs.opentofu-version }}
+          tofu_wrapper: false
+
       - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4
+        if: ${{ inputs.opentofu-version == '' }}
         with:
           terraform_wrapper: false
           terraform_version: "1.5.7"
