@@ -39,8 +39,6 @@ jobs:
         with:
           go-version: "stable"
           cache-dependency-path: "**/go.sum"
-      - name: Install go Tools
-        run: go install tool
       - name: Generate Matrix for Terraform
         run: echo "matrix=$(go tool mage terraform:gitHubActionsJobMatrix)" >> $GITHUB_OUTPUT
         id: set-matrix
