@@ -32,7 +32,7 @@ on:
         description: If true it will create a github release based on the tag of the OCI
     outputs:
       oci-images:
-        value: ${{ jobs.go-build.outputs.oci-images }}
+        value: ${{ jobs.go-build-and-push.outputs.oci-images || '{}' }}
         description: OCI image references.
 
 jobs:
@@ -96,129 +96,35 @@ jobs:
 
   go-build:
     name: Go build
+    if: ${{ github.ref != 'refs/heads/main' }}
+    uses: ./.github/workflows/reusable-goapp-build.yaml
+    permissions:
+      contents: read
+      packages: read
+    secrets: inherit
+    with:
+      oci-image-base: ${{ inputs.oci-image-base }}
+      push: false
+      go-runtime: ${{ inputs.go-runtime }}
+
+  go-build-and-push:
+    name: Go build and push
     needs:
       - go-lint
       - go-test
-    runs-on: ubuntu-24.04
+    if: ${{ github.ref == 'refs/heads/main' }}
+    uses: ./.github/workflows/reusable-goapp-build.yaml
     permissions:
       contents: write
       id-token: write
       packages: read
-    outputs:
-      oci-images: ${{ steps.oci-images.outputs.images }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Configure access to internal and private GitHub repos
-        run: git config --global url."https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
-      - name: Authenticate with GCP
-        id: gcp-auth
-        if: ${{ inputs.push-oci-image }}
-        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
-        with:
-          token_format: access_token
-          workload_identity_provider: ${{ inputs.workload-identity-provider }}
-          service_account: ${{ inputs.service-account }}
-          create_credentials_file: true
-      # - name: Configure Google Cloud Artifact Registry for Docker
-      #   if: ${{ inputs.push-oci-image }}
-      #   run: gcloud auth print-access-token | docker login https://${{ inputs.artifact-registry-location }}-docker.pkg.dev -u oauth2accesstoken --password-stdin
-      - name: Login to Google Cloud Artifact Registry
-        if: ${{ inputs.push-oci-image }}
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4
-        with:
-          registry: ${{ inputs.artifact-registry-location }}-docker.pkg.dev
-          username: oauth2accesstoken
-          password: ${{ steps.gcp-auth.outputs.access_token }}
-      - name: Safe Git Workspace
-        run: git config --global --add safe.directory /app
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: "stable"
-          cache-dependency-path: "**/go.sum"
-      - name: Check if coop mage has separate build commands
-        id: has-multiple-cmds
-        run: echo "outcome=$(go tool mage -l | grep go:buildBinaries | wc -l)" >> $GITHUB_OUTPUT
-        # this block requires coopnorge/mage > v0.10.0
-      - name: Download Go modules
-        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
-        run: "go tool mage -v go:downloadModules"
-      - name: Run Go Build
-        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
-        run: "go tool mage -v go:buildBinaries"
-      - name: Build Docker Images
-        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
-        run: "go tool mage -v docker:buildImages"
-        env:
-          OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
-          PUSH_IMAGE: ${{ inputs.push-oci-image }}
-          GO_RUNTIME: ${{ inputs.go-runtime }}
-      # this block is uses when <= v0.10.0
-      - name: Build Go and Docker Images
-        if: ${{ steps.has-multiple-cmds.outputs.outcome == '0' }}
-        run: "go tool mage -v docker:buildAndPush"
-        env:
-          OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
-          PUSH_IMAGE: ${{ inputs.push-oci-image }}
-          GO_RUNTIME: ${{ inputs.go-runtime }}
-      - id: oci-images
-        name: Output OCI images references
-        run: |
-          if [ -f ./var/oci-images.json ]; then
-            echo "images=$(cat ./var/oci-images.json)" >> $GITHUB_OUTPUT
-          else
-            echo "images={}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Generate token for release
-        id: generate_token
-        if: ${{ github.ref == 'refs/heads/main' && inputs.tag-based-diff }}
-        # v1.5.1
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          app-id: 172868
-          private-key: ${{ secrets.WRITEBACK_APP_PRIVATE_KEY_PEM }}
-          owner: coopnorge
-
-      - name: Get tag of the build OCI
-        id: oci-tag
-        if: ${{ github.ref == 'refs/heads/main' && inputs.tag-based-diff }}
-        run: |
-          OCI_TAG=$(cat var/oci-images.json | yq -P | grep "tag:" | head -1 | yq '.tag')
-          if [[ -z "$OCI_TAG" ]]; then
-            echo cannot get an OCI TAG, bailing
-            exit 1
-          fi
-          echo "tag=$(echo $OCI_TAG)" >> $GITHUB_OUTPUT
-
-      - uses: release-drafter/release-drafter@4d75298e00d9e34c483e5ff8c68d0ea1c1940c1e # v7.5.1
-        name: Create release
-        id: make-release
-        if: ${{ github.ref == 'refs/heads/main' && inputs.tag-based-diff }}
-        env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
-        with:
-          commitish: main
-          config-name: "release-drafter.yml"
-          publish: true
-          version: ${{ steps.oci-tag.outputs.tag }}
-          tag: ${{ steps.oci-tag.outputs.tag }}
-          name: "Go OCI Release ${{ steps.oci-tag.outputs.tag }}"
-          # only used when no releases exists. Initial release might be to long
-          # with out limitation
-          initial-commits-since: "2026-03-01T09:09:09Z"
-
-      - name: Show output
-        if: always()
-        run: tree var/
+    secrets: inherit
+    with:
+      oci-image-base: ${{ inputs.oci-image-base }}
+      push: true
+      push-oci-image: ${{ inputs.push-oci-image }}
+      workload-identity-provider: ${{ inputs.workload-identity-provider }}
+      service-account: ${{ inputs.service-account }}
+      artifact-registry-location: ${{ inputs.artifact-registry-location }}
+      go-runtime: ${{ inputs.go-runtime }}
+      tag-based-diff: ${{ inputs.tag-based-diff }}
