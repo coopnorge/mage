@@ -3,7 +3,7 @@ FROM golangci/golangci-lint:v2.12.2@sha256:5cceeef04e53efe1470638d4b4b4f5ceefd57
 FROM ghcr.io/yannh/kubeconform:v0.7.0@sha256:85dbef6b4b312b99133decc9c6fc9495e9fc5f92293d4ff3b7e1b30f5611823c AS kubeconform
 FROM docker.io/palantirtechnologies/policy-bot:1.41.1@sha256:1babe4d474db1ed7184146fbd2d332138c30121b2f860451347d9dbb825f5a20 AS policy-bot-version-tracker
 FROM docker.io/hashicorp/terraform:1.5.7@sha256:9fc0d70fb0f858b0af1fadfcf8b7510b1b61e8b35e7a4bb9ff39f7f6568c321d AS terraform
-FROM ghcr.io/opentofu/opentofu:1.12.0@sha256:ddb4aac816fdacb621b665908a0e914dce9964a33f4aa7d9fdd27c23d7c2310e AS tofu
+FROM ghcr.io/opentofu/opentofu:1.6.3@sha256:bcfdb7fcd385eb62c3389f7b06f5813de55d09d709498fbb5421dcc6dd4c3d06 AS tofu
 FROM ghcr.io/terraform-linters/tflint:v0.63.1@sha256:890e37827d7b5e400f26137c5189c7efa581365fe9299b5b9814e5148d5978b9 AS tflint
 FROM docker.io/aquasec/trivy:0.71.0@sha256:016eae51fdcf989332a5404af7e8f625cd5d95d7c0907a221d080a996f556500 AS trivy
 FROM quay.io/terraform-docs/terraform-docs:0.20.0@sha256:37329e2dc2518e7f719a986a3954b10771c3fe000f50f83fd4d98d489df2eae2 AS terraform-docs

@@ -33,6 +33,11 @@
             "matchManagers": ["dockerfile", "docker-compose"],
             "allowedVersions": "< 1.6.0"
         },
+        {
+            "matchPackageNames": ["ghcr.io/opentofu/opentofu"],
+            "matchManagers": ["dockerfile", "docker-compose"],
+            "allowedVersions": "< 1.7.0"
+        },
         // until setteld https://github.com/aquasecurity/trivy-action/issues/541
         {
             "matchPackageNames": ["docker.io/aquasec/trivy"],
