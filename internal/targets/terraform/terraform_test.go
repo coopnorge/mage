@@ -1,6 +1,7 @@
 package terraform
 
 import (
+	"io"
 	"os"
 	"testing"
 
@@ -188,6 +189,74 @@ func TestTargets(t *testing.T) {
 			} else {
 				assert.NoError(t, gotErr)
 			}
+		})
+	}
+}
+
+func TestGHAMatrix(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		workdir                     string
+		changedFilesEnv             string
+		AdditionalGlobsTerraformEnv string
+		want                        string
+		wantErr                     bool
+	}{
+		{
+			name:            "Should show changes on all folders",
+			workdir:         "testdata/multi-terraform",
+			changedFilesEnv: "terraform-1/main.tf,terraform-2/main.tf",
+			want:            "{\"directory\":[\"terraform-1\",\"terraform-2\"]}\n",
+		},
+		{
+			name:            "Should show changes on a selected folder",
+			workdir:         "testdata/multi-terraform",
+			changedFilesEnv: "terraform-2/main.tf",
+			want:            "{\"directory\":[\"terraform-2\"]}\n",
+		},
+		{
+			name:                        "Should show empty directory array",
+			workdir:                     "testdata/multi-terraform",
+			changedFilesEnv:             "terraform-3/main.tf",
+			AdditionalGlobsTerraformEnv: "src/checksums.txt",
+			want:                        "{\"directory\":[]}\n",
+		},
+		{
+			name:                        "Should include ADDITIONAL_GLOBS_TERRAFORM",
+			workdir:                     "testdata/multi-terraform",
+			changedFilesEnv:             "src/checksums.txt",
+			AdditionalGlobsTerraformEnv: "src/checksums.txt",
+			want:                        "{\"directory\":[\"terraform-1\",\"terraform-2\"]}\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Chdir(tt.workdir)
+			t.Setenv("CHANGED_FILES", tt.changedFilesEnv)
+			t.Setenv("ADDITIONAL_GLOBS_TERRAFORM", tt.AdditionalGlobsTerraformEnv)
+
+			// setup capture of stdout
+			origStdout := os.Stdout
+			r, w, err := os.Pipe()
+			require.NoError(t, err)
+			t.Cleanup(func() { os.Stdout = origStdout })
+			os.Stdout = w
+			gotErr := GitHubActionsJobMatrix()
+			// fetch stdout
+			require.NoError(t, w.Close())
+			out, err := io.ReadAll(r)
+			require.NoError(t, err)
+			require.NoError(t, r.Close())
+			output := string(out)
+
+			if tt.wantErr {
+				assert.Error(t, gotErr)
+			} else {
+				assert.NoError(t, gotErr)
+			}
+
+			assert.Equal(t, tt.want, output)
 		})
 	}
 }

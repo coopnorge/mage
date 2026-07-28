@@ -3,6 +3,7 @@ package terraform
 import (
 	"context"
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -303,4 +304,36 @@ func skipIfNoChanges(directory string) bool {
 		fmt.Printf("Skipping because TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR=%s and non changes in dir %s\n", terraformSkipEnv, directory)
 	}
 	return !changes
+}
+
+// GitHubActionsJobMatrix returns a matrix which is used in Github Actions to
+// generate a matrix for parallel jobs
+func GitHubActionsJobMatrix() error {
+	changedDirs := []string{}
+	directories, err := terraform.FindTerraformProjects(".")
+	if err != nil {
+		return err
+	}
+	for _, dir := range directories {
+		changes, err := terraform.HasChanges([]string{dir})
+		if err != nil {
+			return err
+		}
+		if changes {
+			changedDirs = append(changedDirs, dir)
+		}
+	}
+	payload := matrixConfig{
+		Directory: changedDirs,
+	}
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(jsonData))
+	return nil
+}
+
+type matrixConfig struct {
+	Directory []string `json:"directory"`
 }
