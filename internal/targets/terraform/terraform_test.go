@@ -223,7 +223,7 @@ func TestGHAMatrix(t *testing.T) {
 			want:                        "{\"directory\":[]}\n",
 		},
 		{
-			name:                        "Should include TERRAFORM_ADDITIONAL_GLOBS",
+			name:                        "Should include ADDITIONAL_GLOBS_TERRAFORM",
 			workdir:                     "testdata/multi-terraform",
 			changedFilesEnv:             "src/checksums.txt",
 			AdditionalGlobsTerraformEnv: "src/checksums.txt",
