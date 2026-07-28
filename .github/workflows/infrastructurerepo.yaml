@@ -81,7 +81,6 @@ jobs:
     if: ${{  needs.detect-changes.outputs.terraform == 'true'  }}
     uses: ./.github/workflows/reusable-terraform.yaml
     with:
-      skip-terraform-if-dir-has-no-changes: ${{ inputs.skip-terraform-if-dir-has-no-changes }}
       suggest-formatting-fixes: ${{ inputs.terraform-suggest-formatting-fixes }}
       cleanup-diskspace: ${{ inputs.terraform-cleanup-diskspace }}
       opentofu-version: ${{ inputs.opentofu-version }}
