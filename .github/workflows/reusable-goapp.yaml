@@ -116,10 +116,7 @@ jobs:
 
   go-build-and-push:
     name: Go build and push
-    needs:
-      - go-lint
-      - go-test
-    if: ${{ github.ref == 'refs/heads/main' }}
+    if: ${{ always() && github.ref == 'refs/heads/main' && (inputs.skip-lint-and-test-on-main || (needs.go-lint.result == 'success' && needs.go-test.result == 'success')) }}
     uses: ./.github/workflows/reusable-goapp-build.yaml
     permissions:
       contents: write
