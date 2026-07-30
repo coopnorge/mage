@@ -1,0 +1,54 @@
+name: mage go:fix
+description: |
+  Sets up the environment and runs "mage go:fix". The repository must be checked out before calling this action.
+  Any changes made by "mage go:fix" are left uncommitted - committing and pushing is the responsibility of the caller.
+
+  Example usage from an external repository:
+
+    jobs:
+      go-fix:
+        runs-on: ubuntu-slim
+        permissions:
+          contents: write
+        steps:
+          - uses: actions/checkout@v7
+          - uses: coopnorge/mage/.github/actions/go-fix@v0
+            with:
+              github-token: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
+
+inputs:
+  go-version-file:
+    description: Path to a go.mod or go.work file to determine the Go version. Defaults to "go.mod".
+    required: false
+    default: "go.mod"
+  github-token:
+    description: GitHub token with access to private coopnorge modules (e.g. secrets.REVIEWBOT_GITHUB_TOKEN).
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Configure access to internal and private GitHub repos
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: git config --global url."https://x-access-token:${GH_TOKEN}@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
+
+    - name: Set up Go
+      uses: actions/setup-go@v7
+      with:
+        go-version-file: ${{ inputs.go-version-file }}
+        cache: true
+        cache-dependency-path: "**/go.sum"
+
+    - name: Setup golangci-lint
+      uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9
+      with:
+        install-only: true
+
+    - name: Run go:fix
+      shell: bash
+      run: |
+        FLAGS=""
+        [ "${RUNNER_DEBUG}" = "1" ] && FLAGS="-v"
+        go tool mage ${FLAGS} go:fix
