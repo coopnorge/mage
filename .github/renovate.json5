@@ -4,6 +4,17 @@
         "github>coopnorge/github-workflow-renovate",
     ],
     "customManagers": [
+        // golangci-lint version in GitHub Actions workflows, kept in sync with tools.Dockerfile
+        {
+            "customType": "regex",
+            "managerFilePatterns": ["/^\\.github/(workflows|actions)/.+\\.yaml$/"],
+            "matchStrings": [
+                "version:\\s+(?<currentValue>v[\\d.]+)\\s+# renovate: datasource=docker depName=golangci/golangci-lint"
+            ],
+            "datasourceTemplate": "docker",
+            "depNameTemplate": "golangci/golangci-lint",
+            "versioningTemplate": "semver",
+        },
         // backstage entity validator version in Dockerfile
         {
             "customType": "regex",
