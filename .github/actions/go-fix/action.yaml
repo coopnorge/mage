@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-action.json
 name: mage go:fix
 description: |
   Sets up the environment and runs "mage go:fix". The repository must be checked out before calling this action.
@@ -14,7 +15,7 @@ description: |
           - uses: actions/checkout@v7
           - uses: coopnorge/mage/.github/actions/go-fix@v0
             with:
-              github-token: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
+              github-token: <your-github-token-secret, e.g. REVIEWBOT_GITHUB_TOKEN>
 
 inputs:
   go-version-file:
