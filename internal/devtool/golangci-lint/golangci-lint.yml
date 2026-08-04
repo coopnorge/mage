@@ -14,6 +14,7 @@ linters:
     - unused
     - whitespace
     - reassign
+    - errorlint
   settings:
     errcheck:
       check-type-assertions: true

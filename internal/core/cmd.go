@@ -2,6 +2,7 @@ package core
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -191,7 +192,7 @@ func ExecAt(env map[string]string, stdout, stderr io.Writer, pwd string, cmd str
 	if ran {
 		return ran, mg.Fatalf(code, `running "%s %s" failed with exit code %d`, cmd, strings.Join(args, " "), code)
 	}
-	return ran, fmt.Errorf(`failed to run "%s %s: %v"`, cmd, strings.Join(args, " "), err)
+	return ran, fmt.Errorf(`failed to run "%s %s: %w"`, cmd, strings.Join(args, " "), err)
 }
 
 func run(env map[string]string, stdout, stderr io.Writer, pwd string, cmd string, args ...string) (ran bool, code int, err error) {
@@ -227,8 +228,7 @@ func CmdRan(err error) bool {
 	if err == nil {
 		return true
 	}
-	ee, ok := err.(*exec.ExitError)
-	if ok {
+	if ee, ok := errors.AsType[*exec.ExitError](err); ok {
 		return ee.Exited()
 	}
 	return false
@@ -248,8 +248,9 @@ func ExitStatus(err error) int {
 	if e, ok := err.(exitStatus); ok {
 		return e.ExitStatus()
 	}
-	if e, ok := err.(*exec.ExitError); ok {
-		if ex, ok := e.Sys().(exitStatus); ok {
+
+	if ee, ok := errors.AsType[*exec.ExitError](err); ok {
+		if ex, ok := ee.Sys().(exitStatus); ok {
 			return ex.ExitStatus()
 		}
 	}

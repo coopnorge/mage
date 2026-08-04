@@ -88,7 +88,7 @@ func RenderTemplates(chart HelmChart, dest string, try bool) error {
 	// make sure dependencies are there
 	depstatus, _, err := helm.Run(nil, path, "dep", "list", ".")
 	if err != nil {
-		return fmt.Errorf("failed to check dependencies. Please remove all contents %s/charts. Error: %s", chart.path, err)
+		return fmt.Errorf("failed to check dependencies. Please remove all contents %s/charts. Error: %w", chart.path, err)
 	}
 	if !depStatusOK(depstatus) {
 		_, _, err := helm.Run(nil, path, "dep", "up", ".")
