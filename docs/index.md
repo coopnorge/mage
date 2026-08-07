@@ -152,7 +152,7 @@ go-app:
 ```
 
 If you did not create a system through inventory you have to hard-code the
-inputs.
+inputs. See [Hard-coded workflow inputs](hard-coded-inputs.md).
 
 ```yaml
 oci-image-base: europe-docker.pkg.dev/helloworld-shared-0918
