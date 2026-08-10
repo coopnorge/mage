@@ -20,8 +20,8 @@ variables:
 
 `oci-image-base` is the OCI registry base used during image builds.
 
-In the workflows in this repository it is passed to Mage as the
-`OCI_IMAGE_BASE` environment variable.
+In the workflows in this repository it is passed to Mage as the `OCI_IMAGE_BASE`
+environment variable.
 
 Examples in this repository show values such as:
 
@@ -31,9 +31,9 @@ oci-image-base: europe-docker.pkg.dev/helloworld-shared-0918
 
 ### `workload-identity-provider`
 
-`workload-identity-provider` is passed to
-`google-github-actions/auth` as `workload_identity_provider` when the workflow
-authenticates to GCP before logging in to Google Cloud Artifact Registry.
+`workload-identity-provider` is passed to `google-github-actions/auth` as
+`workload_identity_provider` when the workflow authenticates to GCP before
+logging in to Google Cloud Artifact Registry.
 
 In the Cloud Platform documentation, this is the workload identity provider name
 that lets a GitHub repository use a GCP service account through workload
@@ -47,8 +47,8 @@ workload-identity-provider: projects/889992792607/locations/global/workloadIdent
 
 ### `service-account`
 
-`service-account` is passed to `google-github-actions/auth` as
-`service_account` in the same authentication step.
+`service-account` is passed to `google-github-actions/auth` as `service_account`
+in the same authentication step.
 
 In the Cloud Platform documentation, this is the GCP service account the GitHub
 workflow is allowed to use after authenticating through workload identity
@@ -85,8 +85,10 @@ That code creates GitHub Actions repository variables including:
 
 Based on the current implementation there, the values are derived as follows:
 
-- `PALLET_REGISTRY_URL` is built from `europe-docker.pkg.dev/<gcp project id>/<registry name>`
-- `PALLET_SERVICE_ACCOUNT` is built from `<service-account-name>@<gcp project id>.iam.gserviceaccount.com`
+- `PALLET_REGISTRY_URL` is built from
+  `europe-docker.pkg.dev/<gcp project id>/<registry name>`
+- `PALLET_SERVICE_ACCOUNT` is built from
+  `<service-account-name>@<gcp project id>.iam.gserviceaccount.com`
 - `PALLET_WORKLOAD_IDENTITY_PROVIDER` is built from
   `projects/<numeric project number>/locations/global/workloadIdentityPools/<pool>/providers/<provider>`
 
@@ -130,13 +132,14 @@ related workload identity provider and service account in GCP.
 If your repository still uses kustomize instead of Helm, the lookup flow is not
 documented here. Please consider migrating to Helm first.
 
-**WARNING** If your repository uses separate registries for different environments,
-you will need to change this, as Mage does not support multiple registries.
+**WARNING** If your repository uses separate registries for different
+environments, you will need to change this, as Mage does not support multiple
+registries.
 
 ### Finding `workload-identity-provider`
 
-In Google Cloud Console, select the project used for the registry and navigate to `IAM & Admin -> Workload Identity
-Federation`.
+In Google Cloud Console, select the project used for the registry and navigate
+to `IAM & Admin -> Workload Identity Federation`.
 
 You should see a list of `Workload Identity Pools`. Look for a pool named
 something like `github-actions`.
