@@ -19,8 +19,8 @@ this repository read these values from GitHub Actions repository variables:
 
 `oci-image-base` sets the OCI registry base for image builds.
 
-In the workflows in this repository, Mage reads it from the
-`OCI_IMAGE_BASE` environment variable.
+In the workflows in this repository, Mage reads it from the `OCI_IMAGE_BASE`
+environment variable.
 
 Examples in this repository show values such as:
 
@@ -30,9 +30,9 @@ oci-image-base: europe-docker.pkg.dev/helloworld-shared-0918
 
 ### `workload-identity-provider`
 
-The workflow passes `workload-identity-provider` to
-`google-github-actions/auth` as `workload_identity_provider` before it logs in
-to Google Cloud Artifact Registry.
+The workflow passes `workload-identity-provider` to `google-github-actions/auth`
+as `workload_identity_provider` before it logs in to Google Cloud Artifact
+Registry.
 
 In the Google Cloud Platform documentation, this term refers to the workload
 identity provider name that lets a GitHub repository use a GCP service account
@@ -50,8 +50,8 @@ The workflow passes `service-account` to `google-github-actions/auth` as
 `service_account` in the same authentication step.
 
 In the Google Cloud Platform documentation, this term refers to the GCP service
-account that the GitHub workflow can use after it authenticates through
-workload identity federation.
+account that the GitHub workflow can use after it authenticates through workload
+identity federation.
 
 Examples in this repository show values such as:
 
@@ -61,9 +61,8 @@ service-account: gh-ap-helloworld@helloworld-shared-0918.iam.gserviceaccount.com
 
 ## How inventory/pallet injects them
 
-When you use the workflow example in `docs/index.md`,
-inventory/pallet-created repositories read these values from GitHub Actions
-repository variables:
+When you use the workflow example in `docs/index.md`, inventory/pallet-created
+repositories read these values from GitHub Actions repository variables:
 
 ```yaml
 oci-image-base: ${{ vars.PALLET_REGISTRY_URL }}
@@ -96,8 +95,8 @@ That function generates the exact registry, service account, pool, and provider
 names from the project context and may truncate them with a hash suffix when
 needed to fit naming limits.
 
-For background on what `workload-identity-provider` and `service-account`
-mean and how to set them up for GitHub Actions, see the Inventory docs:
+For background on what `workload-identity-provider` and `service-account` mean
+and how to set them up for GitHub Actions, see the Inventory docs:
 
 - [Allow GitHub action to access resources in GCP](https://inventory.internal.coop/docs/default/system/cloud-platform/dev_build_deploy/github/guide_github_action_gcp/)
 - [Workload identity federation](https://inventory.internal.coop/docs/default/system/cloud-platform/dev_build_deploy/workload_identity_federation/)
@@ -125,8 +124,8 @@ For example, you might find an image registry base like:
   image: europe-docker.pkg.dev/ecom-integrati-staging-5551
 ```
 
-In this example, `ecom-integrati-staging-5551` identifies the GCP project ID.
-If all environments use the same registry, that project can help you locate the
+In this example, `ecom-integrati-staging-5551` identifies the GCP project ID. If
+all environments use the same registry, that project can help you locate the
 related workload identity provider and service account in GCP.
 
 If your repository still uses Kustomize instead of Helm, this guide doesn't
