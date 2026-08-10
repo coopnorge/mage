@@ -33,7 +33,7 @@ tool github.com/magefile/mage
 
 ### Go app
 
-Ensure the following project structure is used. See
+Use the following project structure. See
 [helloworld repo](https://github.com/coopnorge/helloworld) for reference and
 [Organizing a Go module: Multiple commands](https://go.dev/doc/modules/layout#multiple-commands)
 for more information on the topic.
@@ -69,7 +69,7 @@ import (
 )
 ```
 
-#### Targets for Go apps
+#### Targets for applications written in Go
 
 - [ ] Go run
 - [x] Go build
@@ -96,7 +96,7 @@ import (
 )
 ```
 
-#### Targets for Go modules
+#### Targets for modules written in Go
 
 - [x] Go tests
 - [x] Go linting
@@ -119,7 +119,7 @@ go tool mage <target>
 go tool mage -l
 ```
 
-## Build Go binaries
+## Build binaries
 
 Builds binaries for all commands in the `cmd` directory.
 
@@ -151,7 +151,7 @@ go-app:
     tag-based-diff: true
 ```
 
-If you did not create a system through inventory you have to hard-code the
+If you didn't create a system through inventory you have to hard-code the
 inputs. See [Hard-coded workflow inputs](hard-coded-inputs.md).
 
 ```yaml
@@ -177,8 +177,8 @@ mage:
 
 You can use renovate to create pull request that update your infrastructure. You
 can find docs [here for how to configure renovate][renovate]. Below is an
-example on how it is used in [helloworld][helloworld]. Note that we need to
-trigger the renovate workflow on push of tags as well.
+example from [helloworld][helloworld]. The renovate workflow also needs to run
+on tag pushes.
 
 ```json5
 {
@@ -283,7 +283,7 @@ that update your OCI tags in your infrastructure. Here are example rules from
 - During build the command `git status --porcelain` returns the error message
   `fatal: detected dubious ownership in repository at '/src'`
 
-  Solution: Add this lines to `.gitconfig`
+  Solution: add these lines to `.gitconfig`
 
 ```shell
   [safe]
