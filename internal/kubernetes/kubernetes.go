@@ -166,6 +166,8 @@ func DiffTemplates(chart HelmChart) error {
 		"--color", "on",
 		"--truecolor", "on",
 		"between",
+		// ignore diff on label metadata.labels.helm.sh/chart
+		"--exclude-regexp", `.*helm.sh/chart`,
 	}
 	if github.InCI() {
 		args = append(args, "--output", "github")
