@@ -192,6 +192,11 @@ func LintFix(directory, golangCILintCfg string) error {
 	return toolLint.Run(nil, directory, "run", "--verbose", "--timeout", "10m", "--fix", "--config", lintCfgPath, "./...")
 }
 
+// Fix updates packages to use new APIs, see also: go fix.
+func Fix(directory string) error {
+	return toolGo.Run(nil, "-C", directory, "fix", "./...")
+}
+
 // DownloadModules downloads Go modules locally
 func DownloadModules(directory string) error {
 	log.Printf("Downloading modules for dir %q", directory)

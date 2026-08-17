@@ -95,6 +95,26 @@ func lintFix(_ context.Context, workingDirectory string) error {
 	return golang.LintFix(workingDirectory, golangcilint.Cfg())
 }
 
+// Fix updates packages to use new APIs, see also: go fix.
+func Fix(ctx context.Context) error {
+	directories, err := golang.FindGoModules(".")
+	if err != nil {
+		return err
+	}
+
+	fixDirs := []any{}
+	for _, workDir := range directories {
+		fixDirs = append(fixDirs, mg.F(fix, workDir))
+	}
+
+	mg.SerialCtxDeps(ctx, fixDirs...)
+	return nil
+}
+
+func fix(_ context.Context, workingDirectory string) error {
+	return golang.Fix(workingDirectory)
+}
+
 // DownloadModules downloads Go modules locally
 func DownloadModules(ctx context.Context) error {
 	directories, err := golang.FindGoModules(".")
