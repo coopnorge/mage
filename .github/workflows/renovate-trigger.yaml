@@ -1,0 +1,37 @@
+name: Trigger Renovate on Dashboard Update
+
+on:
+  issues:
+    types: [edited]
+
+# Concurrency group ensures rapid, back-to-back issue updates
+# cancel the previous runs and only execute the latest one.
+concurrency:
+  group: renovate-dashboard-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+permissions:
+  actions: write
+  issues: read
+
+jobs:
+  trigger-renovate:
+    name: Trigger Renovate Workflow
+    # Only run if the issue is the Dependency Dashboard AND the person updating it is NOT the renovate bot
+    if: >
+      github.actor != 'renovate-coop-norge[bot]' &&
+      contains(github.event.issue.title, 'Dependency Dashboard')
+    runs-on: ubuntu-slim
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Trigger Renovate Workflow
+        env:
+          # GITHUB_TOKEN must have `actions: write` permission to trigger workflows
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Triggers a workflow dispatch event for a workflow named "renovate.yml"
+          # Adjust the filename 'renovate.yml' if your workflow file has a different name.
+          gh workflow run renovate.yml \
+            -f log-level="info"
