@@ -33,5 +33,5 @@ jobs:
         run: |
           # Triggers a workflow dispatch event for a workflow named "renovate.yml"
           # Adjust the filename 'renovate.yml' if your workflow file has a different name.
-          gh workflow run renovate.yml \
+          gh workflow run renovate.yaml \
             -f log-level="info"
