@@ -32,9 +32,9 @@ func (Go) Validate(ctx context.Context) error {
 
 // Fix runs auto fixes on the Go source code in the repository.
 //
-// For details see [Go.LintFix].
+// For details see [Go.LintFix] and [golang.Fix].
 func (Go) Fix(ctx context.Context) error {
-	mg.CtxDeps(ctx, Go.LintFix)
+	mg.CtxDeps(ctx, Go.LintFix, golang.Fix)
 	return nil
 }
 
