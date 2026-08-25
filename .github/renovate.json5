@@ -15,6 +15,17 @@
             "depNameTemplate": "golangci/golangci-lint",
             "versioningTemplate": "semver",
         },
+        // golangci-lint version in GitHub Actions cache keys
+        {
+            "customType": "regex",
+            "managerFilePatterns": ["/^\\.github/(workflows|actions)/.+\\.yaml$/"],
+            "matchStrings": [
+                "key: \\s+\\"golangci-lint-(?<currentValue>v[\\d.]+)\\"\\s+# renovate: datasource=docker depName=golangci/golangci-lint"
+            ],
+            "datasourceTemplate": "docker",
+            "depNameTemplate": "golangci/golangci-lint",
+            "versioningTemplate": "semver",
+        },
         // docker.io/library/golang version in GitHub Actions workflows, kept in sync with tools.Dockerfile
         {
             "customType": "regex",
