@@ -141,7 +141,7 @@ go-app:
     id-token: write
     packages: write
     pull-requests: write
-    checks: read
+    checks: write
   secrets: inherit
   with:
     oci-image-base: ${{ vars.PALLET_REGISTRY_URL }}

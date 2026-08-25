@@ -55,6 +55,7 @@ jobs:
     if: ${{ needs.setup-terraform-matrix.outputs.matrix-config != '' && needs.setup-terraform-matrix.outputs.matrix-config != '{"directory":[]}' }}
     permissions:
       contents: read
+      checks: write
       issues: write
       pull-requests: write
     env:

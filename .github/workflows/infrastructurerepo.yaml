@@ -91,7 +91,7 @@ jobs:
       issues: write
       id-token: write
       packages: read
-      checks: read
+      checks: write
     secrets: inherit
 
   policy-bot:
