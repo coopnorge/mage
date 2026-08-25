@@ -81,7 +81,7 @@ import (
 - [x] Terraform CI
 - [x] Policy-bot config validation
 - [x] Catalog-info validation
-- [ ] Techdocs CI
+- [ ] TechDocs CI
 - [ ] Kubernetes CI
 - [ ] Security Scanning
 
@@ -104,7 +104,7 @@ import (
 - [ ] Go mock generation
 - [x] Policy-bot config validation
 - [x] Catalog-info validation
-- [ ] Techdocs CI
+- [ ] TechDocs CI
 - [ ] Security Scanning
 
 ## Run CI
