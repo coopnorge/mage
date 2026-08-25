@@ -48,6 +48,12 @@ runs:
         install-only: true
         version: v2.13.0 # renovate: datasource=docker depName=golangci/golangci-lint
 
+    - name: Cache golangci-lint analysis cache
+      uses: actions/cache@v6
+      with:
+        path: ~/.cache/golangci-lint
+        key: "golangci-lint-v2.13.0" # renovate: datasource=docker depName=golangci/golangci-lint
+
     - name: Run go:fix
       shell: bash
       run: |
