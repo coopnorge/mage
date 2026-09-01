@@ -55,18 +55,18 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
-          go-version: "1.26.5" # renovate: datasource=docker depName=docker.io/library/golang
+          go-version: "1.27.0" # renovate: datasource=docker depName=docker.io/library/golang
           cache-dependency-path: "**/go.sum"
       - name: Setup Golangci Lint
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9
         with:
           install-only: true
-          version: v2.13.0 # renovate: datasource=docker depName=golangci/golangci-lint
+          version: v2.13.2 # renovate: datasource=docker depName=golangci/golangci-lint
       - name: Cache golangci-lint analysis cache
         uses: actions/cache@v6
         with:
           path: ~/.cache/golangci-lint
-          key: "golangci-lint-v2.13.0" # renovate: datasource=docker depName=golangci/golangci-lint
+          key: "golangci-lint-v2.13.2" # renovate: datasource=docker depName=golangci/golangci-lint
       - name: Check if coop mage has separeate build commands
         id: has-multiple-cmds
         run: echo "outcome=$(go tool mage -l | grep go:buildBinaries | wc -l)" >> $GITHUB_OUTPUT
@@ -93,7 +93,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
-          go-version: "1.26.5" # renovate: datasource=docker depName=docker.io/library/golang
+          go-version: "1.27.0" # renovate: datasource=docker depName=docker.io/library/golang
           cache-dependency-path: "**/go.sum"
       - name: Check if coop mage has separate build commands
         id: has-multiple-cmds
