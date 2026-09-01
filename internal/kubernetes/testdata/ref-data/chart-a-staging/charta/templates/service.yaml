@@ -20,3 +20,4 @@ spec:
   selector:
     app.kubernetes.io/name: charta
     app.kubernetes.io/instance: release-name
+
