@@ -9,7 +9,7 @@
             "customType": "regex",
             "managerFilePatterns": ["/^\\.github/(workflows|actions)/.+\\.yaml$/"],
             "matchStrings": [
-                "go-version:\\s+\"(?<currentValue>[\\d.]+)\"\\s+# renovate: datasource=docker depName=docker.io/library/golang"
+                "version:\\s+(?<currentValue>v[\\d.]+)\\s+# renovate: datasource=docker depName=golangci/golangci-lint"
             ],
             "datasourceTemplate": "docker",
             "depNameTemplate": "golangci/golangci-lint",
@@ -31,7 +31,7 @@
             "customType": "regex",
             "managerFilePatterns": ["/^\\.github/(workflows|actions)/.+\\.yaml$/"],
             "matchStrings": [
-                "version:\\s+(?<currentValue>v[\\d.]+)\\s+# renovate: datasource=docker depName=docker.io/library/golang"
+                "go-version:\\s+\"(?<currentValue>[\\d.]+)\"\\s+# renovate: datasource=docker depName=docker.io/library/golang"
             ],
             "datasourceTemplate": "docker",
             "depNameTemplate": "docker.io/library/golang",
