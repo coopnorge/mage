@@ -84,7 +84,8 @@
               "docker.io/library/golang",
               "golangci/golangci-lint"
             ],
-            "groupName": "Go and Golangci-lint versions"
+            "groupName": "Go and Golangci-lint versions",
+            "minimumReleaseAge": "7 days",
          },
 
     ],
