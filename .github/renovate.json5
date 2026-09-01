@@ -20,7 +20,7 @@
             "customType": "regex",
             "managerFilePatterns": ["/^\\.github/(workflows|actions)/.+\\.yaml$/"],
             "matchStrings": [
-                "key: \\s+\\"golangci-lint-(?<currentValue>v[\\d.]+)\\"\\s+# renovate: datasource=docker depName=golangci/golangci-lint"
+                "key:\\s+\"golangci-lint-(?<currentValue>v[\\d.]+)\"\\s+# renovate: datasource=docker depName=golangci/golangci-lint"
             ],
             "datasourceTemplate": "docker",
             "depNameTemplate": "golangci/golangci-lint",
