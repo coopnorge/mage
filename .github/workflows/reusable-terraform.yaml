@@ -37,7 +37,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
-          go-version: "1.27.0" # renovate: datasource=docker depName=docker.io/library/golang
+          go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
           cache-dependency-path: "**/go.sum"
       - name: Generate Matrix for Terraform
         run: echo "matrix=$(go tool mage terraform:gitHubActionsJobMatrix)" >> $GITHUB_OUTPUT
@@ -100,7 +100,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
-          go-version: "1.27.0" # renovate: datasource=docker depName=docker.io/library/golang
+          go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
           cache-dependency-path: "**/go.sum"
 
       - name: Terraform Init
