@@ -1,6 +1,9 @@
 package cataloginfo
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
@@ -12,6 +15,19 @@ import (
 )
 
 func TestCatalogInfoTargets(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		resp, _ := json.Marshal([]map[string]string{{"slug": "engineering"}})
+		_, _ = w.Write(resp)
+	}))
+	t.Cleanup(func() {
+		server.Close()
+	})
+
+	t.Setenv("GITHUB_TOKEN", "test-token")
+	t.Setenv("GITHUB_REPOSITORY", "coopnorge/test")
+	t.Setenv("GITHUB_API_URL", server.URL)
+
 	tests := []struct {
 		name        string
 		testProject string
