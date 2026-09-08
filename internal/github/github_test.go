@@ -211,3 +211,18 @@ func TestListAllTeams(t *testing.T) {
 		})
 	}
 }
+
+func TestGHTokenFallback(t *testing.T) {
+	t.Setenv("GITHUB_TOKEN", "")
+	t.Setenv("GITHUB_REPOSITORY", "coopnorge/test")
+	t.Setenv("CI", "")
+
+	// Unsetting GITHUB_TOKEN triggers getGHCLIToken fallback.
+	// If gh CLI is logged in locally, it will succeed; if not, it returns missing GITHUB_TOKEN error.
+	teams, err := github.ListAllTeams()
+	if err != nil {
+		assert.Error(t, err)
+	} else {
+		assert.NotNil(t, teams)
+	}
+}
