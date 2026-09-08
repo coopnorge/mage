@@ -4,9 +4,11 @@ go 1.26.0
 
 require (
 	github.com/bmatcuk/doublestar/v4 v4.10.0
+	github.com/datolabs-io/go-backstage/v3 v3.2.0
 	github.com/hashicorp/go-version v1.9.0
 	github.com/magefile/mage v1.17.2
 	github.com/stretchr/testify v1.12.1
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require go.yaml.in/yaml/v3 v3.0.5 // indirect

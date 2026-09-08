@@ -1,0 +1,8 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: comp-2
+spec:
+  type: library
+  lifecycle: production
+  owner: team-b
