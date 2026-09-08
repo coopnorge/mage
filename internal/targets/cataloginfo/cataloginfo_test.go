@@ -26,10 +26,10 @@ func TestCatalogInfoTargets(t *testing.T) {
 		server.Close()
 	})
 
-	t.Setenv("GITHUB_TOKEN", "fake-token")
+	t.Setenv("GITHUB_TOKEN", "test-token")
 	t.Setenv("GITHUB_REPOSITORY", "coopnorge/test")
 	t.Setenv("GITHUB_API_URL", server.URL)
-	t.Setenv("CI", "true")
+
 	tests := []struct {
 		name        string
 		testProject string
