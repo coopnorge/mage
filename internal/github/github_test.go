@@ -130,10 +130,10 @@ func TestGetLatestReleaseTagWithPrefix(t *testing.T) {
 
 func TestListAllTeams(t *testing.T) {
 	tests := []struct {
-		name       string
-		handler    http.HandlerFunc
-		want       []string
-		wantErr    bool
+		name    string
+		handler http.HandlerFunc
+		want    []string
+		wantErr bool
 	}{
 		{
 			name: "single page success",

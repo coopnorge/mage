@@ -320,13 +320,20 @@ func ListAllTeams(opts ...Option) ([]string, error) {
 		}
 
 		if resp.StatusCode != http.StatusOK {
-			_ = resp.Body.Close()
+			err = resp.Body.Close()
+			if err != nil {
+				return nil, fmt.Errorf("failed to close response body\nerr: %w", err)
+			}
 			return nil, fmt.Errorf("got status %d, expected is %d", resp.StatusCode, http.StatusOK)
 		}
 
-		body, err := io.ReadAll(resp.Body)
-		_ = resp.Body.Close()
+		body, bodyerr := io.ReadAll(resp.Body)
+		err = resp.Body.Close()
 		if err != nil {
+			return nil, fmt.Errorf("failed to close response body\nerr: %w", err)
+		}
+
+		if bodyerr != nil {
 			return nil, err
 		}
 
