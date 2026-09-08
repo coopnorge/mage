@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/git"
@@ -104,12 +105,14 @@ func validateOwnerConsistency(data *catalogInfoData) (string, error) {
 func validateOwnerExistsInGithub(owner string) error {
 	teams, err := github.ListAllTeams()
 	if err != nil {
-		return fmt.Errorf("failed to fetch GitHub teams: %w", err)
-	}
-	for _, team := range teams {
-		if team == owner {
+		if !github.InCI() {
+			fmt.Printf("WARNING: unable to validate catalog owner %q against GitHub teams: %v\n", owner, err)
 			return nil
 		}
+		return fmt.Errorf("failed to fetch GitHub teams: %w", err)
+	}
+	if slices.Contains(teams, owner) {
+		return nil
 	}
 	return fmt.Errorf("owner %q is not a valid GitHub team in coopnorge", owner)
 }
