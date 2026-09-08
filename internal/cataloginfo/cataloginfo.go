@@ -9,6 +9,7 @@ import (
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/git"
+	"github.com/coopnorge/mage/internal/github"
 	backstage "github.com/datolabs-io/go-backstage/v3"
 	"gopkg.in/yaml.v3"
 )
@@ -29,8 +30,88 @@ type entityHeader struct {
 
 // Validate validates the catalog-info files
 func Validate() error {
-	_, err := parseCatalogInfoFiles()
-	return err
+	data, err := parseCatalogInfoFiles()
+	if err != nil {
+		return err
+	}
+	owner, err := validateOwnerConsistency(data)
+	if err != nil {
+		return err
+	}
+	if owner == "" {
+		return fmt.Errorf("catalog info is missing owner")
+	}
+	return validateOwnerExistsInGithub(owner)
+}
+
+type entityOwner struct {
+	Kind  string
+	Name  string
+	Owner string
+}
+
+func getEntityOwners(data *catalogInfoData) []entityOwner {
+	var owners []entityOwner
+	if data.System != nil && data.System.Spec != nil {
+		owners = append(owners, entityOwner{
+			Kind:  "System",
+			Name:  data.System.Metadata.Name,
+			Owner: data.System.Spec.Owner,
+		})
+	}
+	for _, c := range data.Components {
+		if c.Spec != nil {
+			owners = append(owners, entityOwner{
+				Kind:  "Component",
+				Name:  c.Metadata.Name,
+				Owner: c.Spec.Owner,
+			})
+		}
+	}
+	for _, r := range data.Resources {
+		if r.Spec != nil {
+			owners = append(owners, entityOwner{
+				Kind:  "Resource",
+				Name:  r.Metadata.Name,
+				Owner: r.Spec.Owner,
+			})
+		}
+	}
+	return owners
+}
+
+func validateOwnerConsistency(data *catalogInfoData) (string, error) {
+	owners := getEntityOwners(data)
+	if len(owners) == 0 {
+		return "", fmt.Errorf("catalog info is missing owner")
+	}
+	first := owners[0]
+	if first.Owner == "" {
+		return "", fmt.Errorf("catalog info is missing owner")
+	}
+	for _, eo := range owners[1:] {
+		if eo.Owner == "" {
+			return "", fmt.Errorf("catalog info is missing owner")
+		}
+		if eo.Owner != first.Owner {
+			return "", fmt.Errorf("owner mismatch across catalog objects: %s %q has owner %q, but %s %q has owner %q",
+				first.Kind, first.Name, first.Owner, eo.Kind, eo.Name, eo.Owner)
+		}
+	}
+	return first.Owner, nil
+}
+
+func validateOwnerExistsInGithub(owner string) error {
+	teams, err := github.ListAllTeams()
+	if err != nil {
+		return fmt.Errorf("failed to fetch GitHub teams: %w", err)
+	}
+	for _, team := range teams {
+		if team == owner {
+			return nil
+		}
+	}
+	return fmt.Errorf("owner %q is not a valid GitHub team in coopnorge", owner)
 }
 
 // HasChanges checks if the current branch has policy bot config file changes
