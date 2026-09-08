@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -107,6 +108,7 @@ func setupMockGitHubServer(t *testing.T, handler http.HandlerFunc) {
 	t.Setenv("GITHUB_TOKEN", "test-token")
 	t.Setenv("GITHUB_REPOSITORY", "coopnorge/test")
 	t.Setenv("GITHUB_API_URL", server.URL)
+	t.Setenv("CI", "true")
 }
 
 func TestValidate(t *testing.T) {
@@ -115,8 +117,10 @@ func TestValidate(t *testing.T) {
 			assert.Equal(t, "/orgs/coopnorge/teams?per_page=100&page=1", r.URL.RequestURI())
 			assert.Equal(t, "Bearer test-token", r.Header.Get("Authorization"))
 			w.WriteHeader(http.StatusOK)
-			resp, _ := json.Marshal([]map[string]string{{"slug": "team-a"}})
-			_, _ = w.Write(resp)
+			resp, err := json.Marshal([]map[string]string{{"slug": "team-a"}})
+			require.NoError(t, err)
+			_, err = w.Write(resp)
+			require.NoError(t, err)
 		})
 
 		absPath, err := filepath.Abs("testdata/valid-system-component-resource")
@@ -131,8 +135,10 @@ func TestValidate(t *testing.T) {
 	t.Run("fail owner mismatch across catalog objects", func(t *testing.T) {
 		setupMockGitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			resp, _ := json.Marshal([]map[string]string{{"slug": "team-a"}, {"slug": "team-b"}})
-			_, _ = w.Write(resp)
+			resp, err := json.Marshal([]map[string]string{{"slug": "team-a"}, {"slug": "team-b"}})
+			require.NoError(t, err)
+			_, err = w.Write(resp)
+			require.NoError(t, err)
 		})
 
 		absPath, err := filepath.Abs("testdata/fail-owner-mismatch")
@@ -148,8 +154,10 @@ func TestValidate(t *testing.T) {
 	t.Run("fail owner not found in github teams", func(t *testing.T) {
 		setupMockGitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			resp, _ := json.Marshal([]map[string]string{{"slug": "other-team"}})
-			_, _ = w.Write(resp)
+			resp, err := json.Marshal([]map[string]string{{"slug": "other-team"}})
+			require.NoError(t, err)
+			_, err = w.Write(resp)
+			require.NoError(t, err)
 		})
 
 		absPath, err := filepath.Abs("testdata/valid-system-component-resource")
@@ -162,10 +170,11 @@ func TestValidate(t *testing.T) {
 		assert.Contains(t, err.Error(), "owner \"team-a\" is not a valid GitHub team in coopnorge")
 	})
 
-	t.Run("fail github api error", func(t *testing.T) {
+	t.Run("fail github api error in CI", func(t *testing.T) {
 		setupMockGitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		})
+		t.Setenv("CI", "true")
 
 		absPath, err := filepath.Abs("testdata/valid-system-component-resource")
 		require.NoError(t, err)
@@ -175,6 +184,22 @@ func TestValidate(t *testing.T) {
 		err = Validate()
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to fetch GitHub teams")
+	})
+
+	t.Run("warn github api error when not in CI", func(t *testing.T) {
+		setupMockGitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+		})
+		err := os.Unsetenv("CI")
+		require.NoError(t, err)
+
+		absPath, err := filepath.Abs("testdata/valid-system-component-resource")
+		require.NoError(t, err)
+
+		t.Chdir(absPath)
+
+		err = Validate()
+		require.NoError(t, err)
 	})
 
 	t.Run("fail empty owner or no entities", func(t *testing.T) {
