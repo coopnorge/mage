@@ -25,4 +25,6 @@ jobs:
 
       - name: Catalog Info Validation
         id: validate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: go tool mage catalogInfo:validate

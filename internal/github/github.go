@@ -330,7 +330,7 @@ func ListAllTeams(opts ...Option) ([]string, error) {
 		}
 
 		if bodyerr != nil {
-			return nil, err
+			return nil, bodyerr
 		}
 
 		var pageTeams []ghTeam
