@@ -188,9 +188,12 @@ func defaultOptions() (*options, error) {
 	// token fallback
 	if t, ok := os.LookupEnv("GITHUB_TOKEN"); ok && t != "" {
 		opts.token = t
-	} else if t, err := getGHCLIToken(); err == nil && t != "" {
-		opts.token = t
-	} else {
+	} else if !InCI() {
+		if t, err := getGHCLIToken(); err == nil && t != "" {
+			opts.token = t
+		}
+	}
+	if opts.token == "" {
 		return nil, fmt.Errorf("missing GITHUB_TOKEN")
 	}
 
