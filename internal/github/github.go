@@ -285,6 +285,82 @@ type ghRelease struct {
 	CreatedAt  time.Time `json:"created_at"`
 }
 
+// ListAllTeams lists all teams in the coopnorge organization
+func ListAllTeams(opts ...Option) ([]string, error) {
+	o, err := defaultOptions()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, opt := range opts {
+		opt(o)
+	}
+
+	baseURL := o.baseURL
+	if baseURL == "" {
+		baseURL = "https://api.github.com"
+	}
+
+	var teams []string
+	page := 1
+
+	for {
+		url := fmt.Sprintf("%s/orgs/coopnorge/teams?per_page=100&page=%d", baseURL, page)
+
+		req, err := http.NewRequest(http.MethodGet, url, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Authorization", "Bearer "+o.token)
+
+		resp, err := o.httpClient.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("failed to call GitHub API: %w", err)
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			err = resp.Body.Close()
+			if err != nil {
+				return nil, fmt.Errorf("failed to close response body\nerr: %w", err)
+			}
+			return nil, fmt.Errorf("got status %d, expected is %d", resp.StatusCode, http.StatusOK)
+		}
+
+		body, bodyerr := io.ReadAll(resp.Body)
+		err = resp.Body.Close()
+		if err != nil {
+			return nil, fmt.Errorf("failed to close response body\nerr: %w", err)
+		}
+
+		if bodyerr != nil {
+			return nil, err
+		}
+
+		var pageTeams []ghTeam
+		if err := json.Unmarshal(body, &pageTeams); err != nil {
+			return nil, fmt.Errorf("failed to parse: %s\nerr: %w", string(body), err)
+		}
+
+		for _, t := range pageTeams {
+			teams = append(teams, t.Slug)
+		}
+
+		hasNextPage := strings.Contains(resp.Header.Get("Link"), `rel="next"`)
+		if !hasNextPage && len(pageTeams) < 100 {
+			break
+		}
+
+		page++
+	}
+
+	return teams, nil
+}
+
+type ghTeam struct {
+	Slug string `json:"slug"`
+}
+
 // ghRepo stores information about the repo
 // when running in github actions CI
 type ghRepo struct {
