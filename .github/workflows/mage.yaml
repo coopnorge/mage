@@ -106,14 +106,23 @@ jobs:
         with:
           tofu_version: ${{ inputs.opentofu-version }}
           tofu_wrapper: false
+
+      - uses: actions/create-github-app-token@v3
+        id: app-token
+        with:
+          client-id: Iv23liFKpdpVm7O1CJiq
+          private-key: ${{ secrets.MAGE_CATALOGINFO_APP_PEM }}
+
       - name: Build
         run: "go tool mage -v build"
         env:
           OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
           PUSH_IMAGE: ${{ inputs.push-oci-image }}
           GO_RUNTIME: ${{ inputs.go-runtime }}
-          GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
+          #       GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
           USE_TOFU: ${{ inputs.opentofu-version != '' && 'true' || '' }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+
       - id: oci-images
         name: Output OCI images references
         run: |
