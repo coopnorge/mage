@@ -31,7 +31,6 @@ jobs:
 
       - name: Catalog Info Validation
         id: validate
-        # TODO replace with github app. Needs only org read scope
         env:
-          GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         run: go tool mage catalogInfo:validate
