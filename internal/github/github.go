@@ -186,9 +186,14 @@ func defaultOptions() (*options, error) {
 	}
 
 	// token fallback
-	if t, ok := os.LookupEnv("GITHUB_TOKEN"); ok {
+	if t, ok := os.LookupEnv("GITHUB_TOKEN"); ok && t != "" {
 		opts.token = t
-	} else {
+	} else if !InCI() {
+		if t, err := getGHCLIToken(); err == nil && t != "" {
+			opts.token = t
+		}
+	}
+	if opts.token == "" {
 		return nil, fmt.Errorf("missing GITHUB_TOKEN")
 	}
 
@@ -202,6 +207,14 @@ func defaultOptions() (*options, error) {
 	opts.baseURL = repo.APIURL
 
 	return opts, nil
+}
+
+func getGHCLIToken() (string, error) {
+	out, err := sh.Output("gh", "auth", "token")
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(out), nil
 }
 
 // WithHTTPClient overrides the http client for github api requests. Mainly useful
@@ -334,7 +347,7 @@ func ListAllTeams(opts ...Option) ([]string, error) {
 		}
 
 		if bodyerr != nil {
-			return nil, err
+			return nil, bodyerr
 		}
 
 		var pageTeams []ghTeam
