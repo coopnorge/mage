@@ -23,6 +23,12 @@ jobs:
           go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
           cache-dependency-path: "**/go.sum"
 
+      - uses: actions/create-github-app-token@v3
+        id: app-token
+        with:
+          client-id: Iv23liFKpdpVm7O1CJiq
+          private-key: ${{ secrets.MAGE_CATALOGINFO_APP_PEM }}
+
       - name: Catalog Info Validation
         id: validate
         # TODO replace with github app. Needs only org read scope
