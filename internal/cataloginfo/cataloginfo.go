@@ -45,6 +45,24 @@ func Validate() error {
 	return validateOwnerExistsInGithub(owner)
 }
 
+// HasChanges checks if the current branch has policy bot config file changes
+// from the main branch
+func HasChanges() (bool, error) {
+	changedFiles, err := git.DiffToMain()
+	if err != nil {
+		return false, err
+	}
+	// always trigger on go.mod/sum and workflows because of changes in ci.
+	additionalGlobs := []string{"go.mod", "go.sum", ".github/workflows/*"}
+	additionalGlobs = append(additionalGlobs, getCatalogInfoPaths()...)
+	return core.CompareChangesToPaths(changedFiles, []string{}, additionalGlobs)
+}
+
+func getCatalogInfoPaths() []string {
+	// This is configured here: https://github.com/coopnorge/backstage/blob/54a68fc5202c1b3e3bd492d4f54f2254aef553a9/backstage/app-config.yaml#L94
+	return []string{"catalog-info*.yaml"}
+}
+
 type entityOwner struct {
 	Kind  string
 	Name  string
@@ -115,19 +133,6 @@ func validateOwnerExistsInGithub(owner string) error {
 		return nil
 	}
 	return fmt.Errorf("owner %q is not a valid GitHub team in coopnorge", owner)
-}
-
-// HasChanges checks if the current branch has policy bot config file changes
-// from the main branch
-func HasChanges() (bool, error) {
-	changedFiles, err := git.DiffToMain()
-	if err != nil {
-		return false, err
-	}
-	// always trigger on go.mod/sum and workflows because of changes in ci.
-	additionalGlobs := []string{"go.mod", "go.sum", ".github/workflows/*"}
-	additionalGlobs = append(additionalGlobs, getCatalogInfoPaths()...)
-	return core.CompareChangesToPaths(changedFiles, []string{}, additionalGlobs)
 }
 
 func parseCatalogInfoFiles() (*catalogInfoData, error) {
@@ -266,9 +271,4 @@ func parseResource(node *yaml.Node, docIdx int, filePath string, data *catalogIn
 	}
 	data.Resources = append(data.Resources, res)
 	return nil
-}
-
-func getCatalogInfoPaths() []string {
-	// This is configured here: https://github.com/coopnorge/backstage/blob/54a68fc5202c1b3e3bd492d4f54f2254aef553a9/backstage/app-config.yaml#L94
-	return []string{"catalog-info*.yaml"}
 }
