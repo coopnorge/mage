@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"slices"
@@ -14,6 +15,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/coopnorge/mage/internal/core"
 	"github.com/magefile/mage/sh"
 )
 
@@ -192,10 +194,9 @@ func defaultOptions() (*options, error) {
 		return nil, fmt.Errorf("missing GITHUB_TOKEN")
 	}
 
-	// repo fallback
 	repo, err := getRepoInfo()
-	if err != nil && InCI() {
-		return nil, fmt.Errorf("failed to get repo info: %w", err)
+	if err != nil {
+		return nil, err
 	}
 	opts.owner = repo.Owner
 	opts.repo = repo.Repo
@@ -296,16 +297,11 @@ func ListAllTeams(opts ...Option) ([]string, error) {
 		opt(o)
 	}
 
-	baseURL := o.baseURL
-	if baseURL == "" {
-		baseURL = "https://api.github.com"
-	}
-
 	var teams []string
 	page := 1
 
 	for {
-		url := fmt.Sprintf("%s/orgs/coopnorge/teams?per_page=100&page=%d", baseURL, page)
+		url := fmt.Sprintf("%s/orgs/coopnorge/teams?per_page=100&page=%d", o.baseURL, page)
 
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		if err != nil {
@@ -370,17 +366,63 @@ type ghRepo struct {
 }
 
 func getRepoInfo() (ghRepo, error) {
-	info := ghRepo{}
-	val, found := os.LookupEnv("GITHUB_REPOSITORY")
-	if !found {
-		return info, fmt.Errorf("environment variable GITHUB_REPOSITORY not found, unable to determine repository info")
+	info := ghRepo{APIURL: "https://api.github.com"}
+	if apiURL := strings.TrimSpace(os.Getenv("GITHUB_API_URL")); apiURL != "" {
+		info.APIURL = strings.TrimRight(apiURL, "/")
 	}
-	url, found := os.LookupEnv("GITHUB_API_URL")
-	if !found {
-		return info, fmt.Errorf("environment variable GITHUB_API_URL not found, unable to determine api url")
+
+	repository := strings.TrimSpace(os.Getenv("GITHUB_REPOSITORY"))
+	if repository == "" {
+		remote, err := core.Output("git", "remote", "get-url", "origin")
+		if err != nil {
+			return info, fmt.Errorf("unable to determine repository from GITHUB_REPOSITORY or git origin: %w", err)
+		}
+		repository = strings.TrimSpace(remote)
+		owner, repo, err := repositoryFromRemoteURL(repository)
+		if err != nil {
+			return info, err
+		}
+		info.Owner = owner
+		info.Repo = repo
+		return info, nil
 	}
-	info.APIURL = url
-	info.Owner = strings.Split(val, "/")[0]
-	info.Repo = strings.Split(val, "/")[1]
+
+	owner, repo, err := repositoryFromSlug(repository)
+	if err != nil {
+		return info, fmt.Errorf("invalid GITHUB_REPOSITORY %q: %w", repository, err)
+	}
+	info.Owner = owner
+	info.Repo = repo
 	return info, nil
+}
+
+func repositoryFromSlug(slug string) (string, string, error) {
+	parts := strings.Split(strings.Trim(slug, "/"), "/")
+	if len(parts) != 2 || parts[0] == "" {
+		return "", "", fmt.Errorf("repository must have the form owner/name")
+	}
+	repo := strings.TrimSuffix(parts[1], ".git")
+	if repo == "" {
+		return "", "", fmt.Errorf("repository must have the form owner/name")
+	}
+	return parts[0], repo, nil
+}
+
+func repositoryFromRemoteURL(rawURL string) (string, string, error) {
+	rawURL = strings.TrimSpace(rawURL)
+	if strings.HasPrefix(rawURL, "git@") {
+		parts := strings.SplitN(rawURL, ":", 2)
+		if len(parts) != 2 {
+			return "", "", fmt.Errorf("unable to parse git remote URL %q", rawURL)
+		}
+		rawURL = parts[1]
+	} else {
+		parsedURL, err := url.Parse(rawURL)
+		if err != nil {
+			return "", "", fmt.Errorf("unable to parse git remote URL %q: %w", rawURL, err)
+		}
+		rawURL = parsedURL.Path
+	}
+
+	return repositoryFromSlug(strings.TrimSuffix(rawURL, ".git"))
 }
