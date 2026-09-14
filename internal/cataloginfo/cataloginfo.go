@@ -127,12 +127,16 @@ func validateOwnerExistsInGithub(owner string) error {
 			fmt.Printf("WARNING: unable to validate catalog owner %q against GitHub teams: %v\n", owner, err)
 			return nil
 		}
-		return fmt.Errorf("failed to fetch GitHub teams: %w", err)
+		validationErr := fmt.Errorf("failed to fetch GitHub teams: %w", err)
+		github.PrintActionMessage("error", "Catalog owner validation failed", validationErr.Error())
+		return validationErr
 	}
 	if slices.Contains(teams, owner) {
 		return nil
 	}
-	return fmt.Errorf("owner %q is not a valid GitHub team in coopnorge", owner)
+	validationErr := fmt.Errorf("owner %q is not a valid GitHub team in coopnorge", owner)
+	github.PrintActionMessage("error", "Catalog owner validation failed", validationErr.Error())
+	return validationErr
 }
 
 func parseCatalogInfoFiles() (*catalogInfoData, error) {
