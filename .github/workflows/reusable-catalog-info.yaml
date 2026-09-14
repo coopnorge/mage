@@ -28,6 +28,7 @@ jobs:
         with:
           client-id: Iv23liFKpdpVm7O1CJiq
           private-key: ${{ secrets.MAGE_CATALOGINFO_APP_PEM }}
+          owner: coopnorge
 
       - name: Catalog Info Validation
         id: validate
