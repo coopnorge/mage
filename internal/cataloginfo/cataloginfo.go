@@ -46,6 +46,11 @@ func HasChanges() (bool, error) {
 	return core.CompareChangesToPaths(changedFiles, []string{}, additionalGlobs)
 }
 
+func getCatalogInfoPaths() []string {
+	// This is configured here: https://github.com/coopnorge/backstage/blob/54a68fc5202c1b3e3bd492d4f54f2254aef553a9/backstage/app-config.yaml#L94
+	return []string{"catalog-info*.yaml"}
+}
+
 func parseCatalogInfoFiles() (*catalogInfoData, error) {
 	var matches []string
 	for _, pattern := range getCatalogInfoPaths() {
@@ -83,13 +88,14 @@ func parseCatalogInfoFile(filePath string, data *catalogInfoData) (err error) {
 		docIdx++
 		var node yaml.Node
 		decodeErr := dec.Decode(&node)
+		// if end of file, exit the loop
 		if errors.Is(decodeErr, io.EOF) {
 			break
 		}
 		if decodeErr != nil {
 			return fmt.Errorf("failed to parse YAML doc %d in %s: %w", docIdx, filePath, decodeErr)
 		}
-
+		// if empty document, go to next
 		if node.Kind == 0 || (node.Kind == yaml.DocumentNode && len(node.Content) == 0) {
 			continue
 		}
@@ -128,6 +134,7 @@ func parseDocument(node *yaml.Node, docIdx int, filePath string, data *catalogIn
 }
 
 func parseSystem(node *yaml.Node, docIdx int, filePath string, data *catalogInfoData) error {
+	// validate that we only one system object in a repo
 	if data.System != nil {
 		return fmt.Errorf("more than one System defined: found second system in doc %d of %s", docIdx, filePath)
 	}
@@ -182,9 +189,4 @@ func parseResource(node *yaml.Node, docIdx int, filePath string, data *catalogIn
 	}
 	data.Resources = append(data.Resources, res)
 	return nil
-}
-
-func getCatalogInfoPaths() []string {
-	// This is configured here: https://github.com/coopnorge/backstage/blob/54a68fc5202c1b3e3bd492d4f54f2254aef553a9/backstage/app-config.yaml#L94
-	return []string{"catalog-info*.yaml"}
 }
