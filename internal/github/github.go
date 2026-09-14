@@ -366,6 +366,9 @@ type ghRepo struct {
 }
 
 func getRepoInfo() (ghRepo, error) {
+	// doing repo information here instead of in internal/git. We are importing
+	// this github package into internal/git. We should maybe consider move
+	// internal/github out of internal/git.
 	info := ghRepo{APIURL: "https://api.github.com"}
 	if apiURL := strings.TrimSpace(os.Getenv("GITHUB_API_URL")); apiURL != "" {
 		info.APIURL = strings.TrimRight(apiURL, "/")
