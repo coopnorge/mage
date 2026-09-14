@@ -1,0 +1,7 @@
+kind: Component
+metadata:
+  name: comp-1
+spec:
+  type: service
+  lifecycle: production
+  owner: team-a

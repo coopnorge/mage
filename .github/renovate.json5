@@ -37,17 +37,6 @@
             "depNameTemplate": "docker.io/library/golang",
             "versioningTemplate": "semver",
         },
-        // backstage entity validator version in Dockerfile
-        {
-            "customType": "regex",
-            "managerFilePatterns": ["/^internal/devtool/catalog-info.go$/"],
-            "matchStrings": [
-                "const\\s+validateEntityVersion\\s*=\\s*(?<currentValue>[0-9.]+)"
-            ],
-            "datasourceTemplate": "npm",
-            "depNameTemplate": "@roadiehq/backstage-entity-validator",
-            "versioningTemplate": "semver",
-        },
         {
             "customType": "regex",
             "managerFilePatterns": ["/^internal/devtool/dyff.go$/"],
