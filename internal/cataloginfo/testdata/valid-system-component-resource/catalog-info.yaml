@@ -6,6 +6,20 @@ spec:
   owner: team-a
 ---
 apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: my-api
+spec:
+  type: openapi
+  lifecycle: production
+  owner: team-a
+  definition: |
+    openapi: 3.0.0
+    info:
+      title: My API
+      version: 1.0.0
+---
+apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: my-component
