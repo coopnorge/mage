@@ -127,3 +127,87 @@ func TestGetLatestReleaseTagWithPrefix(t *testing.T) {
 		})
 	}
 }
+
+func TestListAllTeams(t *testing.T) {
+	tests := []struct {
+		name    string
+		handler http.HandlerFunc
+		want    []string
+		wantErr bool
+	}{
+		{
+			name: "single page success",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, "/orgs/coopnorge/teams?per_page=100&page=1", r.URL.RequestURI())
+				assert.Equal(t, "Bearer test", r.Header.Get("Authorization"))
+				w.WriteHeader(http.StatusOK)
+				_, err := w.Write([]byte(`[{"slug": "team-a"}, {"slug": "team-b"}]`))
+				assert.NoError(t, err)
+			},
+			want:    []string{"team-a", "team-b"},
+			wantErr: false,
+		},
+		{
+			name: "pagination success",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.RequestURI() == "/orgs/coopnorge/teams?per_page=100&page=1" {
+					w.Header().Set("Link", `<http://`+r.Host+`/orgs/coopnorge/teams?per_page=100&page=2>; rel="next"`)
+					w.WriteHeader(http.StatusOK)
+					_, err := w.Write([]byte(`[{"slug": "team-a"}]`))
+					assert.NoError(t, err)
+					return
+				}
+				if r.URL.RequestURI() == "/orgs/coopnorge/teams?per_page=100&page=2" {
+					w.WriteHeader(http.StatusOK)
+					_, err := w.Write([]byte(`[{"slug": "team-b"}]`))
+					assert.NoError(t, err)
+					return
+				}
+				w.WriteHeader(http.StatusBadRequest)
+			},
+			want:    []string{"team-a", "team-b"},
+			wantErr: false,
+		},
+		{
+			name: "error status",
+			handler: func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusInternalServerError)
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "invalid json",
+			handler: func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				_, err := w.Write([]byte(`invalid json`))
+				assert.NoError(t, err)
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(tt.handler)
+			t.Cleanup(func() {
+				server.Close()
+			})
+
+			t.Setenv("GITHUB_TOKEN", "test")
+			t.Setenv("GITHUB_REPOSITORY", "coopnorge/test")
+			t.Setenv("GITHUB_API_URL", server.URL)
+
+			teams, err := github.ListAllTeams(
+				github.WithHTTPClient(server.Client()),
+			)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, tt.want, teams)
+		})
+	}
+}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"slices"
@@ -14,6 +15,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/coopnorge/mage/internal/core"
 	"github.com/magefile/mage/sh"
 )
 
@@ -192,10 +194,9 @@ func defaultOptions() (*options, error) {
 		return nil, fmt.Errorf("missing GITHUB_TOKEN")
 	}
 
-	// repo fallback
 	repo, err := getRepoInfo()
-	if err != nil && InCI() {
-		return nil, fmt.Errorf("failed to get repo info: %w", err)
+	if err != nil {
+		return nil, err
 	}
 	opts.owner = repo.Owner
 	opts.repo = repo.Repo
@@ -285,6 +286,77 @@ type ghRelease struct {
 	CreatedAt  time.Time `json:"created_at"`
 }
 
+// ListAllTeams lists all teams in the coopnorge organization
+func ListAllTeams(opts ...Option) ([]string, error) {
+	o, err := defaultOptions()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, opt := range opts {
+		opt(o)
+	}
+
+	var teams []string
+	page := 1
+
+	for {
+		url := fmt.Sprintf("%s/orgs/coopnorge/teams?per_page=100&page=%d", o.baseURL, page)
+
+		req, err := http.NewRequest(http.MethodGet, url, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Authorization", "Bearer "+o.token)
+
+		resp, err := o.httpClient.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("failed to call GitHub API: %w", err)
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			err = resp.Body.Close()
+			if err != nil {
+				return nil, fmt.Errorf("failed to close response body\nerr: %w", err)
+			}
+			return nil, fmt.Errorf("got status %d, expected is %d", resp.StatusCode, http.StatusOK)
+		}
+
+		body, bodyerr := io.ReadAll(resp.Body)
+		err = resp.Body.Close()
+		if err != nil {
+			return nil, fmt.Errorf("failed to close response body\nerr: %w", err)
+		}
+
+		if bodyerr != nil {
+			return nil, err
+		}
+
+		var pageTeams []ghTeam
+		if err := json.Unmarshal(body, &pageTeams); err != nil {
+			return nil, fmt.Errorf("failed to parse: %s\nerr: %w", string(body), err)
+		}
+
+		for _, t := range pageTeams {
+			teams = append(teams, t.Slug)
+		}
+
+		hasNextPage := strings.Contains(resp.Header.Get("Link"), `rel="next"`)
+		if !hasNextPage && len(pageTeams) < 100 {
+			break
+		}
+
+		page++
+	}
+
+	return teams, nil
+}
+
+type ghTeam struct {
+	Slug string `json:"slug"`
+}
+
 // ghRepo stores information about the repo
 // when running in github actions CI
 type ghRepo struct {
@@ -294,17 +366,66 @@ type ghRepo struct {
 }
 
 func getRepoInfo() (ghRepo, error) {
-	info := ghRepo{}
-	val, found := os.LookupEnv("GITHUB_REPOSITORY")
-	if !found {
-		return info, fmt.Errorf("environment variable GITHUB_REPOSITORY not found, unable to determine repository info")
+	// doing repo information here instead of in internal/git. We are importing
+	// this github package into internal/git. We should maybe consider move
+	// internal/github out of internal/git.
+	info := ghRepo{APIURL: "https://api.github.com"}
+	if apiURL := strings.TrimSpace(os.Getenv("GITHUB_API_URL")); apiURL != "" {
+		info.APIURL = strings.TrimRight(apiURL, "/")
 	}
-	url, found := os.LookupEnv("GITHUB_API_URL")
-	if !found {
-		return info, fmt.Errorf("environment variable GITHUB_API_URL not found, unable to determine api url")
+
+	repository := strings.TrimSpace(os.Getenv("GITHUB_REPOSITORY"))
+	if repository == "" {
+		remote, err := core.Output("git", "remote", "get-url", "origin")
+		if err != nil {
+			return info, fmt.Errorf("unable to determine repository from GITHUB_REPOSITORY or git origin: %w", err)
+		}
+		repository = strings.TrimSpace(remote)
+		owner, repo, err := repositoryFromRemoteURL(repository)
+		if err != nil {
+			return info, err
+		}
+		info.Owner = owner
+		info.Repo = repo
+		return info, nil
 	}
-	info.APIURL = url
-	info.Owner = strings.Split(val, "/")[0]
-	info.Repo = strings.Split(val, "/")[1]
+
+	owner, repo, err := repositoryFromSlug(repository)
+	if err != nil {
+		return info, fmt.Errorf("invalid GITHUB_REPOSITORY %q: %w", repository, err)
+	}
+	info.Owner = owner
+	info.Repo = repo
 	return info, nil
+}
+
+func repositoryFromSlug(slug string) (string, string, error) {
+	parts := strings.Split(strings.Trim(slug, "/"), "/")
+	if len(parts) != 2 || parts[0] == "" {
+		return "", "", fmt.Errorf("repository must have the form owner/name")
+	}
+	repo := strings.TrimSuffix(parts[1], ".git")
+	if repo == "" {
+		return "", "", fmt.Errorf("repository must have the form owner/name")
+	}
+	return parts[0], repo, nil
+}
+
+func repositoryFromRemoteURL(rawURL string) (string, string, error) {
+	rawURL = strings.TrimSpace(rawURL)
+	if strings.HasPrefix(rawURL, "git@") {
+		parts := strings.SplitN(rawURL, ":", 2)
+		if len(parts) != 2 {
+			return "", "", fmt.Errorf("unable to parse git remote URL %q", rawURL)
+		}
+		rawURL = parts[1]
+	} else {
+		parsedURL, err := url.Parse(rawURL)
+		if err != nil {
+			return "", "", fmt.Errorf("unable to parse git remote URL %q: %w", rawURL, err)
+		}
+		rawURL = parsedURL.Path
+	}
+
+	return repositoryFromSlug(strings.TrimSuffix(rawURL, ".git"))
 }
