@@ -17,6 +17,7 @@ import (
 
 type catalogInfoData struct {
 	System     *backstage.SystemEntityV1alpha1
+	APIs       []backstage.ApiEntityV1alpha1
 	Components []backstage.ComponentEntityV1alpha1
 	Resources  []backstage.ResourceEntityV1alpha1
 }
@@ -77,6 +78,15 @@ func getEntityOwners(data *catalogInfoData) []entityOwner {
 			Name:  data.System.Metadata.Name,
 			Owner: data.System.Spec.Owner,
 		})
+	}
+	for _, a := range data.APIs {
+		if a.Spec != nil {
+			owners = append(owners, entityOwner{
+				Kind:  "API",
+				Name:  a.Metadata.Name,
+				Owner: a.Spec.Owner,
+			})
+		}
 	}
 	for _, c := range data.Components {
 		if c.Spec != nil {
@@ -212,6 +222,8 @@ func parseDocument(node *yaml.Node, docIdx int, filePath string, data *catalogIn
 	switch header.Kind {
 	case backstage.KindSystem:
 		return parseSystem(node, docIdx, filePath, data)
+	case backstage.KindAPI:
+		return parseAPI(node, header.Metadata.Name, docIdx, filePath, data)
 	case backstage.KindComponent:
 		return parseComponent(node, docIdx, filePath, data)
 	case backstage.KindResource:
@@ -219,6 +231,31 @@ func parseDocument(node *yaml.Node, docIdx int, filePath string, data *catalogIn
 	default:
 		return fmt.Errorf("doc %d in %s: unknown or unsupported entity kind %q", docIdx, filePath, header.Kind)
 	}
+}
+
+func parseAPI(node *yaml.Node, name string, docIdx int, filePath string, data *catalogInfoData) error {
+	var api backstage.ApiEntityV1alpha1
+	if err := node.Decode(&api); err != nil {
+		return fmt.Errorf("failed to decode API in doc %d of %s: %w", docIdx, filePath, err)
+	}
+	api.Metadata.Name = name
+	if api.Spec == nil {
+		return fmt.Errorf("doc %d in %s: API %q is missing spec", docIdx, filePath, api.Metadata.Name)
+	}
+	if api.Spec.Type == "" {
+		return fmt.Errorf("doc %d in %s: API %q spec is missing type", docIdx, filePath, api.Metadata.Name)
+	}
+	if api.Spec.Lifecycle == "" {
+		return fmt.Errorf("doc %d in %s: API %q spec is missing lifecycle", docIdx, filePath, api.Metadata.Name)
+	}
+	if api.Spec.Owner == "" {
+		return fmt.Errorf("doc %d in %s: API %q spec is missing owner", docIdx, filePath, api.Metadata.Name)
+	}
+	if api.Spec.Definition == "" {
+		return fmt.Errorf("doc %d in %s: API %q spec is missing definition", docIdx, filePath, api.Metadata.Name)
+	}
+	data.APIs = append(data.APIs, api)
+	return nil
 }
 
 func parseSystem(node *yaml.Node, docIdx int, filePath string, data *catalogInfoData) error {

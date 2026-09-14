@@ -19,6 +19,7 @@ func TestParseCatalogInfoFiles(t *testing.T) {
 		wantErr       bool
 		errContains   string
 		wantSystem    bool
+		numAPIs       int
 		numComponents int
 		numResources  int
 	}{
@@ -29,6 +30,7 @@ func TestParseCatalogInfoFiles(t *testing.T) {
 			wantSystem:    true,
 			numComponents: 1,
 			numResources:  1,
+			numAPIs:       1,
 		},
 		{
 			name:          "valid zero system and multiple components",
@@ -68,6 +70,12 @@ func TestParseCatalogInfoFiles(t *testing.T) {
 			wantErr:     true,
 			errContains: "spec is missing owner",
 		},
+		{
+			name:        "fail missing API definition",
+			testDir:     "testdata/fail-missing-api-definition",
+			wantErr:     true,
+			errContains: "API \"my-api\" spec is missing definition",
+		},
 	}
 
 	for _, tt := range tests {
@@ -92,6 +100,7 @@ func TestParseCatalogInfoFiles(t *testing.T) {
 					assert.Nil(t, data.System)
 				}
 				assert.Len(t, data.Components, tt.numComponents)
+				assert.Len(t, data.APIs, tt.numAPIs)
 				assert.Len(t, data.Resources, tt.numResources)
 			}
 		})
