@@ -191,9 +191,11 @@ func defaultOptions() (*options, error) {
 	if t, ok := os.LookupEnv("GITHUB_TOKEN"); ok && t != "" {
 		opts.token = t
 	} else if !InCI() {
-		if t, err := getGHCLIToken(); err == nil && t != "" {
-			opts.token = t
+		t, err := getGHCLIToken()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get token from gh CLI: %w", err)
 		}
+		opts.token = t
 	}
 	if opts.token == "" {
 		return nil, fmt.Errorf("missing GITHUB_TOKEN")
@@ -211,11 +213,46 @@ func defaultOptions() (*options, error) {
 }
 
 func getGHCLIToken() (string, error) {
+	if err := validateGHCLIAuth(); err != nil {
+		return "", err
+	}
+
 	out, err := sh.Output("gh", "auth", "token")
 	if err != nil {
 		return "", err
 	}
 	return strings.TrimSpace(out), nil
+}
+
+func validateGHCLIAuth() error {
+	var stdout, stderr bytes.Buffer
+	_, err := core.Exec(nil, &stdout, &stderr, "gh", "auth", "status", "--active")
+	if err != nil {
+		return fmt.Errorf("gh auth status failed: %w", err)
+	}
+
+	status := stdout.String() + "\n" + stderr.String()
+	if !ghAuthStatusHasScope(status, "read:org") {
+		return fmt.Errorf("gh CLI token is missing the required read:org scope")
+	}
+	return nil
+}
+
+func ghAuthStatusHasScope(status, wantedScope string) bool {
+	for _, line := range strings.Split(status, "\n") {
+		const scopePrefix = "Token scopes:"
+		index := strings.Index(line, scopePrefix)
+		if index == -1 {
+			continue
+		}
+
+		for _, scope := range strings.Split(line[index+len(scopePrefix):], ",") {
+			if strings.Trim(scope, " '\"") == wantedScope {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // WithHTTPClient overrides the http client for github api requests. Mainly useful
