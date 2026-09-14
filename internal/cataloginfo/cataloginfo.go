@@ -17,9 +17,23 @@ import (
 
 type catalogInfoData struct {
 	System     *backstage.SystemEntityV1alpha1
-	APIs       []backstage.ApiEntityV1alpha1
+	APIs       []apiEntity
 	Components []backstage.ComponentEntityV1alpha1
 	Resources  []backstage.ResourceEntityV1alpha1
+}
+
+type apiEntity struct {
+	Metadata struct {
+		Name string `yaml:"name"`
+	} `yaml:"metadata"`
+	Spec *apiSpec `yaml:"spec"`
+}
+
+type apiSpec struct {
+	Type       string    `yaml:"type"`
+	Lifecycle  string    `yaml:"lifecycle"`
+	Owner      string    `yaml:"owner"`
+	Definition yaml.Node `yaml:"definition"`
 }
 
 type entityHeader struct {
@@ -234,7 +248,7 @@ func parseDocument(node *yaml.Node, docIdx int, filePath string, data *catalogIn
 }
 
 func parseAPI(node *yaml.Node, name string, docIdx int, filePath string, data *catalogInfoData) error {
-	var api backstage.ApiEntityV1alpha1
+	var api apiEntity
 	if err := node.Decode(&api); err != nil {
 		return fmt.Errorf("failed to decode API in doc %d of %s: %w", docIdx, filePath, err)
 	}
@@ -251,7 +265,7 @@ func parseAPI(node *yaml.Node, name string, docIdx int, filePath string, data *c
 	if api.Spec.Owner == "" {
 		return fmt.Errorf("doc %d in %s: API %q spec is missing owner", docIdx, filePath, api.Metadata.Name)
 	}
-	if api.Spec.Definition == "" {
+	if api.Spec.Definition.Kind == 0 || api.Spec.Definition.Tag == "!!null" {
 		return fmt.Errorf("doc %d in %s: API %q spec is missing definition", docIdx, filePath, api.Metadata.Name)
 	}
 	data.APIs = append(data.APIs, api)

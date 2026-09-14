@@ -41,6 +41,12 @@ func TestParseCatalogInfoFiles(t *testing.T) {
 			numResources:  0,
 		},
 		{
+			name:    "valid API with OpenAPI reference",
+			testDir: "testdata/valid-api-openapi-reference",
+			wantErr: false,
+			numAPIs: 1,
+		},
+		{
 			name:        "fail more than one system",
 			testDir:     "testdata/fail-multiple-systems",
 			wantErr:     true,
