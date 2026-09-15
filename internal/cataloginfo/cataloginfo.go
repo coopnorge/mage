@@ -17,9 +17,23 @@ import (
 
 type catalogInfoData struct {
 	System     *backstage.SystemEntityV1alpha1
-	APIs       []backstage.ApiEntityV1alpha1
+	APIs       []apiEntity
 	Components []backstage.ComponentEntityV1alpha1
 	Resources  []backstage.ResourceEntityV1alpha1
+}
+
+type apiEntity struct {
+	Metadata struct {
+		Name string `yaml:"name"`
+	} `yaml:"metadata"`
+	Spec *apiSpec `yaml:"spec"`
+}
+
+type apiSpec struct {
+	Type       string    `yaml:"type"`
+	Lifecycle  string    `yaml:"lifecycle"`
+	Owner      string    `yaml:"owner"`
+	Definition yaml.Node `yaml:"definition"`
 }
 
 type entityHeader struct {
@@ -221,20 +235,20 @@ func parseDocument(node *yaml.Node, docIdx int, filePath string, data *catalogIn
 
 	switch header.Kind {
 	case backstage.KindSystem:
-		return parseSystem(node, docIdx, filePath, data)
+		return parseSystem(node, header.Metadata.Name, docIdx, filePath, data)
 	case backstage.KindAPI:
 		return parseAPI(node, header.Metadata.Name, docIdx, filePath, data)
 	case backstage.KindComponent:
-		return parseComponent(node, docIdx, filePath, data)
+		return parseComponent(node, header.Metadata.Name, docIdx, filePath, data)
 	case backstage.KindResource:
-		return parseResource(node, docIdx, filePath, data)
+		return parseResource(node, header.Metadata.Name, docIdx, filePath, data)
 	default:
 		return fmt.Errorf("doc %d in %s: unknown or unsupported entity kind %q", docIdx, filePath, header.Kind)
 	}
 }
 
 func parseAPI(node *yaml.Node, name string, docIdx int, filePath string, data *catalogInfoData) error {
-	var api backstage.ApiEntityV1alpha1
+	var api apiEntity
 	if err := node.Decode(&api); err != nil {
 		return fmt.Errorf("failed to decode API in doc %d of %s: %w", docIdx, filePath, err)
 	}
@@ -251,14 +265,14 @@ func parseAPI(node *yaml.Node, name string, docIdx int, filePath string, data *c
 	if api.Spec.Owner == "" {
 		return fmt.Errorf("doc %d in %s: API %q spec is missing owner", docIdx, filePath, api.Metadata.Name)
 	}
-	if api.Spec.Definition == "" {
+	if api.Spec.Definition.Kind == 0 || api.Spec.Definition.Tag == "!!null" {
 		return fmt.Errorf("doc %d in %s: API %q spec is missing definition", docIdx, filePath, api.Metadata.Name)
 	}
 	data.APIs = append(data.APIs, api)
 	return nil
 }
 
-func parseSystem(node *yaml.Node, docIdx int, filePath string, data *catalogInfoData) error {
+func parseSystem(node *yaml.Node, name string, docIdx int, filePath string, data *catalogInfoData) error {
 	// validate that we only one system object in a repo
 	if data.System != nil {
 		return fmt.Errorf("more than one System defined: found second system in doc %d of %s", docIdx, filePath)
@@ -267,6 +281,7 @@ func parseSystem(node *yaml.Node, docIdx int, filePath string, data *catalogInfo
 	if err := node.Decode(&sys); err != nil {
 		return fmt.Errorf("failed to decode System in doc %d of %s: %w", docIdx, filePath, err)
 	}
+	sys.Metadata.Name = name
 	if sys.Spec == nil {
 		return fmt.Errorf("doc %d in %s: System %q is missing spec", docIdx, filePath, sys.Metadata.Name)
 	}
@@ -277,11 +292,12 @@ func parseSystem(node *yaml.Node, docIdx int, filePath string, data *catalogInfo
 	return nil
 }
 
-func parseComponent(node *yaml.Node, docIdx int, filePath string, data *catalogInfoData) error {
+func parseComponent(node *yaml.Node, name string, docIdx int, filePath string, data *catalogInfoData) error {
 	var comp backstage.ComponentEntityV1alpha1
 	if err := node.Decode(&comp); err != nil {
 		return fmt.Errorf("failed to decode Component in doc %d of %s: %w", docIdx, filePath, err)
 	}
+	comp.Metadata.Name = name
 	if comp.Spec == nil {
 		return fmt.Errorf("doc %d in %s: Component %q is missing spec", docIdx, filePath, comp.Metadata.Name)
 	}
@@ -298,11 +314,12 @@ func parseComponent(node *yaml.Node, docIdx int, filePath string, data *catalogI
 	return nil
 }
 
-func parseResource(node *yaml.Node, docIdx int, filePath string, data *catalogInfoData) error {
+func parseResource(node *yaml.Node, name string, docIdx int, filePath string, data *catalogInfoData) error {
 	var res backstage.ResourceEntityV1alpha1
 	if err := node.Decode(&res); err != nil {
 		return fmt.Errorf("failed to decode Resource in doc %d of %s: %w", docIdx, filePath, err)
 	}
+	res.Metadata.Name = name
 	if res.Spec == nil {
 		return fmt.Errorf("doc %d in %s: Resource %q is missing spec", docIdx, filePath, res.Metadata.Name)
 	}

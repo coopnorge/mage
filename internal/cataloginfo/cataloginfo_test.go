@@ -41,6 +41,12 @@ func TestParseCatalogInfoFiles(t *testing.T) {
 			numResources:  0,
 		},
 		{
+			name:    "valid API with OpenAPI reference",
+			testDir: "testdata/valid-api-openapi-reference",
+			wantErr: false,
+			numAPIs: 1,
+		},
+		{
 			name:        "fail more than one system",
 			testDir:     "testdata/fail-multiple-systems",
 			wantErr:     true,
@@ -158,6 +164,8 @@ func TestValidate(t *testing.T) {
 		err = Validate()
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "owner mismatch across catalog objects")
+		assert.Contains(t, err.Error(), `System "my-system"`)
+		assert.Contains(t, err.Error(), `Component "my-component"`)
 	})
 
 	t.Run("fail owner not found in github teams", func(t *testing.T) {
