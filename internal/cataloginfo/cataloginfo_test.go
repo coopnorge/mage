@@ -164,6 +164,8 @@ func TestValidate(t *testing.T) {
 		err = Validate()
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "owner mismatch across catalog objects")
+		assert.Contains(t, err.Error(), `System "my-system"`)
+		assert.Contains(t, err.Error(), `Component "my-component"`)
 	})
 
 	t.Run("fail owner not found in github teams", func(t *testing.T) {
