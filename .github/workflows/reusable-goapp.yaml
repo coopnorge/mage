@@ -35,6 +35,10 @@ on:
         default: false
         required: false
         description: If set to true, skip the Lint and Test jobs on the main branch. Will still run on pull requests and other branches.
+      datadog-site:
+        type: string
+        default: "datadoghq.eu"
+        description: Datadog site to upload code coverage reports to.
     outputs:
       oci-images:
         value: ${{ jobs.go-build-and-push.outputs.oci-images || '{}' }}
@@ -106,6 +110,14 @@ jobs:
         run: "go tool mage -v go:test"
         env:
           GO_RUNTIME: ${{ inputs.go-runtime }}
+      - name: Upload coverage reports to Datadog
+        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
+        continue-on-error: true
+        uses: DataDog/coverage-upload-github-action@d9548b1c3c4ab639d5d3ab29a1508af188975f77 # v1.0.5
+        with:
+          api_key: ${{ secrets.DATADOG_API_KEY }}
+          site: ${{ inputs.datadog-site }}
+          files: ./var
 
   go-build:
     name: Go build
