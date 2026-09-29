@@ -16,7 +16,7 @@ jobs:
       run-techdocs-ci: ${{ steps.changes.outputs.techdocs == 'true' || github.event_name == 'workflow_dispatch' }}
       validate-policy-bot-config: ${{ steps.changes.outputs.policy-bot == 'true' }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: changes
         with:
