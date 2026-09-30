@@ -57,9 +57,10 @@ jobs:
       - name: Configure access to internal and private GitHub repos
         run: git config --global url."https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
       - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1
         with:
           go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
+          cache-key-prefix: go-lint
           cache-dependency-path: "**/go.sum"
       - name: Setup Golangci Lint
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
@@ -71,14 +72,7 @@ jobs:
         with:
           path: ~/.cache/golangci-lint
           key: "golangci-lint-v2.13.2" # renovate: datasource=docker depName=golangci/golangci-lint
-      - name: Check if coop mage has separeate build commands
-        id: has-multiple-cmds
-        run: echo "outcome=$(go tool mage -l | grep go:buildBinaries | wc -l)" >> $GITHUB_OUTPUT
-      - name: Download Go modules
-        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
-        run: "go tool mage -v go:downloadModules"
       - name: Run Go Lint
-        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
         run: "go tool mage -v go:lint"
         env:
           GO_RUNTIME: ${{ inputs.go-runtime }}
@@ -95,18 +89,12 @@ jobs:
       - name: Configure access to internal and private GitHub repos
         run: git config --global url."https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
       - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1
         with:
           go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
+          cache-key-prefix: go-test
           cache-dependency-path: "**/go.sum"
-      - name: Check if coop mage has separate build commands
-        id: has-multiple-cmds
-        run: echo "outcome=$(go tool mage -l | grep go:buildBinaries | wc -l)" >> $GITHUB_OUTPUT
-      - name: Download Go modules
-        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
-        run: "go tool mage -v go:downloadModules"
       - name: Run Go Test
-        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
         run: "go tool mage -v go:test"
         env:
           GO_RUNTIME: ${{ inputs.go-runtime }}
