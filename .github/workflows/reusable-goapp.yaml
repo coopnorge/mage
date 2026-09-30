@@ -70,7 +70,7 @@ jobs:
         run: git config --global url."https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
       - name: Set up Go
         if: ${{ inputs.go-lint-cache-enabled }}
-        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1
+        uses: coopnorge/mage/.github/actions/setup-go@update-caching-go
         with:
           go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
           cache-key-prefix: go-lint
@@ -110,7 +110,7 @@ jobs:
         run: git config --global url."https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
       - name: Set up Go
         if: ${{ inputs.go-test-cache-enabled }}
-        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1
+        uses: coopnorge/mage/.github/actions/setup-go@update-caching-go
         with:
           go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
           cache-key-prefix: go-test

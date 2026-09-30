@@ -35,7 +35,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Set up Go
-        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1
+        uses: coopnorge/mage/.github/actions/setup-go@update-caching-go
         with:
           go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
           cache-key-prefix: terraform-matrix
@@ -99,7 +99,7 @@ jobs:
           SPACELIFT_READ_TOKEN: ${{ secrets.SPACELIFT_READ_TOKEN }}
 
       - name: Set up Go
-        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1
+        uses: coopnorge/mage/.github/actions/setup-go@update-caching-go
         with:
           go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
           cache-key-prefix: terraform-validate
