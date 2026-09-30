@@ -39,6 +39,18 @@ on:
         type: string
         default: "datadoghq.eu"
         description: Datadog site to upload code coverage reports to.
+      go-lint-cache-enabled:
+        type: boolean
+        default: true
+        description: If set to false, disable the Go module/build cache (and golangci-lint analysis cache) for the Go Lint job.
+      go-test-cache-enabled:
+        type: boolean
+        default: true
+        description: If set to false, disable the Go module/build cache for the Go Test job.
+      go-build-cache-enabled:
+        type: boolean
+        default: true
+        description: If set to false, disable the Go module/build cache for the Go Build job.
     outputs:
       oci-images:
         value: ${{ jobs.go-build-and-push.outputs.oci-images || '{}' }}
@@ -57,17 +69,25 @@ jobs:
       - name: Configure access to internal and private GitHub repos
         run: git config --global url."https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
       - name: Set up Go
+        if: ${{ inputs.go-lint-cache-enabled }}
         uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1
         with:
           go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
           cache-key-prefix: go-lint
           cache-dependency-path: "**/go.sum"
+      - name: Set up Go (cache disabled)
+        if: ${{ !inputs.go-lint-cache-enabled }}
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
+          cache: false
       - name: Setup Golangci Lint
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           install-only: true
           version: v2.13.2 # renovate: datasource=docker depName=golangci/golangci-lint
       - name: Cache golangci-lint analysis cache
+        if: ${{ inputs.go-lint-cache-enabled }}
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.cache/golangci-lint
@@ -89,11 +109,18 @@ jobs:
       - name: Configure access to internal and private GitHub repos
         run: git config --global url."https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
       - name: Set up Go
+        if: ${{ inputs.go-test-cache-enabled }}
         uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1
         with:
           go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
           cache-key-prefix: go-test
           cache-dependency-path: "**/go.sum"
+      - name: Set up Go (cache disabled)
+        if: ${{ !inputs.go-test-cache-enabled }}
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
+          cache: false
       - name: Run Go Test
         run: "go tool mage -v go:test"
         env:
@@ -119,6 +146,7 @@ jobs:
       oci-image-base: ${{ inputs.oci-image-base }}
       push: false
       go-runtime: ${{ inputs.go-runtime }}
+      go-cache-enabled: ${{ inputs.go-build-cache-enabled }}
 
   go-build-and-push:
     name: Go build and push
@@ -141,3 +169,4 @@ jobs:
       artifact-registry-location: ${{ inputs.artifact-registry-location }}
       go-runtime: ${{ inputs.go-runtime }}
       tag-based-diff: ${{ inputs.tag-based-diff }}
+      go-cache-enabled: ${{ inputs.go-build-cache-enabled }}
