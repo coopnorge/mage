@@ -147,3 +147,4 @@ jobs:
       - name: Show output
         if: always()
         run: tree var/
+        continue-on-error: true
