@@ -88,14 +88,14 @@ jobs:
         run: git config --global --add safe.directory /app
       - name: Set up Go
         if: ${{ inputs.go-cache-enabled }}
-        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1
+        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1.0.0
         with:
           go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
           cache-key-prefix: go-build
           cache-dependency-path: "**/go.sum"
       - name: Set up Go (cache disabled)
         if: ${{ !inputs.go-cache-enabled }}
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
           cache: false
