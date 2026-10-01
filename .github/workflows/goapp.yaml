@@ -69,6 +69,18 @@ on:
         type: string
         default: "datadoghq.eu"
         description: Datadog site to upload code coverage reports to.
+      go-lint-cache-enabled:
+        type: boolean
+        default: true
+        description: If set to false, disable the Go module/build cache (and golangci-lint analysis cache) for the Go Lint job.
+      go-test-cache-enabled:
+        type: boolean
+        default: true
+        description: If set to false, disable the Go module/build cache for the Go Test job.
+      go-build-cache-enabled:
+        type: boolean
+        default: true
+        description: If set to false, disable the Go module/build cache for the Go Build job.
 
     outputs:
       oci-images:
@@ -94,9 +106,10 @@ jobs:
         with:
           fetch-depth: 0
       - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1.0.0
         with:
           go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
+          cache-key-prefix: detect-changes
           cache-dependency-path: "**/go.sum"
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
@@ -170,6 +183,9 @@ jobs:
       tag-based-diff: ${{ inputs.tag-based-diff }}
       skip-lint-and-test-on-main: ${{ inputs.skip-lint-and-test-on-main }}
       datadog-site: ${{ inputs.datadog-site }}
+      go-lint-cache-enabled: ${{ inputs.go-lint-cache-enabled }}
+      go-test-cache-enabled: ${{ inputs.go-test-cache-enabled }}
+      go-build-cache-enabled: ${{ inputs.go-build-cache-enabled }}
 
   terraform:
     name: Terraform

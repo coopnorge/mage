@@ -35,6 +35,10 @@ on:
         default: true
         required: false
         description: If true it will create a github release based on the tag of the OCI
+      go-cache-enabled:
+        type: boolean
+        default: true
+        description: If set to false, disable the Go module/build cache for the Go Build job.
     outputs:
       oci-images:
         value: ${{ jobs.go-build.outputs.oci-images }}
@@ -83,31 +87,22 @@ jobs:
       - name: Safe Git Workspace
         run: git config --global --add safe.directory /app
       - name: Set up Go
+        if: ${{ inputs.go-cache-enabled }}
+        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1.0.0
+        with:
+          go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
+          cache-key-prefix: go-build
+          cache-dependency-path: "**/go.sum"
+      - name: Set up Go (cache disabled)
+        if: ${{ !inputs.go-cache-enabled }}
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
-          cache-dependency-path: "**/go.sum"
-      - name: Check if coop mage has separate build commands
-        id: has-multiple-cmds
-        run: echo "outcome=$(go tool mage -l | grep go:buildBinaries | wc -l)" >> $GITHUB_OUTPUT
-        # this block requires coopnorge/mage > v0.10.0
-      - name: Download Go modules
-        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
-        run: "go tool mage -v go:downloadModules"
+          cache: false
       - name: Run Go Build
-        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
         run: "go tool mage -v go:buildBinaries"
       - name: Build Docker Images
-        if: ${{ steps.has-multiple-cmds.outputs.outcome == '1' }}
         run: "go tool mage -v docker:buildImages"
-        env:
-          OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
-          PUSH_IMAGE: ${{ inputs.push && inputs.push-oci-image }}
-          GO_RUNTIME: ${{ inputs.go-runtime }}
-      # this block is uses when <= v0.10.0
-      - name: Build Go and Docker Images
-        if: ${{ steps.has-multiple-cmds.outputs.outcome == '0' }}
-        run: "go tool mage -v docker:buildAndPush"
         env:
           OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
           PUSH_IMAGE: ${{ inputs.push && inputs.push-oci-image }}
