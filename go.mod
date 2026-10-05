@@ -3,7 +3,7 @@ module github.com/coopnorge/mage
 go 1.27.1
 
 require (
-	github.com/bmatcuk/doublestar/v4 v4.10.0
+	github.com/bmatcuk/doublestar/v4 v4.10.2
 	github.com/datolabs-io/go-backstage/v3 v3.2.0
 	github.com/hashicorp/go-version v1.9.0
 	github.com/magefile/mage v1.17.2
