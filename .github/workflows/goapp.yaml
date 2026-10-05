@@ -113,10 +113,6 @@ jobs:
             --tags "reusable_workflow.file_path:${{ job.workflow_file_path }}" \
             --tags "reusable_workflow.caller_repo:${{ github.repository }}"
 
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Build
-        run: make build
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
