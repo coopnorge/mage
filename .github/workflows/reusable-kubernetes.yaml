@@ -24,7 +24,7 @@ jobs:
         run: git fetch origin main:main
 
       - name: Set up Go
-        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1
+        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1.0.0
         with:
           go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
           cache-key-prefix: kubernetes
