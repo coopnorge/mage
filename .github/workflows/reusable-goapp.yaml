@@ -70,14 +70,14 @@ jobs:
         run: git config --global url."https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
       - name: Set up Go
         if: ${{ inputs.go-lint-cache-enabled }}
-        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1
+        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1.0.0
         with:
           go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
           cache-key-prefix: go-lint
           cache-dependency-path: "**/go.sum"
       - name: Set up Go (cache disabled)
         if: ${{ !inputs.go-lint-cache-enabled }}
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
           cache: false
@@ -88,7 +88,7 @@ jobs:
           version: v2.13.2 # renovate: datasource=docker depName=golangci/golangci-lint
       - name: Cache golangci-lint analysis cache
         if: ${{ inputs.go-lint-cache-enabled }}
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/golangci-lint
           key: "golangci-lint-v2.13.2" # renovate: datasource=docker depName=golangci/golangci-lint
@@ -110,14 +110,14 @@ jobs:
         run: git config --global url."https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
       - name: Set up Go
         if: ${{ inputs.go-test-cache-enabled }}
-        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1
+        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1.0.0
         with:
           go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
           cache-key-prefix: go-test
           cache-dependency-path: "**/go.sum"
       - name: Set up Go (cache disabled)
         if: ${{ !inputs.go-test-cache-enabled }}
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
           cache: false
