@@ -222,12 +222,14 @@ jobs:
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.policy-bot == 'true'  }}
     uses: ./.github/workflows/reusable-policy-bot.yaml
+    secrets: inherit
 
   pallets:
     name: Pallets
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.pallets == 'true'  }}
     uses: ./.github/workflows/reusable-pallets.yaml
+    secrets: inherit
 
   catalog-info:
     name: Catalog Info
@@ -244,6 +246,7 @@ jobs:
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.kubernetes == 'true'  }}
     uses: ./.github/workflows/reusable-kubernetes.yaml
+    secrets: inherit
     permissions:
       contents: read
       pull-requests: write
