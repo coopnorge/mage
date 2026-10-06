@@ -31,6 +31,17 @@ jobs:
     outputs:
       matrix-config: ${{ steps.set-matrix.outputs.matrix }}
     steps:
+      - name: Tag reusable workflow metadata
+        env:
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          DATADOG_SITE: datadoghq.eu
+        run: |
+          npx @datadog/datadog-ci tag --level job \
+            --tags "reusable_workflow.ref:${{ job.workflow_ref }}" \
+            --tags "reusable_workflow.repo:${{ job.workflow_repository }}" \
+            --tags "reusable_workflow.file_path:${{ job.workflow_file_path }}" \
+            --tags "reusable_workflow.caller_repo:${{ github.repository }}"
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
@@ -64,6 +75,17 @@ jobs:
       ADDITIONAL_GLOBS_TERRAFORM: ${{ inputs.additional-globs-terraform }}
       USE_TOFU: ${{ inputs.opentofu-version != '' && 'true' || '' }}
     steps:
+      - name: Tag reusable workflow metadata
+        env:
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          DATADOG_SITE: datadoghq.eu
+        run: |
+          npx @datadog/datadog-ci tag --level job \
+            --tags "reusable_workflow.ref:${{ job.workflow_ref }}" \
+            --tags "reusable_workflow.repo:${{ job.workflow_repository }}" \
+            --tags "reusable_workflow.file_path:${{ job.workflow_file_path }}" \
+            --tags "reusable_workflow.caller_repo:${{ github.repository }}"
+
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -156,6 +178,17 @@ jobs:
       REQUIRED_CHECK: spacelift/proposed
       GIT_REV: ${{ github.event.pull_request.head.sha }}
     steps:
+      - name: Tag reusable workflow metadata
+        env:
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          DATADOG_SITE: datadoghq.eu
+        run: |
+          npx @datadog/datadog-ci tag --level job \
+            --tags "reusable_workflow.ref:${{ job.workflow_ref }}" \
+            --tags "reusable_workflow.repo:${{ job.workflow_repository }}" \
+            --tags "reusable_workflow.file_path:${{ job.workflow_file_path }}" \
+            --tags "reusable_workflow.caller_repo:${{ github.repository }}"
+
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: check if spacelift/proposed exists as a required check in branch protection
@@ -228,6 +261,17 @@ jobs:
     runs-on: ubuntu-slim
     needs: ["validate-terraform"]
     steps:
+      - name: Tag reusable workflow metadata
+        env:
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          DATADOG_SITE: datadoghq.eu
+        run: |
+          npx @datadog/datadog-ci tag --level job \
+            --tags "reusable_workflow.ref:${{ job.workflow_ref }}" \
+            --tags "reusable_workflow.repo:${{ job.workflow_repository }}" \
+            --tags "reusable_workflow.file_path:${{ job.workflow_file_path }}" \
+            --tags "reusable_workflow.caller_repo:${{ github.repository }}"
+
       #- uses: actions/checkout@v6
       - name: Waiting for checks suites to populate
         run: sleep 10

@@ -51,6 +51,17 @@ jobs:
     outputs:
       oci-images: ${{ steps.oci-images.outputs.images }}
     steps:
+      - name: Tag reusable workflow metadata
+        env:
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          DATADOG_SITE: datadoghq.eu
+        run: |
+          npx @datadog/datadog-ci tag --level job \
+            --tags "reusable_workflow.ref:${{ job.workflow_ref }}" \
+            --tags "reusable_workflow.repo:${{ job.workflow_repository }}" \
+            --tags "reusable_workflow.file_path:${{ job.workflow_file_path }}" \
+            --tags "reusable_workflow.caller_repo:${{ github.repository }}"
+
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up QEMU
