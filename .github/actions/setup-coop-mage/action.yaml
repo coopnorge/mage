@@ -6,13 +6,6 @@ description: |
 runs:
   using: composite
   steps:
-    - name: Parse Go version
-      id: go-version
-      shell: bash
-      run: |
-        VERSION=$(awk '/^go [0-9]/ { print $2 }' go.mod)
-        echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
     - name: Restore Pre-compiled coop-mage
       id: mage-cache
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
