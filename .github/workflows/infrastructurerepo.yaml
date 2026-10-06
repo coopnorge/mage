@@ -38,11 +38,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
-          cache-dependency-path: "**/go.sum"
+      - name: Setup coop-mage
+        uses: coopnorge/github-action-setup-mage@v0.0.3
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
@@ -52,26 +49,26 @@ jobs:
               - '**'
       - name: List changes
         id: list
-        run: go tool mage git:listChanges
+        run: coop-mage git:listChanges
       - name: Check for Terraform changes
         id: terraform
-        run: echo "terraform=$(go tool mage terraform:changes)" >> $GITHUB_OUTPUT
+        run: echo "terraform=$(coop-mage terraform:changes)" >> $GITHUB_OUTPUT
         env:
           ADDITIONAL_GLOBS_TERRAFORM: ${{ inputs.additional-globs-terraform }}
           CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
       - name: Check for PolicyBot changes
         id: policy-bot
-        run: echo "policy_bot=$(go tool mage policyBotConfig:changes)" >> $GITHUB_OUTPUT
+        run: echo "policy_bot=$(coop-mage policyBotConfig:changes)" >> $GITHUB_OUTPUT
         env:
           CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
       - name: Check for Pallet changes
         id: pallets
-        run: echo "pallets=$(go tool mage pallets:changes)" >> $GITHUB_OUTPUT
+        run: echo "pallets=$(coop-mage pallets:changes)" >> $GITHUB_OUTPUT
         env:
           CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
       - name: Check for Catalog-info changes
         id: catalog-info
-        run: echo "catalog_info=$(go tool mage catalogInfo:changes)" >> $GITHUB_OUTPUT
+        run: echo "catalog_info=$(coop-mage catalogInfo:changes)" >> $GITHUB_OUTPUT
         env:
           CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
 
