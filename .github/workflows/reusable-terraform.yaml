@@ -288,10 +288,6 @@ jobs:
     runs-on: ubuntu-slim
     needs: ["validate-terraform"]
     steps:
-      #- uses: actions/checkout@v6
-      - name: Waiting for checks suites to populate
-        run: sleep 10
-
       - name: cancel old proposed runs in the same branch
         id: spacelift-check
         env:
