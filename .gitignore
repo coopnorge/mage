@@ -34,4 +34,3 @@ site/
 mkdocs.yml
 
 .terraform
-.mage-bin/
