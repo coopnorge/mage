@@ -36,7 +36,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup coop-mage
-        uses: coopnorge/github-action-setup-mage@pravindahal/feat/First-version
+        uses: coopnorge/github-action-setup-mage@v0.0.1
 
       - name: Generate Matrix for Terraform
         run: echo "matrix=$(coop-mage terraform:gitHubActionsJobMatrix)" >> $GITHUB_OUTPUT
@@ -97,7 +97,7 @@ jobs:
           SPACELIFT_READ_TOKEN: ${{ secrets.SPACELIFT_READ_TOKEN }}
 
       - name: Setup coop-mage
-        uses: coopnorge/github-action-setup-mage@pravindahal/feat/First-version
+        uses: coopnorge/github-action-setup-mage@v0.0.1
 
       - name: Add coop-mage to PATH
         run: |
@@ -127,7 +127,7 @@ jobs:
       # and it cleans up the restored/compiled coop-mage-binary, which we restore
       # here
       - name: Setup coop-mage
-        uses: coopnorge/github-action-setup-mage@pravindahal/feat/First-version
+        uses: coopnorge/github-action-setup-mage@v0.0.1
 
       - name: Code Lint
         id: lint
