@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-action.json
+name: setup coop-mage
+description: |
+  Sets up coop-mage binary for use. It compiles the binary as `coop-mage` and adds it to the path.
+
+runs:
+  using: composite
+  steps:
+    - name: Parse Go version
+      id: go-version
+      shell: bash
+      run: |
+        VERSION=$(awk '/^go [0-9]/ { print $2 }' go.mod)
+        echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+    - name: Restore Pre-compiled coop-mage
+      id: mage-cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: $RUNNER_TEMP/coop-mage
+        key: coop-mage-bin-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('magefiles/**', 'magefile.go', 'go.mod', 'go.sum') }}
+
+    - name: Set up Go
+      if: steps.mage-cache.outputs.cache-hit != 'true'
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      with:
+        go-version-file: 'go.mod'
+    
+    - name: Compile coop-mage
+      if: steps.mage-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        go tool mage -compile "$RUNNER_TEMP/coop-mage"
+
+    - name: Add coop-mage to PATH
+      shell: bash
+      run: |
+        chmod +x "$RUNNER_TEMP/coop-mage" 2>/dev/null || true
+        echo "$RUNNER_TEMP/coop-mage" >> "$GITHUB_PATH"
