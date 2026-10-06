@@ -34,30 +34,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - name: Restore Pre-compiled coop-mage
-        id: mage-cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .mage-bin/coop-mage
-          key: coop-mage-bin-${{ runner.os }}-${{ runner.arch }}-1.27.1-${{ hashFiles('magefiles/**', 'magefile.go', 'go.mod', 'go.sum') }}
 
-      - name: Set up Go
-        if: steps.mage-cache.outputs.cache-hit != 'true'
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
-          cache: false
-
-      - name: Compile coop-mage
-        if: steps.mage-cache.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p .mage-bin
-          go tool mage -compile "$PWD/.mage-bin/coop-mage"
-
-      - name: Add coop-mage to PATH
-        run: |
-          chmod +x .mage-bin/coop-mage 2>/dev/null || true
-          echo "$PWD/.mage-bin" >> "$GITHUB_PATH"
+      - name: Setup coop-mage
+        uses: ./.github/actions/setup-coop-mage
 
       - name: Generate Matrix for Terraform
         run: echo "matrix=$(coop-mage terraform:gitHubActionsJobMatrix)" >> $GITHUB_OUTPUT
@@ -117,25 +96,8 @@ jobs:
         env:
           SPACELIFT_READ_TOKEN: ${{ secrets.SPACELIFT_READ_TOKEN }}
 
-      - name: Restore Pre-compiled coop-mage
-        id: mage-cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .mage-bin/coop-mage
-          key: coop-mage-bin-${{ runner.os }}-${{ runner.arch }}-1.27.1-${{ hashFiles('magefiles/**', 'magefile.go', 'go.mod', 'go.sum') }}
-
-      - name: Set up Go
-        if: steps.mage-cache.outputs.cache-hit != 'true'
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
-          cache: false
-
-      - name: Compile coop-mage
-        if: steps.mage-cache.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p .mage-bin
-          go tool mage -compile "$PWD/.mage-bin/coop-mage"
+      - name: Setup coop-mage
+        uses: ./.github/actions/setup-coop-mage
 
       - name: Add coop-mage to PATH
         run: |
@@ -164,25 +126,8 @@ jobs:
       # reviewdog/actions-suggester is run with cleanup=true (which is desired) 
       # and it cleans up the restored/compiled coop-mage-binary, which we restore
       # here
-      - name: Restore Pre-compiled coop-mage
-        id: mage-cache-again
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .mage-bin/coop-mage
-          key: coop-mage-bin-${{ runner.os }}-${{ runner.arch }}-1.27.1-${{ hashFiles('magefiles/**', 'magefile.go', 'go.mod', 'go.sum') }}
-
-      - name: Set up Go
-        if: steps.mage-cache-again.outputs.cache-hit != 'true'
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
-          cache: false
-
-      - name: Compile coop-mage
-        if: steps.mage-cache-again.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p .mage-bin
-          go tool mage -compile "$PWD/.mage-bin/coop-mage"
+      - name: Setup coop-mage
+        uses: ./.github/actions/setup-coop-mage
 
       - name: Code Lint
         id: lint
