@@ -24,7 +24,7 @@ jobs:
         run: git fetch origin main:main
 
       - name: Setup coop-mage
-        uses: coopnorge/github-action-setup-mage@v0.0.3
+        uses: coopnorge/github-action-setup-mage@v0.0.4
 
       - name: Kubernetes List Detected charts
         id: list
