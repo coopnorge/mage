@@ -35,6 +35,10 @@ on:
         default: true
         required: false
         description: If true it will create a github release based on the tag of the OCI
+      go-cache-enabled:
+        type: boolean
+        default: true
+        description: If set to false, disable the Go module/build cache for the Go Build job.
     outputs:
       oci-images:
         value: ${{ jobs.go-build.outputs.oci-images }}
@@ -84,6 +88,19 @@ jobs:
         run: git config --global --add safe.directory /app
       - name: Setup coop-mage
         uses: coopnorge/github-action-setup-mage@v0.0.3
+      - name: Set up Go
+        if: ${{ inputs.go-cache-enabled }}
+        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1.0.0
+        with:
+          go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
+          cache-key-prefix: go-build
+          cache-dependency-path: "**/go.sum"
+      - name: Set up Go (cache disabled)
+        if: ${{ !inputs.go-cache-enabled }}
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
+          cache: false
       - name: Run Go Build
         run: "coop-mage -v go:buildBinaries"
       - name: Build Docker Images

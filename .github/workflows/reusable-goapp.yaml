@@ -150,6 +150,7 @@ jobs:
       oci-image-base: ${{ inputs.oci-image-base }}
       push: false
       go-runtime: ${{ inputs.go-runtime }}
+      go-cache-enabled: ${{ inputs.go-build-cache-enabled }}
 
   go-build-and-push:
     name: Go build and push
@@ -172,3 +173,4 @@ jobs:
       artifact-registry-location: ${{ inputs.artifact-registry-location }}
       go-runtime: ${{ inputs.go-runtime }}
       tag-based-diff: ${{ inputs.tag-based-diff }}
+      go-cache-enabled: ${{ inputs.go-build-cache-enabled }}
