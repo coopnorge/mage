@@ -99,11 +99,9 @@ jobs:
         env:
           SPACELIFT_READ_TOKEN: ${{ secrets.SPACELIFT_READ_TOKEN }}
 
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
-          cache-dependency-path: "**/go.sum"
+      - name: Setup coop-mage
+        uses: coopnorge/github-action-setup-mage@v0.0.3
+
       - name: Install OpenTofu
         if: ${{ inputs.opentofu-version != '' }}
         uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
@@ -119,7 +117,7 @@ jobs:
           owner: coopnorge
 
       - name: Build
-        run: "go tool mage -v build"
+        run: "coop-mage -v build"
         env:
           OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
           PUSH_IMAGE: ${{ inputs.push-oci-image }}

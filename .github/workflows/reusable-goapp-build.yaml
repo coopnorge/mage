@@ -86,6 +86,8 @@ jobs:
           password: ${{ steps.gcp-auth.outputs.access_token }}
       - name: Safe Git Workspace
         run: git config --global --add safe.directory /app
+      - name: Setup coop-mage
+        uses: coopnorge/github-action-setup-mage@v0.0.3
       - name: Set up Go
         if: ${{ inputs.go-cache-enabled }}
         uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1.0.0
@@ -100,9 +102,9 @@ jobs:
           go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
           cache: false
       - name: Run Go Build
-        run: "go tool mage -v go:buildBinaries"
+        run: "coop-mage -v go:buildBinaries"
       - name: Build Docker Images
-        run: "go tool mage -v docker:buildImages"
+        run: "coop-mage -v docker:buildImages"
         env:
           OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
           PUSH_IMAGE: ${{ inputs.push && inputs.push-oci-image }}
