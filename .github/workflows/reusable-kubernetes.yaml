@@ -23,24 +23,20 @@ jobs:
       - name: Fetch the main branch as well
         run: git fetch origin main:main
 
-      - name: Set up Go
-        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1.0.0
-        with:
-          go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
-          cache-key-prefix: kubernetes
-          cache-dependency-path: "**/go.sum"
+      - name: Setup coop-mage
+        uses: coopnorge/github-action-setup-mage@v0.0.3
 
       - name: Kubernetes List Detected charts
         id: list
-        run: go tool mage k8s:list
+        run: coop-mage k8s:list
 
       - name: Kubernetes validation
         id: validate
-        run: go tool mage k8s:validate
+        run: coop-mage k8s:validate
 
       - name: Kubernetes diff
         id: diff
-        run: go tool mage k8s:diff
+        run: coop-mage k8s:diff
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}

@@ -17,13 +17,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Set up Go
-        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1.0.0
-        with:
-          go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
-          cache-key-prefix: policy-bot
-          cache-dependency-path: "**/go.sum"
+      - name: Setup coop-mage
+        uses: coopnorge/github-action-setup-mage@v0.0.3
 
       - name: Policy-bot config validation
         id: validate
-        run: go tool mage policyBotConfig:validate
+        run: coop-mage policyBotConfig:validate

@@ -17,12 +17,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Set up Go
-        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1.0.0
-        with:
-          go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
-          cache-key-prefix: catalog-info
-          cache-dependency-path: "**/go.sum"
+      - name: Setup coop-mage
+        uses: coopnorge/github-action-setup-mage@v0.0.3
 
       - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         id: app-token
@@ -35,4 +31,4 @@ jobs:
         id: validate
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: go tool mage catalogInfo:validate
+        run: coop-mage catalogInfo:validate
