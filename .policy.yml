@@ -1,80 +1,75 @@
-# Policy bot configuration
-# https://github.com/palantir/policy-bot#configuration
 policy:
   approval:
-    - or:
-        - Internal dependency update
-        - Dependabot or renovate update
-        - Code change
+  - or:
+    - Internal dependency update
+    - Dependency updates
+    - Code change
 
 approval_rules:
-  # This rule matches Renovate updates of Coop's own packages, which need no review
-  - name: Internal dependency update
-    description: Renovate updates of coopnorge packages need no review
-    if:
-      only_has_contributors_in:
-        users:
-          - "dependabot[bot]"
-          - "renovate-coop-norge[bot]"
-      from_branch:
-        pattern: "^renovate/(github\\.com-coopnorge-|coopnorge-|engineering-docker-images).*$"
-      only_changed_files:
-        paths:
-          - "^.*Dockerfile$"
-          - "^.github/workflows/.*$"
-          - "^.github/actions/.*$"
-          - "^go.mod$"
-          - "^go.sum$"
-      has_valid_signatures_by_keys:
-        key_ids: ["B5690EEEBB952194"]
-    requires:
-      count: 0
-
-
-  # This rule matches when a pr is created by dependabot or renovate
-  - name: Dependabot or renovate update
-    if:
-      only_has_contributors_in:
-        users:
-          - "dependabot[bot]"
-          - "renovate-coop-norge[bot]"
-      only_changed_files:
-        paths:
-          - "^.*Dockerfile$"
-          - "^.github/workflows/.*$"
-          - "^go.mod$"
-          - "^go.sum$"
-      has_valid_signatures_by_keys:
-        key_ids: ["B5690EEEBB952194"]
-    requires:
-      count: 1 # A Dependabot pr requires 1 approval of review bot or a user
-      teams:
-        - "coopnorge/engineering"
+- name: Internal dependency update
+  requires:
+    count: 0
+  if:
+    only_has_contributors_in:
       users:
-        - "coop-norge-review-bot"
-    options:
-      invalidate_on_push: true
-      request_review:
-        enabled: true
-        mode: random-users
-        count: 2 # The number of random-users to request reviews from
-      methods:
-        github_review: true
+      - "dependabot[bot]"
+      - "renovate-coop-norge[bot]"
+    from_branch:
+      pattern: "^renovate/(github\\.com-coopnorge-|coopnorge-|engineering-docker-images).*$"
+    only_changed_files:
+      paths:
+      - "(^|.*/)go\\.mod$"
+      - "(^|.*/)go\\.sum$"
+      - "(^|.*/)[^/]*Dockerfile[^/]*$"
+      - "(^|.*/)docker-compose\\.ya?ml$"
+      - "^\\.github/workflows/.*$"
+      - "^\\.github/actions/.*$"
+    has_valid_signatures_by_keys:
+      key_ids: ["B5690EEEBB952194"]
 
-  - name: Code change
-    if:
-      changed_files:
-        paths:
-          - ".*"
-    requires:
-      count: 1 # The number of required review approvals
-      teams:
-        - "coopnorge/engineering"
-    options:
-      invalidate_on_push: true
-      request_review:
-        enabled: true
-        mode: random-users
-        count: 2 # The number of random-users to request reviews from
-      methods:
-        github_review: true
+- name: Dependency updates
+  requires:
+    count: 1
+    teams:
+    - "coopnorge/engineering"
+  options:
+    invalidate_on_push: true
+    request_review:
+      enabled: true
+      mode: random-users
+      count: 8
+    methods:
+      github_review: true
+  if:
+    only_has_contributors_in:
+      users:
+      - "dependabot[bot]"
+      - "renovate-coop-norge[bot]"
+    only_changed_files:
+      paths:
+      - "(^|.*/)go\\.mod$"
+      - "(^|.*/)go\\.sum$"
+      - "(^|.*/)[^/]*Dockerfile[^/]*$"
+      - "(^|.*/)docker-compose\\.ya?ml$"
+      - "^\\.github/workflows/.*$"
+      - "^\\.github/actions/.*$"
+    has_valid_signatures_by_keys:
+      key_ids: ["B5690EEEBB952194"]
+
+- name: Code change
+  if:
+    changed_files:
+      paths:
+      - ".*"
+  requires:
+    count: 2
+    teams:
+    - "coopnorge/engineering"
+  options:
+    invalidate_on_push: true
+    request_review:
+      enabled: true
+      mode: random-users
+      count: 8
+    methods:
+      github_review: true
