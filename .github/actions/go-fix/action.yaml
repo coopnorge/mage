@@ -13,7 +13,7 @@ description: |
           contents: write
         steps:
           - uses: actions/checkout@v7
-          - uses: coopnorge/mage/.github/actions/go-fix@v0
+          - uses: coopnorge/mage/.github/actions/go-fix@v0.42.1
             with:
               github-token: <your-github-token-secret, e.g. REVIEWBOT_GITHUB_TOKEN>
 
