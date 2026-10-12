@@ -83,6 +83,14 @@ jobs:
         uses: coopnorge/github-action-setup-mage@v0.0.4
         background: true
         id: setup-coop-mage
+      - name: Set up Go
+        id: setup-go
+        background: true
+        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1.0.0
+        with:
+          go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
+          cache-key-prefix: go-app
+          cache-dependency-path: "**/go.sum"
       - name: Setup Golangci Lint
         id: setup-golangci
         background: true
@@ -98,6 +106,7 @@ jobs:
       - name: wait for setup
         wait:
           - setup-coop-mage
+          - setup-go
           - setup-golangci
           - setup-buildx
       # - name: Set up Go (cache disabled)
