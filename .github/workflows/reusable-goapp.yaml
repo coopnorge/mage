@@ -51,6 +51,10 @@ on:
         type: boolean
         default: true
         description: If set to false, disable the Go module/build cache for the Go Build job.
+      runner-cores:
+        type: number
+        default: 2
+        description: Number of cores to use. supported values is dependendent on runner configurations in https://github.com/organizations/coopnorge/settings/actions/runner-groups/6
     outputs:
       oci-images:
         value: ${{ jobs.go-build-and-push.outputs.oci-images || '{}' }}
@@ -59,7 +63,9 @@ on:
 jobs:
   go-app:
     name: Go App CI
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: ubuntu-latest-large-pool
+      labels: ubuntu-latest-${{ inputs.runner-cores }}core
     outputs:
       oci-images: ${{ steps.oci-images.outputs.images }}
     permissions:
@@ -77,14 +83,6 @@ jobs:
         uses: coopnorge/github-action-setup-mage@v0.0.4
         background: true
         id: setup-coop-mage
-      - name: Set up Go
-        id: setup-go
-        background: true
-        uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1.0.0
-        with:
-          go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
-          cache-key-prefix: go-app
-          cache-dependency-path: "**/go.sum"
       - name: Setup Golangci Lint
         id: setup-golangci
         background: true
