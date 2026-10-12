@@ -31,11 +31,13 @@ jobs:
         run: coop-mage k8s:list
 
       - name: Kubernetes validation
+        background: true
         id: validate
         run: coop-mage k8s:validate
 
       - name: Kubernetes diff
         id: diff
+        background: true
         run: coop-mage k8s:diff
         env:
           GH_TOKEN: ${{ github.token }}
