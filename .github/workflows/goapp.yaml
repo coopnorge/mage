@@ -186,6 +186,7 @@ jobs:
       go-lint-cache-enabled: ${{ inputs.go-lint-cache-enabled }}
       go-test-cache-enabled: ${{ inputs.go-test-cache-enabled }}
       go-build-cache-enabled: ${{ inputs.go-build-cache-enabled }}
+      runner-cores: ${{ inputs.runner-cores }}
 
   terraform:
     name: Terraform
