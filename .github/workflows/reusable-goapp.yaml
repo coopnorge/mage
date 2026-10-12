@@ -98,7 +98,6 @@ jobs:
       - name: wait for setup
         wait:
           - setup-coop-mage
-          - setup-go
           - setup-golangci
           - setup-buildx
       # - name: Set up Go (cache disabled)
