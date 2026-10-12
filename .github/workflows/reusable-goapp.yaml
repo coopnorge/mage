@@ -92,7 +92,7 @@ jobs:
         with:
           install-only: true
 
-          version: v2.13.2 # renovate: datasource=docker depName=golangci/golangci-lint
+          version: v2.14.0 # renovate: datasource=docker depName=golangci/golangci-lint
       - name: Set up Docker Buildx
         id: setup-buildx
         background: true
@@ -115,7 +115,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/golangci-lint
-          key: "golangci-lint-v2.13.2" # renovate: datasource=docker depName=golangci/golangci-lint
+          key: "golangci-lint-v2.14.0" # renovate: datasource=docker depName=golangci/golangci-lint
 
       # looks like only required for multi arg buids, which we are not using
       # atm
