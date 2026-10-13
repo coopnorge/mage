@@ -31,7 +31,7 @@ var toolGo devtool.Go
 //
 // For details see [golang.Generate].
 func (Go) Generate(ctx context.Context) error {
-	mg.CtxDeps(ctx, golang.Generate)
+	mg.CtxDeps(ctx, golangTargets.Generate)
 	return nil
 }
 
