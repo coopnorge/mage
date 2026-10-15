@@ -6,7 +6,7 @@ on:
 
 jobs:
   update-major-tag:
-    uses: coopnorge/github-workflow-release-tagger-for-github-workflows/.github/workflows/release-tagger-for-github-workflows.yaml@v0
+    uses: coopnorge/github-workflow-release-tagger-for-github-workflows/.github/workflows/release-tagger-for-github-workflows.yaml@v0.1.9
     with:
       tag-name: ${{ github.event.release.tag_name }}
     secrets:
