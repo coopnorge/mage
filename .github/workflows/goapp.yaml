@@ -77,6 +77,14 @@ on:
         type: boolean
         default: true
         description: If set to false, disable the Go module/build cache for the Go Test job.
+      go-test-coverpkg-all:
+        type: boolean
+        default: false
+        description: >-
+          Opt-in. If set to true, measure coverage across all packages in each Go module
+          (go test -coverpkg=./...), so code only exercised by tests in other packages, such as
+          generated code, is reported as covered. The coverage report becomes larger and contains
+          duplicate blocks, one set per test binary.
       go-build-cache-enabled:
         type: boolean
         default: true
@@ -181,6 +189,7 @@ jobs:
       datadog-site: ${{ inputs.datadog-site }}
       go-lint-cache-enabled: ${{ inputs.go-lint-cache-enabled }}
       go-test-cache-enabled: ${{ inputs.go-test-cache-enabled }}
+      go-test-coverpkg-all: ${{ inputs.go-test-coverpkg-all }}
       go-build-cache-enabled: ${{ inputs.go-build-cache-enabled }}
 
   terraform:

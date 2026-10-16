@@ -187,24 +187,37 @@ func smaller(a, b int) int {
 	assert.Contains(t, after, "min(")
 }
 
-// TestTest_reportsCoverageFromAllPackages verifies that coverage is attributed
-// to every package in the module, including packages without tests of their
-// own, such as generated code that is executed by tests in another package.
-func TestTest_reportsCoverageFromAllPackages(t *testing.T) {
-	dir := newGoModule(t, "example.com/app", "1.26.0", map[string]string{
-		// No tests in this package. It is only executed by the tests in
-		// package "app".
-		"gen/gen.go": `package gen
+// TestTest_coverageFromAllPackages verifies that coverage is only attributed
+// to packages without tests of their own, such as generated code that is
+// executed by tests in another package, when GO_TEST_COVERPKG_ALL is enabled.
+func TestTest_coverageFromAllPackages(t *testing.T) {
+	tests := []struct {
+		name        string
+		env         string
+		setEnv      bool
+		wantCovered bool
+	}{
+		{name: "disabled by default", wantCovered: false},
+		{name: "explicitly disabled", env: "false", setEnv: true, wantCovered: false},
+		{name: "invalid value is treated as disabled", env: "nope", setEnv: true, wantCovered: false},
+		{name: "enabled", env: "true", setEnv: true, wantCovered: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := newGoModule(t, "example.com/app", "1.26.0", map[string]string{
+				// No tests in this package. It is only executed by the
+				// tests in package "app".
+				"gen/gen.go": `package gen
 
 func Generated() int { return 42 }
 `,
-		"app/app.go": `package app
+				"app/app.go": `package app
 
 import "example.com/app/gen"
 
 func Value() int { return gen.Generated() }
 `,
-		"app/app_test.go": `package app
+				"app/app_test.go": `package app
 
 import "testing"
 
@@ -214,27 +227,32 @@ func TestValue(t *testing.T) {
 	}
 }
 `,
-	})
-	t.Chdir(dir)
+			})
+			t.Chdir(dir)
+			if tt.setEnv {
+				t.Setenv(CoverAllPackagesEnv, tt.env)
+			} else {
+				// Make sure an ambient value does not leak into the test.
+				t.Setenv(CoverAllPackagesEnv, "")
+			}
 
-	require.NoError(t, Test("."))
+			require.NoError(t, Test("."))
 
-	profiles, err := cover.ParseProfiles(filepath.Join(dir, "var", coverageReport))
-	require.NoError(t, err)
+			profiles, err := cover.ParseProfiles(filepath.Join(dir, "var", coverageReport))
+			require.NoError(t, err)
 
-	var gen *cover.Profile
-	for _, p := range profiles {
-		if p.FileName == "example.com/app/gen/gen.go" {
-			gen = p
-		}
+			covered := false
+			for _, p := range profiles {
+				if p.FileName != "example.com/app/gen/gen.go" {
+					continue
+				}
+				for _, b := range p.Blocks {
+					if b.Count > 0 {
+						covered = true
+					}
+				}
+			}
+			assert.Equal(t, tt.wantCovered, covered)
+		})
 	}
-	require.NotNil(t, gen, "package without tests must appear in the coverage profile")
-
-	covered := false
-	for _, b := range gen.Blocks {
-		if b.Count > 0 {
-			covered = true
-		}
-	}
-	assert.True(t, covered, "coverage from tests in other packages must be credited to gen: %+v", gen.Blocks)
 }

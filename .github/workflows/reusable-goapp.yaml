@@ -47,6 +47,14 @@ on:
         type: boolean
         default: true
         description: If set to false, disable the Go module/build cache for the Go Test job.
+      go-test-coverpkg-all:
+        type: boolean
+        default: false
+        description: >-
+          Opt-in. If set to true, measure coverage across all packages in each Go module
+          (go test -coverpkg=./...), so code only exercised by tests in other packages, such as
+          generated code, is reported as covered. The coverage report becomes larger and contains
+          duplicate blocks, one set per test binary.
       go-build-cache-enabled:
         type: boolean
         default: true
@@ -129,6 +137,7 @@ jobs:
         run: "coop-mage -v go:test"
         env:
           GO_RUNTIME: ${{ inputs.go-runtime }}
+          GO_TEST_COVERPKG_ALL: ${{ inputs.go-test-coverpkg-all }}
       - name: Upload coverage reports to Datadog
         if: ${{ !cancelled() }}
         continue-on-error: true
