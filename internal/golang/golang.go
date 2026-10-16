@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
@@ -16,6 +17,10 @@ import (
 )
 
 const coverageReport = "coverage.out"
+
+// CoverAllPackagesEnv is the environment variable that, when set to a true
+// value, makes Test pass -coverpkg=./... to go test.
+const CoverAllPackagesEnv = "GO_TEST_COVERPKG_ALL"
 
 var (
 	toolGo   devtool.Go
@@ -148,18 +153,36 @@ func Test(directory string) error {
 
 	output := path.Join(relativeRootPath, core.OutputDir, directory, coverageReport)
 
-	return toolGo.Run(
-		nil,
+	args := []string{
 		"-C",
 		directory,
 		"test",
 		"-vet=off",
 		"--cover",
+	}
+	if coverAllPackages() {
+		args = append(args, "-coverpkg=./...")
+	}
+	args = append(args,
 		fmt.Sprintf("-coverprofile=%s", output),
 		"-covermode=atomic",
 		"-race",
 		"-tags='datadog.no_waf'",
 		"./...")
+
+	return toolGo.Run(nil, args...)
+}
+
+// coverAllPackages reports whether coverage should be measured across all
+// packages in a module, not only the package a test belongs to. It is opt-in
+// via the environment variable [CoverAllPackagesEnv].
+//
+// Enabling it makes the coverage profile considerably larger and makes it
+// contain duplicate blocks, one set per test binary. Consumers of the profile
+// must merge duplicates, for example with golang.org/x/tools/cover.
+func coverAllPackages() bool {
+	enabled, err := strconv.ParseBool(os.Getenv(CoverAllPackagesEnv))
+	return err == nil && enabled
 }
 
 // Lint runs the linters
