@@ -30,11 +30,6 @@ on:
         default: true
         required: false
         description: If true it will create a github release based on the tag of the OCI
-      skip-lint-and-test-on-main:
-        type: boolean
-        default: false
-        required: false
-        description: If set to true, skip the Lint and Test jobs on the main branch. Will still run on pull requests and other branches.
       datadog-site:
         type: string
         default: "datadoghq.eu"
@@ -59,7 +54,6 @@ on:
 jobs:
   go-lint:
     name: Go Lint
-    if: ${{ github.ref != 'refs/heads/main' || inputs.skip-lint-and-test-on-main == false }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -101,7 +95,6 @@ jobs:
 
   go-test:
     name: Go Test
-    if: ${{ github.ref != 'refs/heads/main' || inputs.skip-lint-and-test-on-main == false }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -157,7 +150,7 @@ jobs:
     needs:
       - go-lint
       - go-test
-    if: ${{ always() && github.ref == 'refs/heads/main' && (inputs.skip-lint-and-test-on-main || (needs.go-lint.result == 'success' && needs.go-test.result == 'success')) }}
+    if: ${{ github.ref == 'refs/heads/main' }}
     uses: ./.github/workflows/reusable-goapp-build.yaml
     permissions:
       contents: write

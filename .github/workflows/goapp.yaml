@@ -60,11 +60,6 @@ on:
         type: string
         default: ""
         description: If set, install this version of OpenTofu and set USE_TOFU=true so mage uses the tofu devtool instead of terraform.
-      skip-lint-and-test-on-main:
-        type: boolean
-        default: false
-        required: false
-        description: If set to true, skip the Lint and Test jobs on the main branch. Lint and Test will still run on pull requests and other branches.
       datadog-site:
         type: string
         default: "datadoghq.eu"
@@ -177,7 +172,6 @@ jobs:
       service-account: ${{ inputs.service-account }}
       artifact-registry-location: ${{ inputs.artifact-registry-location }}
       tag-based-diff: ${{ inputs.tag-based-diff }}
-      skip-lint-and-test-on-main: ${{ inputs.skip-lint-and-test-on-main }}
       datadog-site: ${{ inputs.datadog-site }}
       go-lint-cache-enabled: ${{ inputs.go-lint-cache-enabled }}
       go-test-cache-enabled: ${{ inputs.go-test-cache-enabled }}
