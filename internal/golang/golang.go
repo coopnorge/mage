@@ -155,6 +155,7 @@ func Test(directory string) error {
 		"test",
 		"-vet=off",
 		"--cover",
+		"-coverpkg=./...",
 		fmt.Sprintf("-coverprofile=%s", output),
 		"-covermode=atomic",
 		"-race",

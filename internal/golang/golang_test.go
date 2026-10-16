@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/tools/cover"
 )
 
 // writeFile creates a file at path (relative to dir) with the given content,
@@ -184,4 +185,56 @@ func smaller(a, b int) int {
 	assert.NotEqual(t, before, after)
 	assert.NotContains(t, after, "if a < b", "expected if/else to be replaced with min()")
 	assert.Contains(t, after, "min(")
+}
+
+// TestTest_reportsCoverageFromAllPackages verifies that coverage is attributed
+// to every package in the module, including packages without tests of their
+// own, such as generated code that is executed by tests in another package.
+func TestTest_reportsCoverageFromAllPackages(t *testing.T) {
+	dir := newGoModule(t, "example.com/app", "1.26.0", map[string]string{
+		// No tests in this package. It is only executed by the tests in
+		// package "app".
+		"gen/gen.go": `package gen
+
+func Generated() int { return 42 }
+`,
+		"app/app.go": `package app
+
+import "example.com/app/gen"
+
+func Value() int { return gen.Generated() }
+`,
+		"app/app_test.go": `package app
+
+import "testing"
+
+func TestValue(t *testing.T) {
+	if Value() != 42 {
+		t.Fatal("unexpected value")
+	}
+}
+`,
+	})
+	t.Chdir(dir)
+
+	require.NoError(t, Test("."))
+
+	profiles, err := cover.ParseProfiles(filepath.Join(dir, "var", coverageReport))
+	require.NoError(t, err)
+
+	var gen *cover.Profile
+	for _, p := range profiles {
+		if p.FileName == "example.com/app/gen/gen.go" {
+			gen = p
+		}
+	}
+	require.NotNil(t, gen, "package without tests must appear in the coverage profile")
+
+	covered := false
+	for _, b := range gen.Blocks {
+		if b.Count > 0 {
+			covered = true
+		}
+	}
+	assert.True(t, covered, "coverage from tests in other packages must be credited to gen: %+v", gen.Blocks)
 }
