@@ -81,6 +81,10 @@ on:
         type: boolean
         default: true
         description: If set to false, disable the Go module/build cache for the Go Build job.
+      runner-cores:
+        type: number
+        default: 2
+        description: Number of cores to use. supported values is dependendent on runner configurations in https://github.com/organizations/coopnorge/settings/actions/runner-groups/6
 
     outputs:
       oci-images:
@@ -182,6 +186,7 @@ jobs:
       go-lint-cache-enabled: ${{ inputs.go-lint-cache-enabled }}
       go-test-cache-enabled: ${{ inputs.go-test-cache-enabled }}
       go-build-cache-enabled: ${{ inputs.go-build-cache-enabled }}
+      runner-cores: ${{ inputs.runner-cores }}
 
   terraform:
     name: Terraform
