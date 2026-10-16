@@ -105,7 +105,7 @@ func DiffToTagPattern(releasePrefix string) ([]string, error) {
 	}
 
 	if onMain {
-		releaseRef, createdAt, err := github.GetLatestReleaseTagWithPrefix(releasePrefix)
+		releaseRef, _, err := github.GetLatestReleaseTagWithPrefix(releasePrefix)
 		if err != nil {
 			return nil, fmt.Errorf("getting releases from github failed: %w", err)
 		}
@@ -121,6 +121,14 @@ func DiffToTagPattern(releasePrefix string) ([]string, error) {
 			return changedFiles, nil
 		}
 		ref = releaseRef
+		releaseCommit, err := getCommitFromTag(releaseRef)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to commit from tag %s, %w", releaseRef, err)
+		}
+		createdAt, err := getTimeSpampOfCommit(releaseCommit)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to get the timestamp of the release commit %s, %w", releaseCommit, err)
+		}
 		currentCommit, err := getTimeStampOfCurrentCommit()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get timetamp of current commit: %w ", err)
@@ -162,7 +170,11 @@ func CurrentBranch() (string, error) {
 }
 
 func getTimeStampOfCurrentCommit() (time.Time, error) {
-	out, err := sh.Output("git", "show", "--no-patch", `--format=%cI`)
+	return getTimeSpampOfCommit("")
+}
+
+func getTimeSpampOfCommit(commit string) (time.Time, error) {
+	out, err := sh.Output("git", "show", "--no-patch", `--format=%cI`, commit)
 	if err != nil {
 		return time.Unix(0, 0), fmt.Errorf("getting timestamp of commit using git failed: %w", err)
 	}
@@ -171,6 +183,10 @@ func getTimeStampOfCurrentCommit() (time.Time, error) {
 		return time.Unix(0, 0), fmt.Errorf("failed to parse timestamp %s: %w", out, err)
 	}
 	return timestamp, nil
+}
+
+func getCommitFromTag(tag string) (string, error) {
+	return sh.Output("git", "rev-parse", tag)
 }
 
 // Worktree creates a new worktree for the given branch.
