@@ -40,8 +40,9 @@ func Validate(dockerfileContent string) error {
 
 // BuildAndPush an OCI image for the provided platforms. Setting push to true
 // will push the images to the registries. When push is true images are not
-// tagged with latest.
-func BuildAndPush(dockerfileContent, platforms, image, dockerContext, imagePath, metadatafile, app, binary string, shouldPush bool) error {
+// tagged with latest. A non-empty assetsDir is passed to the build as the
+// assets build context.
+func BuildAndPush(dockerfileContent, platforms, image, dockerContext, imagePath, metadatafile, app, binary string, shouldPush bool, assetsDir string) error {
 	versionTag := getVersionTag()
 	versionTaggedImage := fmt.Sprintf("%s:%s", image, versionTag)
 	latestImage := fmt.Sprintf("%s:latest", image)
@@ -87,6 +88,13 @@ func BuildAndPush(dockerfileContent, platforms, image, dockerContext, imagePath,
 		args = append(
 			args,
 			"-t", latestImage,
+		)
+	}
+
+	if assetsDir != "" {
+		args = append(
+			args,
+			"--build-context", fmt.Sprintf("assets=%s", assetsDir),
 		)
 	}
 
