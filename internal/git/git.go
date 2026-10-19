@@ -170,10 +170,10 @@ func CurrentBranch() (string, error) {
 }
 
 func getTimeStampOfCurrentCommit() (time.Time, error) {
-	return getTimeSpampOfCommit("")
+	return getTimeStampOfCommit("")
 }
 
-func getTimeSpampOfCommit(commit string) (time.Time, error) {
+func getTimeStampOfCommit(commit string) (time.Time, error) {
 	out, err := sh.Output("git", "show", "--no-patch", `--format=%cI`, commit)
 	if err != nil {
 		return time.Unix(0, 0), fmt.Errorf("getting timestamp of commit using git failed: %w", err)
