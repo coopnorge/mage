@@ -110,6 +110,18 @@ func (Docker) BuildAndPush(ctx context.Context) error {
 // binaries to present in the ./var/bin/ directories.
 // Setting the PUSH_IMAGE environmental variable to true will push the images to the
 // registries.
+//
+// Setting the GOAPP_ASSETS environmental variable to a directory adds assets
+// to the images. Each application must be present in the directory, create an
+// empty directory for no assets:
+//
+//	./assets
+//	├── app1
+//	│   └── index.html
+//	└── app2
+//
+// The content of an app's directory is copied into each of its images at
+// /usr/local/share/<app> - docker image exports it as GOAPP_ASSETS_DIR env variable
 func (Docker) BuildImages(ctx context.Context) error {
 	shouldPush, err := shouldPush()
 	if err != nil {
@@ -125,10 +137,19 @@ func (Docker) BuildImages(ctx context.Context) error {
 		return err
 	}
 
+	apps := []string{}
+	for _, cmd := range cmds {
+		apps = append(apps, cmd.goModule)
+	}
+	assets, err := findAssets(apps)
+	if err != nil {
+		return err
+	}
+
 	deps := []any{}
 	for _, cmd := range cmds {
 		for _, binary := range cmd.binaries {
-			deps = append(deps, mg.F(buildAndPush, cmd.goModule, binary, shouldPush))
+			deps = append(deps, mg.F(buildAndPush, cmd.goModule, binary, shouldPush, assets[cmd.goModule]))
 		}
 	}
 	mg.CtxDeps(ctx, deps...)
@@ -136,12 +157,12 @@ func (Docker) BuildImages(ctx context.Context) error {
 	return writeImageMetadata()
 }
 
-func buildAndPush(_ context.Context, app, binary string, shouldPush bool) error {
+func buildAndPush(_ context.Context, app, binary string, shouldPush bool, assetsDir string) error {
 	imageName := docker.FullyQualifiedlImageName(app, binary)
 	imagePath := imagePath(app, binary)
 	metadataPath := metadataPath(app, binary)
 
-	return docker.BuildAndPush(dockerfile, golang.DockerPlatforms(), imageName, ".", imagePath, metadataPath, app, binary, shouldPush)
+	return docker.BuildAndPush(dockerfile, golang.DockerPlatforms(), imageName, ".", imagePath, metadataPath, app, binary, shouldPush, assetsDir)
 }
 
 func writeImageMetadata() error {
