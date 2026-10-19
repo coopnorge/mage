@@ -123,11 +123,11 @@ func DiffToTagPattern(releasePrefix string) ([]string, error) {
 		ref = releaseRef
 		releaseCommit, err := getCommitFromTag(releaseRef)
 		if err != nil {
-			return nil, fmt.Errorf("Unable to commit from tag %s, %w", releaseRef, err)
+			return nil, fmt.Errorf("unable to commit from tag %s: %w", releaseRef, err)
 		}
 		createdAt, err := getTimeStampOfCommit(releaseCommit)
 		if err != nil {
-			return nil, fmt.Errorf("Unable to get the timestamp of the release commit %s, %w", releaseCommit, err)
+			return nil, fmt.Errorf("unable to get the timestamp of the release commit %s: %w", releaseCommit, err)
 		}
 		currentCommit, err := getTimeStampOfCurrentCommit()
 		if err != nil {
