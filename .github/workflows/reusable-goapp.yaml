@@ -71,7 +71,7 @@ jobs:
       - name: Configure access to internal and private GitHub repos
         run: git config --global url."https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
       - name: Setup coop-mage
-        uses: coopnorge/github-action-setup-mage@v0.0.4
+        uses: $/.github/actions/setup-mage
       - name: Set up Go
         if: ${{ inputs.go-lint-cache-enabled }}
         uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1.0.0
@@ -112,7 +112,7 @@ jobs:
       - name: Configure access to internal and private GitHub repos
         run: git config --global url."https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
       - name: Setup coop-mage
-        uses: coopnorge/github-action-setup-mage@v0.0.4
+        uses: $/.github/actions/setup-mage
       - name: Set up Go
         if: ${{ inputs.go-test-cache-enabled }}
         uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1.0.0
