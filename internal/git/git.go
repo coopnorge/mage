@@ -125,7 +125,7 @@ func DiffToTagPattern(releasePrefix string) ([]string, error) {
 		if err != nil {
 			return nil, fmt.Errorf("Unable to commit from tag %s, %w", releaseRef, err)
 		}
-		createdAt, err := getTimeSpampOfCommit(releaseCommit)
+		createdAt, err := getTimeStampOfCommit(releaseCommit)
 		if err != nil {
 			return nil, fmt.Errorf("Unable to get the timestamp of the release commit %s, %w", releaseCommit, err)
 		}
@@ -174,7 +174,11 @@ func getTimeStampOfCurrentCommit() (time.Time, error) {
 }
 
 func getTimeStampOfCommit(commit string) (time.Time, error) {
-	out, err := sh.Output("git", "show", "--no-patch", `--format=%cI`, commit)
+	args := []string{"show", "--no-patch", `--format=%cI`}
+	if commit != "" {
+		args = append(args, commit)
+	}
+	out, err := sh.Output("git", args...)
 	if err != nil {
 		return time.Unix(0, 0), fmt.Errorf("getting timestamp of commit using git failed: %w", err)
 	}
