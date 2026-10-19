@@ -1,6 +1,8 @@
 package git_test
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -195,4 +197,87 @@ func TestGitDiff(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestDiffToTagPatternComparesCommitTimestamps(t *testing.T) {
+	tests := []struct {
+		name      string
+		currentAt string
+		want      []string
+		wantErr   string
+	}{
+		{
+			name:      "current commit is newer than release",
+			currentAt: "2026-10-19T10:00:00Z",
+			want:      []string{"after-release.txt"},
+		},
+		{
+			name:      "current commit has same timestamp as release",
+			currentAt: "2026-10-19T09:00:00Z",
+			wantErr:   "is created before or is equal the most recent release",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			unsetEnv(t, "CHANGED_FILES")
+			unsetEnv(t, "CHANGES")
+			t.Setenv("GITHUB_TOKEN", "test")
+			t.Setenv("GITHUB_REPOSITORY", "coopnorge/mage")
+			t.Setenv("CI", "true")
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				_, err := w.Write([]byte(`[{"name":"v1.0.0","tag_name":"v1.0.0","draft":false,"prerelease":false}]`))
+				require.NoError(t, err)
+			}))
+			t.Cleanup(server.Close)
+			t.Setenv("GITHUB_API_URL", server.URL)
+
+			t.Chdir(t.TempDir())
+			runGitTest(t, "init", "-b", "main")
+			runGitTest(t, "config", "user.email", "mage@coop.no")
+			runGitTest(t, "config", "user.name", "Mage CI")
+			runGitTest(t, "config", "commit.gpgsign", "false")
+			require.NoError(t, os.WriteFile("before-release.txt", []byte("before"), 0o600))
+			runGitTest(t, "add", "before-release.txt")
+			require.NoError(t, sh.RunWith(map[string]string{
+				"GIT_AUTHOR_DATE":    "2026-10-19T09:00:00Z",
+				"GIT_COMMITTER_DATE": "2026-10-19T09:00:00Z",
+			}, "git", "commit", "-m", "release"))
+			runGitTest(t, "tag", "v1.0.0")
+			require.NoError(t, os.WriteFile("after-release.txt", []byte("after"), 0o600))
+			runGitTest(t, "add", "after-release.txt")
+			require.NoError(t, sh.RunWith(map[string]string{
+				"GIT_AUTHOR_DATE":    tt.currentAt,
+				"GIT_COMMITTER_DATE": tt.currentAt,
+			}, "git", "commit", "-m", "after release"))
+
+			got, err := git.DiffToTagPattern("v")
+			if tt.wantErr != "" {
+				require.Error(t, err)
+				assert.ErrorContains(t, err, tt.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func unsetEnv(t *testing.T, key string) {
+	t.Helper()
+	value, wasSet := os.LookupEnv(key)
+	require.NoError(t, os.Unsetenv(key))
+	t.Cleanup(func() {
+		if wasSet {
+			assert.NoError(t, os.Setenv(key, value))
+		} else {
+			assert.NoError(t, os.Unsetenv(key))
+		}
+	})
+}
+
+func runGitTest(t *testing.T, args ...string) {
+	t.Helper()
+	require.NoError(t, sh.Run("git", args...))
 }
