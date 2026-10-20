@@ -1,10 +1,12 @@
 package golang
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/coopnorge/mage/internal/devtool"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/cover"
@@ -255,4 +257,46 @@ func TestValue(t *testing.T) {
 			assert.Equal(t, tt.wantCovered, covered)
 		})
 	}
+}
+
+func TestValidateGoModVersions(t *testing.T) {
+	maxV, err := devtool.GolangVersion()
+	require.NoError(t, err)
+	seg := maxV.Segments()
+	same := maxV.Original()
+	higherPatch := fmt.Sprintf("%d.%d.%d", seg[0], seg[1], seg[2]+1)
+	higherMinor := fmt.Sprintf("%d.%d.0", seg[0], seg[1]+1)
+	short := fmt.Sprintf("%d.%d", seg[0], seg[1])
+
+	tests := []struct {
+		name      string
+		goVersion string
+		extra     string
+		wantErr   bool
+	}{
+		{name: "equal", goVersion: same},
+		{name: "short form", goVersion: short},
+		{name: "older", goVersion: "1.20.0"},
+		{name: "higher patch", goVersion: higherPatch, wantErr: true},
+		{name: "higher minor", goVersion: higherMinor, wantErr: true},
+		{name: "newer toolchain allowed", goVersion: same, extra: "toolchain go99.0.0\n"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := newGoModule(t, "example.com/m", tt.goVersion, nil)
+			if tt.extra != "" {
+				writeFile(t, dir, "go.mod", "module example.com/m\n\ngo "+tt.goVersion+"\n"+tt.extra)
+			}
+			err := ValidateGoModVersions(dir)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+
+	t.Run("no modules", func(t *testing.T) {
+		require.NoError(t, ValidateGoModVersions(t.TempDir()))
+	})
 }

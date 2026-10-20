@@ -47,6 +47,7 @@ import (
 	"context"
 
 	"github.com/coopnorge/mage/internal/core"
+	golangTargets "github.com/coopnorge/mage/internal/targets/golang"
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 )
@@ -81,7 +82,7 @@ func Build(ctx context.Context) error {
 //
 // For details see [Go.Validate], [Terraform.Validate] and [Docker.Validate].
 func Validate(ctx context.Context) error {
-	mg.CtxDeps(ctx, Go.Validate, Docker.Validate, Terraform.Validate, CatalogInfo.Validate, PolicyBotConfig.Validate, Pallets.Validate, K8s.Validate)
+	mg.CtxDeps(ctx, golangTargets.ValidateVersion, Go.Validate, Docker.Validate, Terraform.Validate, CatalogInfo.Validate, PolicyBotConfig.Validate, Pallets.Validate, K8s.Validate)
 	return nil
 }
 
