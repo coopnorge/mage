@@ -1,6 +1,7 @@
 package golang
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"log"
@@ -14,6 +15,8 @@ import (
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/devtool"
 	"github.com/coopnorge/mage/internal/git"
+	"github.com/hashicorp/go-version"
+	"golang.org/x/mod/modfile"
 )
 
 const coverageReport = "coverage.out"
@@ -62,6 +65,47 @@ func FindGoModules(base string) ([]string, error) {
 		return nil, err
 	}
 	return directories, nil
+}
+
+// ValidateGoModVersions verifies that the go directive of every go.mod found
+// under root is not newer than the Go version tracked in tools.Dockerfile. The
+// toolchain directive and the installed toolchain are not considered.
+func ValidateGoModVersions(root string) error {
+	maxVersion, err := devtool.GolangVersion()
+	if err != nil {
+		return err
+	}
+	dirs, err := FindGoModules(root)
+	if err != nil {
+		return err
+	}
+
+	var errs []error
+	for _, dir := range dirs {
+		modPath := filepath.Join(dir, "go.mod")
+		data, err := os.ReadFile(modPath)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to read %q: %w", modPath, err))
+			continue
+		}
+		f, err := modfile.ParseLax(modPath, data, nil)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("%s: %w", modPath, err))
+			continue
+		}
+		if f.Go == nil {
+			continue
+		}
+		declared, err := version.NewVersion(f.Go.Version)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("%s: invalid go version %q: %w", modPath, f.Go.Version, err))
+			continue
+		}
+		if declared.GreaterThan(maxVersion) {
+			errs = append(errs, fmt.Errorf("%s: go %s is newer than the maximum supported go %s (see tools.Dockerfile); lower the go directive", modPath, f.Go.Version, maxVersion.Original()))
+		}
+	}
+	return errors.Join(errs...)
 }
 
 // ContainsGoSourceCode returns true if a directory contains a .go file.

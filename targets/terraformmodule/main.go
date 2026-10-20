@@ -41,6 +41,7 @@ package terraformmodule
 import (
 	"context"
 
+	golangTargets "github.com/coopnorge/mage/internal/targets/golang"
 	"github.com/magefile/mage/mg"
 )
 
@@ -54,7 +55,7 @@ func Build(ctx context.Context) error {
 //
 // For details see [Terraform.Validate]
 func Validate(ctx context.Context) error {
-	mg.CtxDeps(ctx, Terraform.Validate, PolicyBotConfig.Validate, CatalogInfo.Validate)
+	mg.CtxDeps(ctx, golangTargets.ValidateVersion, Terraform.Validate, PolicyBotConfig.Validate, CatalogInfo.Validate)
 	return nil
 }
 

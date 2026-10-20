@@ -11,6 +11,12 @@ import (
 	"github.com/magefile/mage/mg"
 )
 
+// ValidateVersion verifies that no go.mod declares a go version newer than
+// the version supported by mage. A newer installed toolchain is allowed.
+func ValidateVersion(_ context.Context) error {
+	return golang.ValidateGoModVersions(".")
+}
+
 // Generate runs commands described by directives within existing files with
 // the intent to generate Go code. Those commands can run any process but the
 // intent is to create or update Go source files

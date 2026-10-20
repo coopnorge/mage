@@ -32,16 +32,22 @@ func (g Go) Run(env map[string]string, args ...string) error {
 	return g.runNative(env, args...)
 }
 
-func (g Go) versionOK() error {
+// GolangVersion returns the Go version tracked in tools.Dockerfile. This is
+// the maximum Go version consumers may declare in their go.mod.
+func GolangVersion() (*version.Version, error) {
 	devtoolData, err := getTool(ToolsDockerfile, "golang")
 	if err != nil {
-		return err
+		return nil, err
 	}
+	return version.NewVersion(devtoolData.version)
+}
+
+func (g Go) versionOK() error {
 	current, err := version.NewVersion(strings.TrimPrefix(runtime.Version(), "go"))
 	if err != nil {
 		return err
 	}
-	devtool, err := version.NewVersion(devtoolData.version)
+	devtool, err := GolangVersion()
 	if err != nil {
 		return err
 	}

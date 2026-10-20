@@ -11,6 +11,7 @@ import (
 	"context"
 
 	"github.com/coopnorge/mage/internal/core"
+	golangTargets "github.com/coopnorge/mage/internal/targets/golang"
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 )
@@ -37,7 +38,7 @@ func Build(ctx context.Context) error {
 //
 // For details see [Go.Validate].
 func Validate(ctx context.Context) error {
-	mg.SerialCtxDeps(ctx, Go.Validate, PolicyBotConfig.Validate, Pallets.Validate)
+	mg.SerialCtxDeps(ctx, golangTargets.ValidateVersion, Go.Validate, PolicyBotConfig.Validate, Pallets.Validate)
 	return nil
 }
 
