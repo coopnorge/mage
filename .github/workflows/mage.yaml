@@ -100,7 +100,7 @@ jobs:
           SPACELIFT_READ_TOKEN: ${{ secrets.SPACELIFT_READ_TOKEN }}
 
       - name: Setup coop-mage
-        uses: coopnorge/github-action-setup-mage@v0.0.4
+        uses: $/.github/actions/setup-mage
 
       - name: Install OpenTofu
         if: ${{ inputs.opentofu-version != '' }}

@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-action.json
+name: setup coop-mage
+description: |
+  Sets up coop-mage binary for use. It compiles the binary as `coop-mage` and adds it to the path.
+
+  Example usage from this repository (including its reusable workflows):
+
+    steps:
+      - uses: $/.github/actions/setup-mage
+      - run: coop-mage <target>
+
+  Example usage from an external repository:
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: coopnorge/mage/.github/actions/setup-mage@<release-tag, e.g. vX.Y.Z>
+      - run: coop-mage <target>
+
+runs:
+  using: composite
+  steps:
+    - name: Restore Pre-compiled coop-mage
+      id: mage-cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/bin/coop-mage
+        key: coop-mage-bin-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('magefiles/**', 'magefile.go', 'go.mod', 'go.sum') }}
+
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      if: steps.mage-cache.outputs.cache-hit != 'true'
+
+    - name: Set up Go
+      if: steps.mage-cache.outputs.cache-hit != 'true'
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      with:
+        go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
+        cache-dependency-path: "**/go.sum"
+
+    - name: Compile coop-mage
+      if: steps.mage-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        mkdir -p "${{ runner.temp }}/bin"
+        go tool mage -compile "${{ runner.temp }}/bin/coop-mage"
+
+    - name: Add coop-mage to PATH
+      shell: bash
+      run: |
+        chmod +x "${{ runner.temp }}/bin/coop-mage" 2>/dev/null || true
+        echo "${{ runner.temp }}/bin" >> "$GITHUB_PATH"
