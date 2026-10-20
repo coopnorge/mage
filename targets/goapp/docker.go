@@ -145,11 +145,16 @@ func (Docker) BuildImages(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	for _, app := range apps {
+		if err := stageAssets(app, assets[app]); err != nil {
+			return err
+		}
+	}
 
 	deps := []any{}
 	for _, cmd := range cmds {
 		for _, binary := range cmd.binaries {
-			deps = append(deps, mg.F(buildAndPush, cmd.goModule, binary, shouldPush, assets[cmd.goModule]))
+			deps = append(deps, mg.F(buildAndPush, cmd.goModule, binary, shouldPush))
 		}
 	}
 	mg.CtxDeps(ctx, deps...)
@@ -157,12 +162,12 @@ func (Docker) BuildImages(ctx context.Context) error {
 	return writeImageMetadata()
 }
 
-func buildAndPush(_ context.Context, app, binary string, shouldPush bool, assetsDir string) error {
+func buildAndPush(_ context.Context, app, binary string, shouldPush bool) error {
 	imageName := docker.FullyQualifiedlImageName(app, binary)
 	imagePath := imagePath(app, binary)
 	metadataPath := metadataPath(app, binary)
 
-	return docker.BuildAndPush(dockerfile, golang.DockerPlatforms(), imageName, ".", imagePath, metadataPath, app, binary, shouldPush, assetsDir)
+	return docker.BuildAndPush(dockerfile, golang.DockerPlatforms(), imageName, ".", imagePath, metadataPath, app, binary, shouldPush)
 }
 
 func writeImageMetadata() error {

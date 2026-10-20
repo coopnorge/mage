@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/coopnorge/mage/internal/core"
 )
 
 // findAssets maps each app with assets to the absolute path of its directory under
@@ -69,4 +71,28 @@ func findAssets(apps []string) (map[string]string, error) {
 	}
 
 	return content, nil
+}
+
+// stageAssets replaces the app's assets in the build context, at
+// var/<app>/assets, with the content of source. An empty source leaves the
+// directory empty.
+func stageAssets(app, source string) error {
+	destination := assetsPath(app)
+	if err := os.RemoveAll(destination); err != nil {
+		return fmt.Errorf("clear the assets of %s: %w", app, err)
+	}
+	if err := os.MkdirAll(destination, 0o755); err != nil {
+		return fmt.Errorf("create the assets directory of %s: %w", app, err)
+	}
+	if source == "" {
+		return nil
+	}
+	if err := os.CopyFS(destination, os.DirFS(source)); err != nil {
+		return fmt.Errorf("copy the assets of %s: %w", app, err)
+	}
+	return nil
+}
+
+func assetsPath(app string) string {
+	return filepath.Join(core.OutputDir, app, "assets")
 }
