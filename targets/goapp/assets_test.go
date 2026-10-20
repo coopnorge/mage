@@ -45,13 +45,13 @@ func TestAssets(t *testing.T) {
 			name:   "app directory missing",
 			files:  []string{"app1/index.html"},
 			apps:   []string{"app1", "app2"},
-			errMsg: "GOAPP_ASSETS: <root> has no directory for app2; every app needs one, empty for an app without assets",
+			errMsg: "GOAPP_ASSETS: <root> has no directory for app2; create empty directory for an app without assets",
 		},
 		{
 			name:   "several app directories missing",
 			files:  []string{"app2/"},
 			apps:   []string{"app1", "app2", "app3"},
-			errMsg: "GOAPP_ASSETS: <root> has no directory for app1, app3; every app needs one, empty for an app without assets",
+			errMsg: "GOAPP_ASSETS: <root> has no directory for app1, app3; create empty directory for an app without assets",
 		},
 		{
 			name:   "app directory is a file",
@@ -129,4 +129,84 @@ func TestAssets(t *testing.T) {
 
 func replaceRoot(text, root string) string {
 	return strings.ReplaceAll(text, "<root>", root)
+}
+
+func TestStageAssets(t *testing.T) {
+	tests := []struct {
+		name string
+		app  string
+		// stale files are left in the app's staged assets by an earlier build.
+		stale []string
+		// source files are the app's assets, none meaning an app without
+		// assets.
+		source []string
+		want   []string
+	}{
+		{
+			name: "first build without assets",
+			app:  "app1",
+			want: []string{},
+		},
+		{
+			name:   "first build with assets",
+			app:    "app1",
+			source: []string{"index.html", "assets/main.js"},
+			want:   []string{"assets/main.js", "index.html"},
+		},
+		{
+			name:   "assets replace an earlier build's",
+			app:    "app1",
+			stale:  []string{"old.html", "assets/old.js"},
+			source: []string{"index.html", "assets/main.js"},
+			want:   []string{"assets/main.js", "index.html"},
+		},
+		{
+			name:  "no assets clear an earlier build's",
+			app:   "app1",
+			stale: []string{"old.html"},
+			want:  []string{},
+		},
+		{
+			name:   "nested app",
+			app:    "apps/app1",
+			source: []string{"index.html"},
+			want:   []string{"index.html"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Chdir(t.TempDir())
+			writeFiles(t, assetsPath(test.app), test.stale)
+
+			source := ""
+			if test.source != nil {
+				source = t.TempDir()
+				writeFiles(t, source, test.source)
+			}
+
+			require.NoError(t, stageAssets(test.app, source))
+
+			got := []string{}
+			err := filepath.WalkDir(assetsPath(test.app), func(path string, entry os.DirEntry, err error) error {
+				if err != nil || entry.IsDir() {
+					return err
+				}
+				relative, err := filepath.Rel(assetsPath(test.app), path)
+				got = append(got, filepath.ToSlash(relative))
+				return err
+			})
+			require.NoError(t, err)
+			assert.Equal(t, test.want, got)
+		})
+	}
+}
+
+func writeFiles(t *testing.T, root string, files []string) {
+	t.Helper()
+	for _, file := range files {
+		path := filepath.Join(root, file)
+		require.NoError(t, os.MkdirAll(filepath.Dir(path), 0o755))
+		require.NoError(t, os.WriteFile(path, []byte(file), 0o644))
+	}
 }

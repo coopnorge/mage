@@ -163,8 +163,8 @@ service-account: gh-ap-helloworld@helloworld-shared-0918.iam.gserviceaccount.com
 
 #### Adding assets to images
 
-An app's image can contain additional files, for example web assets, images.
-To inject additional files set `GOAPP_ASSETS` environment variable to the directory
+An app's image can contain additional files, for example web assets, images. To
+inject additional files set `GOAPP_ASSETS` environment variable to the directory
 containing assets. The assets directory must reflect the app modules structure.
 
 ```text
@@ -175,13 +175,14 @@ assets
 └── app2
 ```
 
-- Every app needs a directory. Leave it empty for an app without assets - missing
-  directory fails the build instead of shipping an image without its
+- Every app needs a directory. Leave it empty for an app without assets -
+  missing directory fails the build instead of shipping an image without its
   assets.
 - Mage ignores directories that match no app.
 
 Each of an app's images contains the content of its directory at
-`/usr/local/share/<app>` - this path is exported via `GOAPP_ASSETS_DIR` environmental variable.
+`/usr/local/share/<app>` - this path is exported via `GOAPP_ASSETS_DIR`
+environmental variable.
 
 To build the images locally:
 

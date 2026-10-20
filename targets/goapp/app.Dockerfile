@@ -1,8 +1,5 @@
 FROM docker.io/kvij/scuttle:1.1.17@sha256:95778d965791ff21fae43c00dc92ecf6ff61e58835d1d9fbc0bb2d4bd66ecec4 AS scuttle
 FROM docker.io/library/alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 AS alpine
-# Replaced by --build-context assets=<dir> when the app has assets, empty
-# otherwise.
-FROM scratch AS assets
 
 FROM alpine AS runtime
 
@@ -36,7 +33,7 @@ RUN \
     ln -vfs /usr/share/zoneinfo/UTC /etc/localtime && \
     true
 
-COPY --from=assets / /usr/local/share/${APP}/
+COPY ./var/${APP}/assets/ /usr/local/share/${APP}/
 ENV GOAPP_ASSETS_DIR=/usr/local/share/${APP}
 
 ARG GIT_REPOSITORY_URL
