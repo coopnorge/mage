@@ -143,9 +143,8 @@ jobs:
         name: Create release
         id: make-release
         if: ${{ inputs.push && inputs.tag-based-diff }}
-        env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
         with:
+          token: ${{ steps.generate_token.outputs.token }}
           commitish: ${{ github.sha }}
           config-name: "release-drafter.yml"
           publish: true
