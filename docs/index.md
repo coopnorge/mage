@@ -161,6 +161,61 @@ workload-identity-provider: projects/889992792607/locations/global/workloadIdent
 service-account: gh-ap-helloworld@helloworld-shared-0918.iam.gserviceaccount.com
 ```
 
+#### Adding assets to images
+
+An app's image can contain additional files, for example web assets, images.
+To inject additional files set `GOAPP_ASSETS` environment variable to the directory
+containing assets. The assets directory must reflect the app modules structure.
+
+```text
+assets
+├── app1
+│   ├── index.html
+│   └── main.js
+└── app2
+```
+
+- Every app needs a directory. Leave it empty for an app without assets - missing
+  directory fails the build instead of shipping an image without its
+  assets.
+- Mage ignores directories that match no app.
+
+Each of an app's images contains the content of its directory at
+`/usr/local/share/<app>` - this path is exported via `GOAPP_ASSETS_DIR` environmental variable.
+
+To build the images locally:
+
+```console
+GOAPP_ASSETS=path/to/assets go tool mage docker:buildImages
+```
+
+In GitHub Actions, upload the directory as an artifact from an earlier job and
+pass its name in `assets-artifact`. The `goapp` job downloads it before building
+the images:
+
+```yaml
+web-bundle:
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v7
+    # ... build the bundle into build/web
+    - run: |
+        mkdir -p assets
+        mv build/web assets/app1
+    - uses: actions/upload-artifact@v7
+      with:
+        name: app-assets
+        path: assets/
+
+go-app:
+  needs: web-bundle
+  uses: coopnorge/mage/.github/workflows/goapp.yaml@main
+  # permissions and secrets as above
+  with:
+    # inputs as above
+    assets-artifact: app-assets
+```
+
 ### When using `golib` as target
 
 ```yaml
