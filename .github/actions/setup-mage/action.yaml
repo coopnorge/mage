@@ -33,7 +33,7 @@ runs:
       if: steps.mage-cache.outputs.cache-hit != 'true'
       uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
-        go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
+        go-version: "1.27.2" # renovate: datasource=docker depName=docker.io/library/golang
         cache-dependency-path: "**/go.sum"
 
     - name: Compile coop-mage
