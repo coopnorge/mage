@@ -139,7 +139,7 @@ jobs:
           fi
           echo "tag=$(echo $OCI_TAG)" >> $GITHUB_OUTPUT
 
-      - uses: release-drafter/release-drafter@72967cdc98ddd3160f1fc3dff619de365e137dd0 # v7.9.0
+      - uses: release-drafter/release-drafter@978bb0b30c5ee8cdd332ced253758157150d43f0 # v7.10.0
         name: Create release
         id: make-release
         if: ${{ inputs.push && inputs.tag-based-diff }}
