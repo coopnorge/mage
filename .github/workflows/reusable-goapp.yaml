@@ -54,6 +54,12 @@ on:
         type: boolean
         default: true
         description: If set to false, disable the Go module/build cache for the Go Build job.
+      assets-artifact-id:
+        type: string
+        default: ""
+        description: >-
+          ID of an artifact, uploaded earlier in the same workflow run (the `artifact-id` output of
+          `actions/upload-artifact`), containing the assets to add to the OCI images.
     outputs:
       oci-images:
         value: ${{ jobs.go-build-and-push.outputs.oci-images || '{}' }}
@@ -153,6 +159,7 @@ jobs:
       push: false
       go-runtime: ${{ inputs.go-runtime }}
       go-cache-enabled: ${{ inputs.go-build-cache-enabled }}
+      assets-artifact-id: ${{ inputs.assets-artifact-id }}
 
   go-build-and-push:
     name: Go build and push
@@ -176,3 +183,4 @@ jobs:
       go-runtime: ${{ inputs.go-runtime }}
       tag-based-diff: ${{ inputs.tag-based-diff }}
       go-cache-enabled: ${{ inputs.go-build-cache-enabled }}
+      assets-artifact-id: ${{ inputs.assets-artifact-id }}
