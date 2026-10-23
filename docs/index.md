@@ -191,19 +191,22 @@ GOAPP_ASSETS=path/to/assets go tool mage docker:buildImages
 ```
 
 In GitHub Actions, upload the directory as an artifact from an earlier job and
-pass its name in `assets-artifact`. The `goapp` job downloads it before building
-the images:
+pass its ID in `assets-artifact-id`. The `goapp` job downloads it before
+building the images:
 
 ```yaml
 web-bundle:
   runs-on: ubuntu-latest
+  outputs:
+    assets-artifact-id: ${{ steps.upload.outputs.artifact-id }}
   steps:
     - uses: actions/checkout@v7
     # ... build the bundle into build/web
     - run: |
         mkdir -p assets
         mv build/web assets/app1
-    - uses: actions/upload-artifact@v7
+    - id: upload
+      uses: actions/upload-artifact@v7
       with:
         name: app-assets
         path: assets/
@@ -214,7 +217,7 @@ go-app:
   # permissions and secrets as above
   with:
     # inputs as above
-    assets-artifact: app-assets
+    assets-artifact-id: ${{ needs.web-bundle.outputs.assets-artifact-id }}
 ```
 
 ### When using `golib` as target

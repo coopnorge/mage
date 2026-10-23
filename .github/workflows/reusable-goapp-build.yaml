@@ -39,12 +39,12 @@ on:
         type: boolean
         default: true
         description: If set to false, disable the Go module/build cache for the Go Build job.
-      assets-artifact:
+      assets-artifact-id:
         type: string
         default: ""
         description: >-
-          Name of an artifact, uploaded earlier in the same workflow run, containing the assets to
-          add to the OCI images.
+          ID of an artifact, uploaded earlier in the same workflow run (the `artifact-id` output of
+          `actions/upload-artifact`), containing the assets to add to the OCI images.
     outputs:
       oci-images:
         value: ${{ jobs.go-build.outputs.oci-images }}
@@ -108,10 +108,10 @@ jobs:
           go-version: "1.27.1" # renovate: datasource=docker depName=docker.io/library/golang
           cache: false
       - name: Download assets
-        if: ${{ inputs.assets-artifact != '' }}
+        if: ${{ inputs.assets-artifact-id != '' }}
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: ${{ inputs.assets-artifact }}
+          artifact-ids: ${{ inputs.assets-artifact-id }}
           path: ${{ runner.temp }}/goapp-assets
       - name: Run Go Build
         run: "coop-mage -v go:buildBinaries"
@@ -121,7 +121,7 @@ jobs:
           OCI_IMAGE_BASE: ${{ inputs.oci-image-base }}
           PUSH_IMAGE: ${{ inputs.push && inputs.push-oci-image }}
           GO_RUNTIME: ${{ inputs.go-runtime }}
-          GOAPP_ASSETS: ${{ inputs.assets-artifact != '' && format('{0}/goapp-assets', runner.temp) || '' }}
+          GOAPP_ASSETS: ${{ inputs.assets-artifact-id != '' && format('{0}/goapp-assets', runner.temp) || '' }}
       - id: oci-images
         name: Output OCI images references
         run: |
