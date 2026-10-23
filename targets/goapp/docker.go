@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path"
 	"strconv"
@@ -141,12 +142,12 @@ func (Docker) BuildImages(ctx context.Context) error {
 	for _, cmd := range cmds {
 		apps = append(apps, cmd.goModule)
 	}
-	assets, err := findAssets(apps)
+	assets, err := docker.FindAssets(os.Getenv(AssetsEnv), apps)
 	if err != nil {
-		return err
+		return fmt.Errorf("%s: %w", AssetsEnv, err)
 	}
 	for _, app := range apps {
-		if err := stageAssets(app, assets[app]); err != nil {
+		if err := docker.StageAssets(app, assets[app]); err != nil {
 			return err
 		}
 	}
