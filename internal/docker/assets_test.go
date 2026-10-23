@@ -1,4 +1,4 @@
-package goapp
+package docker_test
 
 import (
 	"os"
@@ -6,11 +6,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/coopnorge/mage/internal/core"
+	"github.com/coopnorge/mage/internal/docker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestAssets(t *testing.T) {
+func TestFindAssets(t *testing.T) {
 	tests := []struct {
 		name string
 		// files are created under the assets root, a trailing slash
@@ -18,46 +20,46 @@ func TestAssets(t *testing.T) {
 		files  []string
 		root   string
 		apps   []string
-		unset  bool
+		noRoot bool
 		want   map[string]string
 		errMsg string
 	}{
 		{
-			name:  "unset",
-			unset: true,
-			apps:  []string{"app1"},
-			want:  map[string]string{},
+			name:   "no root",
+			noRoot: true,
+			apps:   []string{"app1"},
+			want:   map[string]string{},
 		},
 		{
 			name:   "root missing",
 			root:   "does-not-exist",
 			apps:   []string{"app1"},
-			errMsg: "GOAPP_ASSETS: stat",
+			errMsg: "stat <root>/does-not-exist: no such file or directory",
 		},
 		{
 			name:   "root is a file",
 			files:  []string{"file"},
 			root:   "file",
 			apps:   []string{"app1"},
-			errMsg: "GOAPP_ASSETS: <root>/file is not a directory",
+			errMsg: "<root>/file is not a directory",
 		},
 		{
 			name:   "app directory missing",
 			files:  []string{"app1/index.html"},
 			apps:   []string{"app1", "app2"},
-			errMsg: "GOAPP_ASSETS: <root> has no directory for app2; create empty directory for an app without assets",
+			errMsg: "<root> has no directory for app2; create empty directory for an app without assets",
 		},
 		{
 			name:   "several app directories missing",
 			files:  []string{"app2/"},
 			apps:   []string{"app1", "app2", "app3"},
-			errMsg: "GOAPP_ASSETS: <root> has no directory for app1, app3; create empty directory for an app without assets",
+			errMsg: "<root> has no directory for app1, app3; create empty directory for an app without assets",
 		},
 		{
 			name:   "app directory is a file",
 			files:  []string{"app1"},
 			apps:   []string{"app1"},
-			errMsg: "GOAPP_ASSETS: <root>/app1 is not a directory",
+			errMsg: "<root>/app1 is not a directory",
 		},
 		{
 			name:  "empty app directory",
@@ -87,7 +89,7 @@ func TestAssets(t *testing.T) {
 			name:   "app in the repository root",
 			files:  []string{"index.html"},
 			apps:   []string{"."},
-			errMsg: "GOAPP_ASSETS: assets are not supported for an app in the repository root",
+			errMsg: "assets are not supported for an app in the repository root",
 		},
 	}
 
@@ -104,13 +106,12 @@ func TestAssets(t *testing.T) {
 				require.NoError(t, os.WriteFile(path, []byte("content"), 0o644))
 			}
 
-			if test.unset {
-				t.Setenv(AssetsEnv, "")
-			} else {
-				t.Setenv(AssetsEnv, filepath.Join(root, test.root))
+			assetsRoot := filepath.Join(root, test.root)
+			if test.noRoot {
+				assetsRoot = ""
 			}
 
-			got, err := findAssets(test.apps)
+			got, err := docker.FindAssets(assetsRoot, test.apps)
 
 			if test.errMsg != "" {
 				require.Error(t, err)
@@ -177,7 +178,8 @@ func TestStageAssets(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Chdir(t.TempDir())
-			writeFiles(t, assetsPath(test.app), test.stale)
+			staged := filepath.Join(core.OutputDir, test.app, "assets")
+			writeFiles(t, staged, test.stale)
 
 			source := ""
 			if test.source != nil {
@@ -185,14 +187,14 @@ func TestStageAssets(t *testing.T) {
 				writeFiles(t, source, test.source)
 			}
 
-			require.NoError(t, stageAssets(test.app, source))
+			require.NoError(t, docker.StageAssets(test.app, source))
 
 			got := []string{}
-			err := filepath.WalkDir(assetsPath(test.app), func(path string, entry os.DirEntry, err error) error {
+			err := filepath.WalkDir(staged, func(path string, entry os.DirEntry, err error) error {
 				if err != nil || entry.IsDir() {
 					return err
 				}
-				relative, err := filepath.Rel(assetsPath(test.app), path)
+				relative, err := filepath.Rel(staged, path)
 				got = append(got, filepath.ToSlash(relative))
 				return err
 			})

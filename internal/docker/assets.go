@@ -1,4 +1,4 @@
-package goapp
+package docker
 
 import (
 	"errors"
@@ -11,28 +11,27 @@ import (
 	"github.com/coopnorge/mage/internal/core"
 )
 
-// findAssets maps each app with assets to the absolute path of its directory under
-// the AssetsEnv directory. Apps whose directory is empty are left out. Without
-// AssetsEnv set, no app has assets.
-func findAssets(apps []string) (map[string]string, error) {
-	root := os.Getenv(AssetsEnv)
+// FindAssets maps each app with assets to the absolute path of its directory
+// under root, which holds one directory per app. Apps whose directory is empty
+// are left out. With an empty root, no app has assets.
+func FindAssets(root string, apps []string) (map[string]string, error) {
 	if root == "" {
 		return map[string]string{}, nil
 	}
 
 	info, err := os.Stat(root)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", AssetsEnv, err)
+		return nil, err
 	}
 	if !info.IsDir() {
-		return nil, fmt.Errorf("%s: %s is not a directory", AssetsEnv, root)
+		return nil, fmt.Errorf("%s is not a directory", root)
 	}
 
 	content := map[string]string{}
 	missing := []string{}
 	for _, app := range apps {
 		if app == "." {
-			return nil, fmt.Errorf("%s: assets are not supported for an app in the repository root", AssetsEnv)
+			return nil, errors.New("assets are not supported for an app in the repository root")
 		}
 
 		directory := filepath.Join(root, app)
@@ -42,15 +41,15 @@ func findAssets(apps []string) (map[string]string, error) {
 			continue
 		}
 		if err != nil {
-			return nil, fmt.Errorf("%s: %w", AssetsEnv, err)
+			return nil, err
 		}
 		if !info.IsDir() {
-			return nil, fmt.Errorf("%s: %s is not a directory", AssetsEnv, directory)
+			return nil, fmt.Errorf("%s is not a directory", directory)
 		}
 
 		entries, err := os.ReadDir(directory)
 		if err != nil {
-			return nil, fmt.Errorf("%s: %w", AssetsEnv, err)
+			return nil, err
 		}
 		if len(entries) == 0 {
 			continue
@@ -58,25 +57,25 @@ func findAssets(apps []string) (map[string]string, error) {
 
 		absolute, err := filepath.Abs(directory)
 		if err != nil {
-			return nil, fmt.Errorf("%s: %w", AssetsEnv, err)
+			return nil, err
 		}
 		content[app] = absolute
 	}
 
 	if len(missing) > 0 {
 		return nil, fmt.Errorf(
-			"%s: %s has no directory for %s; create empty directory for an app without assets",
-			AssetsEnv, root, strings.Join(missing, ", "),
+			"%s has no directory for %s; create empty directory for an app without assets",
+			root, strings.Join(missing, ", "),
 		)
 	}
 
 	return content, nil
 }
 
-// stageAssets replaces the app's assets in the build context, at
+// StageAssets replaces the app's assets in the build context, at
 // var/<app>/assets, with the content of source. An empty source leaves the
 // directory empty.
-func stageAssets(app, source string) error {
+func StageAssets(app, source string) error {
 	destination := assetsPath(app)
 	if err := os.RemoveAll(destination); err != nil {
 		return fmt.Errorf("clear the assets of %s: %w", app, err)
