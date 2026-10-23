@@ -84,12 +84,12 @@ on:
         type: boolean
         default: true
         description: If set to false, disable the Go module/build cache for the Go Build job.
-      assets-artifact:
+      assets-artifact-id:
         type: string
         default: ""
         description: >-
-          Name of an artifact, uploaded earlier in the same workflow run, containing the assets to
-          add to the OCI images.
+          ID of an artifact, uploaded earlier in the same workflow run (the `artifact-id` output of
+          `actions/upload-artifact`), containing the assets to add to the OCI images.
 
     outputs:
       oci-images:
@@ -193,7 +193,7 @@ jobs:
       go-test-cache-enabled: ${{ inputs.go-test-cache-enabled }}
       go-test-coverpkg-all: ${{ inputs.go-test-coverpkg-all }}
       go-build-cache-enabled: ${{ inputs.go-build-cache-enabled }}
-      assets-artifact: ${{ inputs.assets-artifact }}
+      assets-artifact-id: ${{ inputs.assets-artifact-id }}
 
   terraform:
     name: Terraform
