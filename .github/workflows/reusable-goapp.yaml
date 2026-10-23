@@ -76,14 +76,14 @@ jobs:
         if: ${{ inputs.go-lint-cache-enabled }}
         uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1.0.0
         with:
-          go-version: "1.27.2" # renovate: datasource=docker depName=docker.io/library/golang
+          go-version: "1.27.3" # renovate: datasource=docker depName=docker.io/library/golang
           cache-key-prefix: go-lint
           cache-dependency-path: "**/go.sum"
       - name: Set up Go (cache disabled)
         if: ${{ !inputs.go-lint-cache-enabled }}
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: "1.27.2" # renovate: datasource=docker depName=docker.io/library/golang
+          go-version: "1.27.3" # renovate: datasource=docker depName=docker.io/library/golang
           cache: false
       - name: Setup Golangci Lint
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
@@ -117,14 +117,14 @@ jobs:
         if: ${{ inputs.go-test-cache-enabled }}
         uses: cloudx-io/setup-go@8b45cf394acf101459db0d47aa9735a4fe5eea63 # v1.0.0
         with:
-          go-version: "1.27.2" # renovate: datasource=docker depName=docker.io/library/golang
+          go-version: "1.27.3" # renovate: datasource=docker depName=docker.io/library/golang
           cache-key-prefix: go-test
           cache-dependency-path: "**/go.sum"
       - name: Set up Go (cache disabled)
         if: ${{ !inputs.go-test-cache-enabled }}
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: "1.27.2" # renovate: datasource=docker depName=docker.io/library/golang
+          go-version: "1.27.3" # renovate: datasource=docker depName=docker.io/library/golang
           cache: false
       - name: Run Go Test
         run: "coop-mage -v go:test"
