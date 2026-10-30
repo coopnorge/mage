@@ -56,6 +56,12 @@
             "allowedVersions": "< 1.6.0"
         },
         {
+            "matchPackageNames": ["terraform"],
+            "matchManagers": ["github-actions"],
+            "matchDepTypes": ["action"],
+            "allowedVersions": "< 1.6.0"
+        },
+        {
             "matchPackageNames": ["ghcr.io/opentofu/opentofu"],
             "matchManagers": ["dockerfile", "docker-compose"],
             "allowedVersions": "< 1.7.0"
