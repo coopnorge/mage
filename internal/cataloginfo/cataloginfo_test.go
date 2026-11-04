@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -231,4 +232,53 @@ func TestValidate(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "catalog info is missing owner")
 	})
+}
+
+func TestMetadataNameLength(t *testing.T) {
+	component := func(name string) string {
+		return "apiVersion: backstage.io/v1alpha1\nkind: Component\nmetadata:\n  name: " + name +
+			"\nspec:\n  type: service\n  lifecycle: production\n  owner: team-a\n"
+	}
+	api := func(name string) string {
+		return "apiVersion: backstage.io/v1alpha1\nkind: API\nmetadata:\n  name: " + name +
+			"\nspec:\n  type: grpc\n  lifecycle: production\n  owner: team-a\n  definition: some-definition\n"
+	}
+	name63 := strings.Repeat("a", 63)
+	name64 := strings.Repeat("a", 64)
+
+	tests := []struct {
+		name        string
+		content     string
+		errContains []string
+	}{
+		{name: "63 characters passes", content: component(name63)},
+		{name: "64 characters fails", content: component(name64), errContains: []string{
+			"Component", `"` + name64 + `"`, "64 characters", "maximum of 63",
+		}},
+		{name: "long API name fails with kind", content: api(strings.Repeat("b", 118)), errContains: []string{
+			"API", "118 characters",
+		}},
+		{name: "multi-document file passes when all within limit", content: component("short") + "---\n" + api(name63)},
+		{name: "multi-document file fails on later document", content: component("short") + "---\n" + api(name64), errContains: []string{
+			"doc 2", "API", "64 characters",
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			require.NoError(t, os.WriteFile(filepath.Join(dir, "catalog-info.yaml"), []byte(tt.content), 0o600))
+			t.Chdir(dir)
+
+			_, err := parseCatalogInfoFiles()
+			if len(tt.errContains) == 0 {
+				require.NoError(t, err)
+				return
+			}
+			require.Error(t, err)
+			for _, s := range tt.errContains {
+				assert.Contains(t, err.Error(), s)
+			}
+		})
+	}
 }
