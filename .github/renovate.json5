@@ -56,9 +56,9 @@
             "allowedVersions": "< 1.6.0"
         },
         {
-            "matchPackageNames": ["terraform"],
+            "matchPackageNames": ["hashicorp/terraform"],
             "matchManagers": ["github-actions"],
-            "matchDepTypes": ["action"],
+            "matchDepTypes": ["uses-with"],
             "allowedVersions": "< 1.6.0"
         },
         {
