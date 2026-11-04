@@ -31,7 +31,7 @@ jobs:
       pull-requests: write
       id-token: write
       issues: write
-    uses: coopnorge/github-workflow-renovate/.github/workflows/renovate.yaml@v0.28.1
+    uses: coopnorge/github-workflow-renovate/.github/workflows/renovate.yaml@v0.29.0
     secrets: inherit
     with:
       log-level: ${{ github.event.inputs.log-level || 'debug' }}
