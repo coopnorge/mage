@@ -21,6 +21,12 @@ on:
         type: string
         default: ""
         description: If set, install this version of OpenTofu and set USE_TOFU=true so mage uses the tofu devtool instead of terraform.
+      catalog-info-allow-multiple-owners:
+        type: boolean
+        default: false
+        description: >-
+          Opt-in. If set to true, catalog info validation skips the rule that all catalog objects
+          must have the same owner and instead checks that each distinct owner is a GitHub team.
 
 jobs:
   detect-changes:
@@ -108,6 +114,8 @@ jobs:
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.catalog-info == 'true'  }}
     uses: ./.github/workflows/reusable-catalog-info.yaml
+    with:
+      catalog-info-allow-multiple-owners: ${{ inputs.catalog-info-allow-multiple-owners }}
     permissions:
       contents: read
       pull-requests: read
