@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
+	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/git"
@@ -14,6 +16,11 @@ import (
 	backstage "github.com/datolabs-io/go-backstage/v3"
 	"gopkg.in/yaml.v3"
 )
+
+// AllowMultipleOwnersEnv is the environment variable that, when set to a true
+// value, makes Validate accept different owners across catalog objects, as
+// long as each distinct owner is a GitHub team.
+const AllowMultipleOwnersEnv = "CATALOG_INFO_ALLOW_MULTIPLE_OWNERS"
 
 type catalogInfoData struct {
 	System     *backstage.SystemEntityV1alpha1
@@ -46,18 +53,43 @@ type entityHeader struct {
 
 // Validate validates the catalog-info files
 func Validate() error {
+	allowMultiple, err := allowMultipleOwners()
+	if err != nil {
+		return err
+	}
 	data, err := parseCatalogInfoFiles()
 	if err != nil {
 		return err
 	}
-	owner, err := validateOwnerConsistency(data)
+	var owners []string
+	if allowMultiple {
+		owners, err = collectOwners(data)
+	} else {
+		var owner string
+		owner, err = validateOwnerConsistency(data)
+		if err == nil && owner == "" {
+			err = fmt.Errorf("catalog info is missing owner")
+		}
+		owners = []string{owner}
+	}
 	if err != nil {
 		return err
 	}
-	if owner == "" {
-		return fmt.Errorf("catalog info is missing owner")
+	return validateOwnersExistInGithub(owners)
+}
+
+// allowMultipleOwners reports whether the single-owner rule is relaxed. It is
+// opt-in via the environment variable [AllowMultipleOwnersEnv].
+func allowMultipleOwners() (bool, error) {
+	value := os.Getenv(AllowMultipleOwnersEnv)
+	if value == "" {
+		return false, nil
 	}
-	return validateOwnerExistsInGithub(owner)
+	enabled, err := strconv.ParseBool(value)
+	if err != nil {
+		return false, fmt.Errorf("invalid value %q for %s: %w", value, AllowMultipleOwnersEnv, err)
+	}
+	return enabled, nil
 }
 
 // HasChanges checks if the current branch has policy bot config file changes
@@ -144,23 +176,60 @@ func validateOwnerConsistency(data *catalogInfoData) (string, error) {
 	return first.Owner, nil
 }
 
-func validateOwnerExistsInGithub(owner string) error {
+// collectOwners returns the distinct owners in first-seen order.
+func collectOwners(data *catalogInfoData) ([]string, error) {
+	entityOwners := getEntityOwners(data)
+	if len(entityOwners) == 0 {
+		return nil, fmt.Errorf("catalog info is missing owner")
+	}
+	var owners []string
+	for _, eo := range entityOwners {
+		if eo.Owner == "" {
+			return nil, fmt.Errorf("catalog info is missing owner")
+		}
+		if !slices.Contains(owners, eo.Owner) {
+			owners = append(owners, eo.Owner)
+		}
+	}
+	return owners, nil
+}
+
+func validateOwnersExistInGithub(owners []string) error {
 	teams, err := github.ListAllTeams()
 	if err != nil {
 		if !github.InCI() {
-			fmt.Printf("WARNING: unable to validate catalog owner %q against GitHub teams: %v\n", owner, err)
+			fmt.Printf("WARNING: unable to validate catalog owner %s against GitHub teams: %v\n", quoteAll(owners), err)
 			return nil
 		}
 		validationErr := fmt.Errorf("failed to fetch GitHub teams: %w", err)
 		github.PrintActionMessage("error", "Catalog owner validation failed", validationErr.Error())
 		return validationErr
 	}
-	if slices.Contains(teams, owner) {
+	var unknown []string
+	for _, owner := range owners {
+		if !slices.Contains(teams, owner) {
+			unknown = append(unknown, owner)
+		}
+	}
+	if len(unknown) == 0 {
 		return nil
 	}
-	validationErr := fmt.Errorf("owner %q is not a valid GitHub team in coopnorge", owner)
+	var validationErr error
+	if len(unknown) == 1 {
+		validationErr = fmt.Errorf("owner %q is not a valid GitHub team in coopnorge", unknown[0])
+	} else {
+		validationErr = fmt.Errorf("owners %s are not valid GitHub teams in coopnorge", quoteAll(unknown))
+	}
 	github.PrintActionMessage("error", "Catalog owner validation failed", validationErr.Error())
 	return validationErr
+}
+
+func quoteAll(values []string) string {
+	quoted := make([]string, len(values))
+	for i, v := range values {
+		quoted[i] = strconv.Quote(v)
+	}
+	return strings.Join(quoted, ", ")
 }
 
 func parseCatalogInfoFiles() (*catalogInfoData, error) {
