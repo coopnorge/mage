@@ -36,6 +36,11 @@ type apiSpec struct {
 	Definition yaml.Node `yaml:"definition"`
 }
 
+// maxMetadataNameLength is the maximum length Backstage allows for
+// metadata.name, see
+// https://backstage.io/docs/features/software-catalog/descriptor-format
+const maxMetadataNameLength = 63
+
 type entityHeader struct {
 	APIVersion string `yaml:"apiVersion"`
 	Kind       string `yaml:"kind"`
@@ -231,6 +236,11 @@ func parseDocument(node *yaml.Node, docIdx int, filePath string, data *catalogIn
 	}
 	if header.Metadata.Name == "" {
 		return fmt.Errorf("doc %d in %s: missing required field metadata.name", docIdx, filePath)
+	}
+
+	if n := len(header.Metadata.Name); n > maxMetadataNameLength {
+		return fmt.Errorf("doc %d in %s: %s %q has metadata.name of %d characters, which exceeds the maximum of %d",
+			docIdx, filePath, header.Kind, header.Metadata.Name, n, maxMetadataNameLength)
 	}
 
 	switch header.Kind {
