@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path"
 	"strconv"
@@ -110,6 +111,18 @@ func (Docker) BuildAndPush(ctx context.Context) error {
 // binaries to present in the ./var/bin/ directories.
 // Setting the PUSH_IMAGE environmental variable to true will push the images to the
 // registries.
+//
+// Setting the GOAPP_ASSETS environmental variable to a directory adds assets
+// to the images. Each application must be present in the directory, create an
+// empty directory for no assets:
+//
+//	./assets
+//	├── app1
+//	│   └── index.html
+//	└── app2
+//
+// The content of an app's directory is copied into each of its images at
+// /usr/local/share/<app> - docker image exports it as GOAPP_ASSETS_DIR env variable
 func (Docker) BuildImages(ctx context.Context) error {
 	shouldPush, err := shouldPush()
 	if err != nil {
@@ -123,6 +136,20 @@ func (Docker) BuildImages(ctx context.Context) error {
 	cmds, err := findCommands(goModules)
 	if err != nil {
 		return err
+	}
+
+	apps := []string{}
+	for _, cmd := range cmds {
+		apps = append(apps, cmd.goModule)
+	}
+	assets, err := docker.FindAssets(os.Getenv(AssetsEnv), apps)
+	if err != nil {
+		return fmt.Errorf("%s: %w", AssetsEnv, err)
+	}
+	for _, app := range apps {
+		if err := docker.StageAssets(app, assets[app]); err != nil {
+			return err
+		}
 	}
 
 	deps := []any{}
