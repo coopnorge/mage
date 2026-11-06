@@ -84,6 +84,12 @@ on:
         type: boolean
         default: true
         description: If set to false, disable the Go module/build cache for the Go Build job.
+      catalog-info-allow-multiple-owners:
+        type: boolean
+        default: false
+        description: >-
+          Opt-in. If set to true, catalog info validation skips the rule that all catalog objects
+          must have the same owner and instead checks that each distinct owner is a GitHub team.
 
     outputs:
       oci-images:
@@ -222,6 +228,8 @@ jobs:
     needs: ["detect-changes"]
     if: ${{  needs.detect-changes.outputs.catalog-info == 'true'  }}
     uses: ./.github/workflows/reusable-catalog-info.yaml
+    with:
+      catalog-info-allow-multiple-owners: ${{ inputs.catalog-info-allow-multiple-owners }}
     permissions:
       contents: read
       pull-requests: read

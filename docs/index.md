@@ -209,6 +209,39 @@ mage:
   secrets: inherit
 ```
 
+## Catalog info owners
+
+By default, `catalogInfo:validate` requires every object in `catalog-info*.yaml`
+to have the same owner, and that owner must be a GitHub team in `coopnorge`.
+
+Set `CATALOG_INFO_ALLOW_MULTIPLE_OWNERS=true` to opt in to a relaxed rule. The
+rule skips the same-owner check. Every object must still have an owner, and each
+distinct owner must be a GitHub team. Unset, empty and `false` keep the default.
+Any other value that isn't a boolean is an error.
+
+In GitHub Actions, set the `catalog-info-allow-multiple-owners` input to `true`
+on the `goapp`, `infrastructurerepo` or `mage` workflow.
+
+```yaml
+with:
+  catalog-info-allow-multiple-owners: true
+```
+
+For the `mage` workflow, a full example looks like this.
+
+```yaml
+jobs:
+  mage:
+    uses: coopnorge/mage/.github/workflows/mage.yaml@<version>
+    with:
+      catalog-info-allow-multiple-owners: true
+```
+
+The option needs a `coop-mage` version that includes this change. Use such a
+version for the workflow ref. Also use it for the `github.com/coopnorge/mage`
+module in your `go.mod`, because the workflow builds `coop-mage` from your
+`go.mod`.
+
 ## Updating OCI tags after build
 
 You can use renovate to create pull request that update your infrastructure. You

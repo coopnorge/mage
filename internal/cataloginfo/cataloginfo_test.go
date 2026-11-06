@@ -232,6 +232,128 @@ func TestValidate(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "catalog info is missing owner")
 	})
+
+	t.Run("default and false env still fail owner mismatch", func(t *testing.T) {
+		for _, value := range []string{"", "false"} {
+			t.Run("value="+value, func(t *testing.T) {
+				setupMockGitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
+					writeTeams(t, w, "team-a", "team-b")
+				})
+				t.Setenv(AllowMultipleOwnersEnv, value)
+				t.Chdir(mustAbs(t, "testdata/fail-owner-mismatch"))
+
+				err := Validate()
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "owner mismatch across catalog objects")
+			})
+		}
+	})
+
+	t.Run("fail invalid allow multiple owners value", func(t *testing.T) {
+		setupMockGitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			writeTeams(t, w, "team-a", "team-b")
+		})
+		t.Setenv(AllowMultipleOwnersEnv, "maybe")
+		t.Chdir(mustAbs(t, "testdata/fail-owner-mismatch"))
+
+		err := Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), AllowMultipleOwnersEnv)
+		assert.Contains(t, err.Error(), `"maybe"`)
+	})
+
+	t.Run("allow multiple owners succeeds and fetches teams once", func(t *testing.T) {
+		calls := 0
+		setupMockGitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			calls++
+			writeTeams(t, w, "team-a", "team-b")
+		})
+		t.Setenv(AllowMultipleOwnersEnv, "true")
+		t.Chdir(mustAbs(t, "testdata/fail-owner-mismatch"))
+
+		require.NoError(t, Validate())
+		assert.Equal(t, 1, calls)
+	})
+
+	t.Run("allow multiple owners fails on unknown owner", func(t *testing.T) {
+		setupMockGitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			writeTeams(t, w, "team-a")
+		})
+		t.Setenv(AllowMultipleOwnersEnv, "true")
+		t.Chdir(mustAbs(t, "testdata/fail-owner-mismatch"))
+
+		err := Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), `owner "team-b" is not a valid GitHub team in coopnorge`)
+		assert.NotContains(t, err.Error(), `"team-a"`)
+	})
+
+	t.Run("allow multiple owners lists all unknown owners", func(t *testing.T) {
+		setupMockGitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			writeTeams(t, w, "other-team")
+		})
+		t.Setenv(AllowMultipleOwnersEnv, "true")
+		t.Chdir(mustAbs(t, "testdata/fail-owner-mismatch"))
+
+		err := Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), `owners "team-a", "team-b" are not valid GitHub teams in coopnorge`)
+	})
+
+	t.Run("allow multiple owners fails on missing owner", func(t *testing.T) {
+		setupMockGitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		})
+		t.Setenv(AllowMultipleOwnersEnv, "true")
+		t.Chdir(t.TempDir())
+
+		err := Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "catalog info is missing owner")
+	})
+
+	t.Run("allow multiple owners fails on github api error in CI", func(t *testing.T) {
+		setupMockGitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+		})
+		t.Setenv(AllowMultipleOwnersEnv, "true")
+		t.Chdir(mustAbs(t, "testdata/fail-owner-mismatch"))
+
+		err := Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to fetch GitHub teams")
+	})
+
+	t.Run("allow multiple owners warns on github api error when not in CI", func(t *testing.T) {
+		setupMockGitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+		})
+		require.NoError(t, os.Unsetenv("CI"))
+		t.Setenv(AllowMultipleOwnersEnv, "true")
+		t.Chdir(mustAbs(t, "testdata/fail-owner-mismatch"))
+
+		require.NoError(t, Validate())
+	})
+}
+
+func writeTeams(t *testing.T, w http.ResponseWriter, slugs ...string) {
+	t.Helper()
+	teams := make([]map[string]string, len(slugs))
+	for i, slug := range slugs {
+		teams[i] = map[string]string{"slug": slug}
+	}
+	resp, err := json.Marshal(teams)
+	require.NoError(t, err)
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(resp)
+	require.NoError(t, err)
+}
+
+func mustAbs(t *testing.T, path string) string {
+	t.Helper()
+	abs, err := filepath.Abs(path)
+	require.NoError(t, err)
+	return abs
 }
 
 func TestMetadataNameLength(t *testing.T) {

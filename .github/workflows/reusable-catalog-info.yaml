@@ -3,7 +3,13 @@ concurrency:
   cancel-in-progress: true
 on:
   workflow_call:
-    inputs: {}
+    inputs:
+      catalog-info-allow-multiple-owners:
+        type: boolean
+        default: false
+        description: >-
+          Opt-in. If set to true, catalog info validation skips the rule that all catalog objects
+          must have the same owner and instead checks that each distinct owner is a GitHub team.
     secrets: {}
 
 jobs:
@@ -31,4 +37,5 @@ jobs:
         id: validate
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          CATALOG_INFO_ALLOW_MULTIPLE_OWNERS: ${{ inputs.catalog-info-allow-multiple-owners }}
         run: coop-mage catalogInfo:validate
