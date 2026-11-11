@@ -3,6 +3,7 @@ kind: RepositoryConfig
 metadata:
   name: helloworld
 spec:
+  owner: team-a
   description: "No description provided"
   branches:
     default:
