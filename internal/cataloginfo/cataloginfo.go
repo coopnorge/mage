@@ -188,6 +188,25 @@ func parseCatalogInfoFiles() (*catalogInfoData, error) {
 	return data, nil
 }
 
+// SystemAndComponentOwners returns owners declared by catalog systems and components.
+func SystemAndComponentOwners() ([]string, error) {
+	data, err := parseCatalogInfoFiles()
+	if err != nil {
+		return nil, err
+	}
+
+	var owners []string
+	if data.System != nil && data.System.Spec != nil {
+		owners = append(owners, data.System.Spec.Owner)
+	}
+	for _, component := range data.Components {
+		if component.Spec != nil {
+			owners = append(owners, component.Spec.Owner)
+		}
+	}
+	return owners, nil
+}
+
 func parseCatalogInfoFile(filePath string, data *catalogInfoData) (err error) {
 	f, openErr := os.Open(filePath)
 	if openErr != nil {
