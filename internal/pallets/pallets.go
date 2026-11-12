@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.com/coopnorge/mage/internal/cataloginfo"
 	"github.com/coopnorge/mage/internal/core"
@@ -76,6 +77,13 @@ func getPalletFiles() ([]string, error) {
 	}
 
 	for _, p := range pallets {
+		if p.IsDir() {
+			// Currently no support for directories within the .pallet folder
+			continue
+		}
+		if ext := filepath.Ext(p.Name()); !strings.EqualFold(ext, ".yaml") && !strings.EqualFold(ext, ".yml") {
+			continue
+		}
 		palletList = append(palletList, filepath.Join(".pallet", p.Name()))
 	}
 	return palletList, nil
