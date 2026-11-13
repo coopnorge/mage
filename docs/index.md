@@ -107,6 +107,42 @@ import (
 - [ ] TechDocs CI
 - [ ] Security Scanning
 
+## Composing your own setup
+
+Instead of a bundle you can import individual namespaces and compose your own
+`magefiles/magefile.go`. The following packages are available:
+
+| Package                                             | Targets                                               |
+| --------------------------------------------------- | ----------------------------------------------------- |
+| `github.com/coopnorge/mage/targets/cataloginfo`     | `catalogInfo:validate`, `catalogInfo:changes`         |
+| `github.com/coopnorge/mage/targets/policybotconfig` | `policyBotConfig:validate`, `policyBotConfig:changes` |
+| `github.com/coopnorge/mage/targets/pallets`         | `pallets:validate`, `pallets:changes`                 |
+
+```go
+package main
+
+import (
+	//mage:import
+	_ "github.com/coopnorge/mage/targets/cataloginfo"
+	//mage:import
+	_ "github.com/coopnorge/mage/targets/pallets"
+	//mage:import
+	_ "github.com/coopnorge/mage/targets/policybotconfig"
+)
+```
+
+The bundles, such as `goapp` and `golib`, already define these targets.
+Importing one of these packages together with a bundle fails with an error like
+`"cataloginfo:validate" target has multiple definitions`. Give one of the
+imports an alias to avoid this. The aliased targets get the alias as prefix:
+
+```go
+	//mage:import golib
+	_ "github.com/coopnorge/mage/targets/golib"
+	//mage:import
+	_ "github.com/coopnorge/mage/targets/cataloginfo"
+```
+
 ## Run CI
 
 ```console
