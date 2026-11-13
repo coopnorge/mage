@@ -70,3 +70,14 @@ spec:
 		})
 	}
 }
+
+func TestGetPalletFilesOnlyYAML(t *testing.T) {
+	t.Chdir(t.TempDir())
+	require.NoError(t, os.Mkdir(".pallet", 0o700))
+	require.NoError(t, os.WriteFile(filepath.Join(".pallet", "config.yaml"), []byte("kind: RepositoryConfig\n"), 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(".pallet", "README.md"), []byte("# Pallets\n"), 0o600))
+
+	files, err := getPalletFiles()
+	require.NoError(t, err)
+	assert.Equal(t, []string{filepath.Join(".pallet", "config.yaml")}, files)
+}
