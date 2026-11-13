@@ -33,6 +33,12 @@ on:
         type: string
         default: "datadoghq.eu"
         description: Datadog site to upload code coverage reports to.
+      catalog-info-allow-multiple-owners:
+        type: boolean
+        default: false
+        description: >-
+          Opt-in. If set to true, catalog info validation skips the rule that all catalog objects
+          must have the same owner and instead checks that each distinct owner is a GitHub team.
     outputs:
       oci-images:
         value: ${{ jobs.mage.outputs.oci-images }}
@@ -125,6 +131,7 @@ jobs:
           #       GITHUB_TOKEN: ${{ secrets.REVIEWBOT_GITHUB_TOKEN }}
           USE_TOFU: ${{ inputs.opentofu-version != '' && 'true' || '' }}
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          CATALOG_INFO_ALLOW_MULTIPLE_OWNERS: ${{ inputs.catalog-info-allow-multiple-owners }}
 
       - name: Upload coverage reports to Datadog
         if: ${{ !cancelled() }}
