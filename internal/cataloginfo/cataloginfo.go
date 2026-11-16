@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
+	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/coopnorge/mage/internal/git"
@@ -49,20 +51,18 @@ type entityHeader struct {
 	} `yaml:"metadata"`
 }
 
-// Validate validates the catalog-info files
+// Validate validates the catalog-info files. All non-API entities must share
+// one owner. APIs may have their own owner. Every owner must be a GitHub team.
 func Validate() error {
 	data, err := parseCatalogInfoFiles()
 	if err != nil {
 		return err
 	}
-	owner, err := validateOwnerConsistency(data)
+	owners, err := validateOwnerConsistency(data)
 	if err != nil {
 		return err
 	}
-	if owner == "" {
-		return fmt.Errorf("catalog info is missing owner")
-	}
-	return validateOwnerExistsInGithub(owner)
+	return validateOwnersExistInGithub(owners)
 }
 
 // HasChanges checks if the current branch has policy bot config file changes
@@ -128,44 +128,75 @@ func getEntityOwners(data *catalogInfoData) []entityOwner {
 	return owners
 }
 
-func validateOwnerConsistency(data *catalogInfoData) (string, error) {
-	owners := getEntityOwners(data)
-	if len(owners) == 0 {
-		return "", fmt.Errorf("catalog info is missing owner")
+// validateOwnerConsistency checks that all non-API entities share one owner
+// and that every API has an owner. It returns the distinct owners to check
+// against GitHub: the shared owner first, then API owners in first-seen order.
+func validateOwnerConsistency(data *catalogInfoData) ([]string, error) {
+	entityOwners := getEntityOwners(data)
+	if len(entityOwners) == 0 {
+		return nil, fmt.Errorf("catalog info is missing owner")
 	}
-	first := owners[0]
-	if first.Owner == "" {
-		return "", fmt.Errorf("catalog info is missing owner")
-	}
-	for _, eo := range owners[1:] {
+	var owners []string
+	var first *entityOwner
+	for i, eo := range entityOwners {
 		if eo.Owner == "" {
-			return "", fmt.Errorf("catalog info is missing owner")
+			return nil, fmt.Errorf("catalog info is missing owner")
 		}
-		if eo.Owner != first.Owner {
-			return "", fmt.Errorf("owner mismatch across catalog objects: %s %q has owner %q, but %s %q has owner %q",
+		if eo.Kind == "API" {
+			continue
+		}
+		if first == nil {
+			first = &entityOwners[i]
+			owners = append(owners, eo.Owner)
+		} else if eo.Owner != first.Owner {
+			return nil, fmt.Errorf("owner mismatch across catalog objects: %s %q has owner %q, but %s %q has owner %q",
 				first.Kind, first.Name, first.Owner, eo.Kind, eo.Name, eo.Owner)
 		}
 	}
-	return first.Owner, nil
+	for _, eo := range entityOwners {
+		if eo.Kind == "API" && !slices.Contains(owners, eo.Owner) {
+			owners = append(owners, eo.Owner)
+		}
+	}
+	return owners, nil
 }
 
-func validateOwnerExistsInGithub(owner string) error {
+func validateOwnersExistInGithub(owners []string) error {
 	teams, err := github.ListAllTeams()
 	if err != nil {
 		if !github.InCI() {
-			fmt.Printf("WARNING: unable to validate catalog owner %q against GitHub teams: %v\n", owner, err)
+			fmt.Printf("WARNING: unable to validate catalog owner %s against GitHub teams: %v\n", quoteAll(owners), err)
 			return nil
 		}
 		validationErr := fmt.Errorf("failed to fetch GitHub teams: %w", err)
 		github.PrintActionMessage("error", "Catalog owner validation failed", validationErr.Error())
 		return validationErr
 	}
-	if slices.Contains(teams, owner) {
+	var unknown []string
+	for _, owner := range owners {
+		if !slices.Contains(teams, owner) {
+			unknown = append(unknown, owner)
+		}
+	}
+	if len(unknown) == 0 {
 		return nil
 	}
-	validationErr := fmt.Errorf("owner %q is not a valid GitHub team in coopnorge", owner)
+	var validationErr error
+	if len(unknown) == 1 {
+		validationErr = fmt.Errorf("owner %q is not a valid GitHub team in coopnorge", unknown[0])
+	} else {
+		validationErr = fmt.Errorf("owners %s are not valid GitHub teams in coopnorge", quoteAll(unknown))
+	}
 	github.PrintActionMessage("error", "Catalog owner validation failed", validationErr.Error())
 	return validationErr
+}
+
+func quoteAll(values []string) string {
+	quoted := make([]string, len(values))
+	for i, v := range values {
+		quoted[i] = strconv.Quote(v)
+	}
+	return strings.Join(quoted, ", ")
 }
 
 func parseCatalogInfoFiles() (*catalogInfoData, error) {

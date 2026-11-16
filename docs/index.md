@@ -209,6 +209,12 @@ mage:
   secrets: inherit
 ```
 
+## Catalog info owners
+
+`catalogInfo:validate` requires every System, Component and Resource in
+`catalog-info*.yaml` to have the same owner. Each API may have its own owner.
+Every owner, including each API owner, must be a GitHub team in `coopnorge`.
+
 ## Updating OCI tags after build
 
 You can use renovate to create pull request that update your infrastructure. You

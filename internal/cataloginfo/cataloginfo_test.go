@@ -232,6 +232,136 @@ func TestValidate(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "catalog info is missing owner")
 	})
+
+	t.Run("APIs may have different owners", func(t *testing.T) {
+		calls := 0
+		setupMockGitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			calls++
+			writeTeams(t, w, "team-a", "team-b", "team-c")
+		})
+		t.Chdir(writeCatalog(t, catalogDoc("System", "sys", "team-a")+
+			catalogDoc("Component", "comp", "team-a")+
+			catalogDoc("API", "api-1", "team-b")+
+			catalogDoc("API", "api-2", "team-c")+
+			catalogDoc("API", "api-3", "team-b")))
+
+		require.NoError(t, Validate())
+		assert.Equal(t, 1, calls)
+	})
+
+	t.Run("fail non-API entity with different owner next to API", func(t *testing.T) {
+		setupMockGitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			writeTeams(t, w, "team-a", "team-b")
+		})
+		t.Chdir(writeCatalog(t, catalogDoc("System", "sys", "team-a")+
+			catalogDoc("API", "api-1", "team-b")+
+			catalogDoc("Component", "comp", "team-b")))
+
+		err := Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "owner mismatch across catalog objects")
+		assert.Contains(t, err.Error(), `Component "comp"`)
+	})
+
+	t.Run("fail API missing owner", func(t *testing.T) {
+		setupMockGitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			writeTeams(t, w, "team-a")
+		})
+		t.Chdir(writeCatalog(t, catalogDoc("System", "sys", "team-a")+catalogDoc("API", "api-1", "")))
+
+		err := Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "missing owner")
+	})
+
+	t.Run("fail unknown API owner", func(t *testing.T) {
+		setupMockGitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			writeTeams(t, w, "team-a")
+		})
+		t.Chdir(writeCatalog(t, catalogDoc("System", "sys", "team-a")+catalogDoc("API", "api-1", "team-b")))
+
+		err := Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), `owner "team-b" is not a valid GitHub team in coopnorge`)
+		assert.NotContains(t, err.Error(), `"team-a"`)
+	})
+
+	t.Run("lists all unknown owners", func(t *testing.T) {
+		setupMockGitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			writeTeams(t, w, "other-team")
+		})
+		t.Chdir(writeCatalog(t, catalogDoc("System", "sys", "team-a")+
+			catalogDoc("API", "api-1", "team-b")+
+			catalogDoc("API", "api-2", "team-c")))
+
+		err := Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), `owners "team-a", "team-b", "team-c" are not valid GitHub teams in coopnorge`)
+	})
+
+	t.Run("only APIs with different owners", func(t *testing.T) {
+		setupMockGitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			writeTeams(t, w, "team-a", "team-b")
+		})
+		t.Chdir(writeCatalog(t, catalogDoc("API", "api-1", "team-a")+catalogDoc("API", "api-2", "team-b")))
+
+		require.NoError(t, Validate())
+	})
+
+	t.Run("fail API owners on github api error in CI", func(t *testing.T) {
+		setupMockGitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+		})
+		t.Chdir(writeCatalog(t, catalogDoc("System", "sys", "team-a")+catalogDoc("API", "api-1", "team-b")))
+
+		err := Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to fetch GitHub teams")
+	})
+
+	t.Run("warn API owners on github api error when not in CI", func(t *testing.T) {
+		setupMockGitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+		})
+		require.NoError(t, os.Unsetenv("CI"))
+		t.Chdir(writeCatalog(t, catalogDoc("System", "sys", "team-a")+catalogDoc("API", "api-1", "team-b")))
+
+		require.NoError(t, Validate())
+	})
+}
+
+func catalogDoc(kind, name, owner string) string {
+	spec := "  owner: " + owner + "\n"
+	if owner == "" {
+		spec = ""
+	}
+	switch kind {
+	case "API":
+		spec += "  type: openapi\n  lifecycle: production\n  definition: |\n    openapi: 3.0.0\n"
+	case "Component":
+		spec += "  type: service\n  lifecycle: production\n"
+	}
+	return "---\napiVersion: backstage.io/v1alpha1\nkind: " + kind + "\nmetadata:\n  name: " + name + "\nspec:\n" + spec
+}
+
+func writeCatalog(t *testing.T, content string) string {
+	t.Helper()
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "catalog-info.yaml"), []byte(content), 0o600))
+	return dir
+}
+
+func writeTeams(t *testing.T, w http.ResponseWriter, slugs ...string) {
+	t.Helper()
+	teams := make([]map[string]string, len(slugs))
+	for i, slug := range slugs {
+		teams[i] = map[string]string{"slug": slug}
+	}
+	resp, err := json.Marshal(teams)
+	require.NoError(t, err)
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(resp)
+	require.NoError(t, err)
 }
 
 func TestMetadataNameLength(t *testing.T) {
