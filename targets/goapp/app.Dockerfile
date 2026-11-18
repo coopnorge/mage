@@ -33,6 +33,9 @@ RUN \
     ln -vfs /usr/share/zoneinfo/UTC /etc/localtime && \
     true
 
+COPY ./var/${APP}/assets/ /usr/local/share/${APP}/
+ENV GOAPP_ASSETS_DIR=/usr/local/share/${APP}
+
 ARG GIT_REPOSITORY_URL
 ARG GIT_COMMIT_SHA
 

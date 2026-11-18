@@ -56,6 +56,11 @@ const (
 	// PushEnv is the name of the environmental variable used to trigger
 	// pushing of OCI images. Set PUSH_IMAGE to true to push images.
 	PushEnv = "PUSH_IMAGE"
+
+	// AssetsEnv is the name of the environmental variable holding the
+	// directory of assets to add to the OCI images. It holds one directory per
+	// app, empty for an app without assets.
+	AssetsEnv = "GOAPP_ASSETS"
 )
 
 // Generate runs commands described by directives within existing files with

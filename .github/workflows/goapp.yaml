@@ -84,6 +84,12 @@ on:
         type: boolean
         default: true
         description: If set to false, disable the Go module/build cache for the Go Build job.
+      assets-artifact-id:
+        type: string
+        default: ""
+        description: >-
+          ID of an artifact, uploaded earlier in the same workflow run (the `artifact-id` output of
+          `actions/upload-artifact`), containing the assets to add to the OCI images.
 
     outputs:
       oci-images:
@@ -108,6 +114,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+      - name: Configure access to internal and private GitHub repos
+        run: git config --global url."https://${{ secrets.REVIEWBOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/coopnorge".insteadOf "https://github.com/coopnorge"
       - name: Setup coop-mage
         uses: $/.github/actions/setup-mage
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
@@ -185,6 +193,7 @@ jobs:
       go-test-cache-enabled: ${{ inputs.go-test-cache-enabled }}
       go-test-coverpkg-all: ${{ inputs.go-test-coverpkg-all }}
       go-build-cache-enabled: ${{ inputs.go-build-cache-enabled }}
+      assets-artifact-id: ${{ inputs.assets-artifact-id }}
 
   terraform:
     name: Terraform
