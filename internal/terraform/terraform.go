@@ -159,17 +159,29 @@ func LintFix(directory, tfLintCfg string) error {
 	return nil
 }
 
+// InitArgsEnv is the environment variable holding extra arguments appended to
+// "terraform init" and "terraform init -upgrade", for example "-backend=false"
+// to validate without backend credentials. It is the equivalent of
+// terraform_init_args in the devtools-terraform image.
+const InitArgsEnv = "TERRAFORM_INIT_ARGS"
+
+// initArgs returns the init arguments, followed by the whitespace separated
+// arguments from TERRAFORM_INIT_ARGS.
+func initArgs(args ...string) []string {
+	return append(args, strings.Fields(os.Getenv(InitArgsEnv))...)
+}
+
 // Init downloads Terraform modules locally
 func Init(directory string) error {
 	log.Printf("Running terraform init for  %q", directory)
-	stdout, stderr, err := getIaCRunner().Run(nil, directory, "init")
+	stdout, stderr, err := getIaCRunner().Run(nil, directory, initArgs("init")...)
 	return handleTerraformOutput(fmt.Sprintf("Terraform init - %s", directory), stdout, stderr, err)
 }
 
 // InitUpgrade downloads and updates Terraform modules locally
 func InitUpgrade(directory string) error {
 	log.Printf("Running terraform init -upgrade for  %q", directory)
-	stdout, stderr, err := getIaCRunner().Run(nil, directory, "init", "-upgrade")
+	stdout, stderr, err := getIaCRunner().Run(nil, directory, initArgs("init", "-upgrade")...)
 	return handleTerraformOutput(fmt.Sprintf("Terraform init upgrade - %s", directory), stdout, stderr, err)
 }
 

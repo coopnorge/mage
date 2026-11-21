@@ -20,6 +20,10 @@ on:
         type: string
         default: ""
         description: If set, install this version of OpenTofu and set USE_TOFU=true so mage uses the tofu devtool instead of terraform.
+      terraform-init-args:
+        type: string
+        default: ""
+        description: Extra arguments for terraform/tofu init, for example "-backend=false" to validate without backend credentials.
     secrets: {}
 
 jobs:
@@ -61,6 +65,7 @@ jobs:
       TERRAFORM_SKIP_IF_NO_CHANGES_IN_DIR: true
       ADDITIONAL_GLOBS_TERRAFORM: ${{ inputs.additional-globs-terraform }}
       USE_TOFU: ${{ inputs.opentofu-version != '' && 'true' || '' }}
+      TERRAFORM_INIT_ARGS: ${{ inputs.terraform-init-args }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

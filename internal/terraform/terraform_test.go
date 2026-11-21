@@ -246,3 +246,12 @@ func TestCheckLock(t *testing.T) {
 		})
 	}
 }
+
+func TestInitArgs(t *testing.T) {
+	t.Setenv(InitArgsEnv, "")
+	assert.Equal(t, []string{"init"}, initArgs("init"))
+
+	t.Setenv(InitArgsEnv, " -backend=false  -input=false ")
+	assert.Equal(t, []string{"init", "-backend=false", "-input=false"}, initArgs("init"))
+	assert.Equal(t, []string{"init", "-upgrade", "-backend=false", "-input=false"}, initArgs("init", "-upgrade"))
+}

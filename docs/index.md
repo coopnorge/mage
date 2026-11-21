@@ -209,6 +209,21 @@ mage:
   secrets: inherit
 ```
 
+## Terraform init arguments
+
+`terraform:init` and `terraform:initUpgrade` append the whitespace separated
+arguments in `TERRAFORM_INIT_ARGS` to `terraform init`, or to `tofu init` when
+`USE_TOFU=true`. Set it to `-backend=false` to validate without backend
+credentials. It replaces the init arguments option from the Terraform devtools
+image.
+
+```bash
+TERRAFORM_INIT_ARGS="-backend=false" go tool mage terraform:init terraform:test
+```
+
+In GitHub Actions, pass `terraform-init-args: -backend=false` to
+`reusable-terraform.yaml`.
+
 ## Catalog info owners
 
 `catalogInfo:validate` requires every System, Component and Resource in
