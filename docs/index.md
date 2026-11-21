@@ -143,6 +143,33 @@ imports an alias to avoid this. The aliased targets get the alias as prefix:
 	_ "github.com/coopnorge/mage/targets/cataloginfo"
 ```
 
+### Validating Pallets in a repository without a bundle
+
+`goapp`, `golib`, `infrastructurerepo` and `terraformmodule` include
+`pallets:validate` and `pallets:changes`. A repository that uses none of these,
+for example a .NET repository, can still validate its `.pallet` files with a
+`magefiles/magefile.go` that only imports the Pallets package:
+
+```go
+//go:build mage
+
+package main
+
+import (
+	//mage:import
+	_ "github.com/coopnorge/mage/targets/pallets"
+)
+```
+
+The repository also needs a `go.mod` with `github.com/coopnorge/mage` and
+`github.com/magefile/mage` as dependencies, for example by running
+`go get -tool github.com/magefile/mage`. See `magefiles/magefile.go` in
+`coopnorge/services-interfaces` for a working example.
+
+Validation checks the `.yaml` and `.yml` files directly in `.pallet` and fetches
+the schemas from `coopnorge/kubernetes-schemas` on GitHub, so it needs network
+access. Files in subdirectories of `.pallet` are not checked.
+
 ## Run CI
 
 ```console
