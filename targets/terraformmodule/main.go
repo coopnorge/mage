@@ -55,7 +55,7 @@ func Build(ctx context.Context) error {
 //
 // For details see [Terraform.Validate]
 func Validate(ctx context.Context) error {
-	mg.CtxDeps(ctx, golangTargets.ValidateVersion, Terraform.Validate, PolicyBotConfig.Validate, CatalogInfo.Validate)
+	mg.CtxDeps(ctx, golangTargets.ValidateVersion, Terraform.Validate, PolicyBotConfig.Validate, CatalogInfo.Validate, Pallets.Validate)
 	return nil
 }
 
