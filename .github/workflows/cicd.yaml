@@ -12,7 +12,6 @@ jobs:
     runs-on: ubuntu-slim
     outputs:
       run-golang-ci: ${{ steps.changes.outputs.golang == 'true' }}
-      run-kubernetes-ci: ${{ steps.changes.outputs.pallet == 'true' && github.event_name == 'pull_request' }}
       run-techdocs-ci: ${{ steps.changes.outputs.techdocs == 'true' || github.event_name == 'workflow_dispatch' }}
       validate-policy-bot-config: ${{ steps.changes.outputs.policy-bot == 'true' }}
     steps:
@@ -22,10 +21,9 @@ jobs:
         with:
           list-files: json
           filters: |
-            pallet:
-              - '.pallet/**'
             golang:
               - '*.go'
+              - '.pallet/**'
               - '.github/workflows/cicd.yaml'
               - '.github/workflows/mage.yaml'
               - 'docker-compose.yaml'
@@ -44,20 +42,6 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-
-  kubernetes-ci:
-    name: "Kubernetes CI"
-    concurrency:
-      group: ${{ github.repository }}-${{ github.workflow }}-kubernetes-ci-${{ github.ref }}
-      cancel-in-progress: true
-    needs: ["setup"]
-    if: ${{ needs.setup.outputs.run-kubernetes-ci == 'true'}}
-    uses: coopnorge/github-workflow-kubernetes-validation/.github/workflows/kubernetes-validation.yaml@v2.1.5
-    secrets:
-      argocd-api-token: ${{ secrets.ARGOCD_API_TOKEN }}
-    permissions:
-      contents: read
-      pull-requests: write
 
   mage:
     needs: ["setup"]
@@ -84,7 +68,6 @@ jobs:
 
   cicd:
     needs:
-      - kubernetes-ci
       - mage
       - techdocs
     if: failure() || cancelled()
