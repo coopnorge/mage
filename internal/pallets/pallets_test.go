@@ -81,3 +81,9 @@ func TestGetPalletFilesOnlyYAML(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, []string{filepath.Join(".pallet", "config.yaml")}, files)
 }
+
+func TestKubeconformArgsStrict(t *testing.T) {
+	args := kubeconformArgs([]string{".pallet/a.yaml"})
+	assert.Contains(t, args, "--strict")
+	assert.Equal(t, ".pallet/a.yaml", args[len(args)-1])
+}

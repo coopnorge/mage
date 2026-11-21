@@ -32,22 +32,19 @@ func Validate() error {
 		return err
 	}
 
-	// palletMountPath := "./.pallet"
-	// dockerArgs := []string{
-	// 	"--volume", fmt.Sprintf("%s:%s", palletMountPath, "/.pallet"),
-	// 	"--workdir", "/",
-	// }
-	// //  kubeconform --strict -verbose  -schema-location "https://raw.githubusercontent.com/coopnorge/kubernetes-schemas/main/pallets/{{ .ResourceKind }}{{ .KindSuffix }}.json" .pallet/gitconfig.yaml
-	//
-	// cmd := "--strict"
+	_, _, err = kubeconform.Run(nil, ".", kubeconformArgs(palletList)...)
+	return err
+}
+
+// kubeconformArgs builds the kubeconform arguments. --strict rejects fields
+// that are not in the schema.
+func kubeconformArgs(palletList []string) []string {
 	args := []string{
+		"--strict",
 		"--schema-location",
 		"https://raw.githubusercontent.com/coopnorge/kubernetes-schemas/main/pallets/{{ .ResourceKind }}{{ .KindSuffix }}.json",
 	}
-	args = append(args, palletList...)
-	_, _, err = kubeconform.Run(nil, ".", args...)
-	return err
-	// return devtool.Run("kubeconform", dockerArgs, cmd, args...)
+	return append(args, palletList...)
 }
 
 // HasChanges checks if the current branch has policy bot config file changes
