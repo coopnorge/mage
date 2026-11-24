@@ -239,7 +239,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GIT_REV: ${{ github.event.pull_request.head.sha }}
           GIT_BRANCH: ${{ github.event.pull_request.head.ref }}
-          SPACELIFT_READ_TOKEN: ${{ secrets.spacelift-read-token }}
+          SPACELIFT_READ_TOKEN: ${{ secrets.SPACELIFT_READ_TOKEN }}
           SPACELIFT_ORG: coopnorge
         shell: bash
         run: |
