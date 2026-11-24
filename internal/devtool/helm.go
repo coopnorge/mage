@@ -3,7 +3,6 @@ package devtool
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
@@ -53,16 +52,7 @@ func (helm Helm) versionOK() error {
 	if err != nil {
 		return err
 	}
-	// set constraint that minor minus 5 version should be minimum
-	constraintString := fmt.Sprintf(">= %s.%s", strconv.Itoa(devtool.Segments()[0]), strconv.Itoa(devtool.Segments()[1]-5))
-	constraint, err := version.NewConstraint(constraintString)
-	if err != nil {
-		return err
-	}
-	if !constraint.Check(current) {
-		return fmt.Errorf("version found %s does not match constraint %s", current.Original(), constraint.String())
-	}
-	return nil
+	return versionWithinMajor(devtool, current, 5)
 }
 
 func (helm Helm) runNative(env map[string]string, workdir string, args ...string) (string, string, error) {

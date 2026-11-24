@@ -3,7 +3,6 @@ package devtool
 import (
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/coopnorge/mage/internal/core"
 	"github.com/hashicorp/go-version"
@@ -50,16 +49,7 @@ func (kf KubeConform) versionOK() error {
 	if err != nil {
 		return err
 	}
-	// set constraint that minor minus 1 version should be minimum
-	constraintString := fmt.Sprintf(">= %s.%s", strconv.Itoa(devtool.Segments()[0]), strconv.Itoa(devtool.Segments()[1]-1))
-	constraint, err := version.NewConstraint(constraintString)
-	if err != nil {
-		return err
-	}
-	if !constraint.Check(current) {
-		return fmt.Errorf("version found %s does not match constraint %s", current.Original(), constraint.String())
-	}
-	return nil
+	return versionWithinMajor(devtool, current, 1)
 }
 
 func (kf KubeConform) runNative(env map[string]string, workdir string, args ...string) (string, string, error) {
