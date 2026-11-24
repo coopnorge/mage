@@ -1,4 +1,4 @@
-FROM alpine:3.24.3@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a AS downloader
+FROM alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf AS downloader
 
 RUN apk add --no-cache curl tar
 
@@ -9,7 +9,7 @@ ARG RELEASE_URL="https://github.com/homeport/dyff/releases/download/v${DYFF_VERS
 WORKDIR /tmp
 RUN curl -L ${RELEASE_URL} | tar -xz
 
-FROM alpine:3.24.3@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a
+FROM alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
 COPY --from=downloader /tmp/dyff /usr/local/bin/dyff
 ENTRYPOINT ["dyff"]
 
