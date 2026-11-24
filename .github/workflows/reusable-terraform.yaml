@@ -395,10 +395,10 @@ jobs:
               | yq -Pe '.check_suites[] | select(.app.slug == "spacelift-io").id')
 
             while IFS=$'\t' read -r id; do
-              names=$(gh api \
+              names=$(gh api --paginate \
                 -H "Accept: application/vnd.github+json" \
                 -H "X-GitHub-Api-Version: 2022-11-28" \
-                /repos/$repo_name/check-suites/$id/check-runs \
+                "/repos/$repo_name/check-suites/$id/check-runs?per_page=100" \
                 --jq '.check_runs[].name')
               while IFS= read -r name; do
                 stack="${name#*/}"
