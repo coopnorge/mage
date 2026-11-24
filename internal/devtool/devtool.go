@@ -137,9 +137,9 @@ func isCommandAvailable(name string) bool {
 }
 
 // versionInRange checks that current is at least devtool's minor minus
-// minorOffset.
+// minorOffset and within the same major version as devtool.
 func versionInRange(devtool, current *version.Version, minorOffset int) error {
-	constraintString := fmt.Sprintf(">= %d.%d", devtool.Segments()[0], devtool.Segments()[1]-minorOffset)
+	constraintString := fmt.Sprintf(">= %d.%d, < %d", devtool.Segments()[0], devtool.Segments()[1]-minorOffset, devtool.Segments()[0]+1)
 	constraint, err := version.NewConstraint(constraintString)
 	if err != nil {
 		return err
