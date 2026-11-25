@@ -3,6 +3,7 @@ policy:
   - or:
     - Internal dependency update
     - Dependency updates
+    - Code change by cloud-platform
     - Code change
 
 approval_rules:
@@ -57,6 +58,24 @@ approval_rules:
       - "(^|.*/).*terraform\\.lock\\.hcl$"
     has_valid_signatures_by_keys:
       key_ids: ["B5690EEEBB952194"]
+
+- name: Code change by cloud-platform
+  if:
+    only_has_contributors_in:
+      teams:
+      - "coopnorge/cloud-platform"
+  requires:
+    count: 1
+    teams:
+    - "coopnorge/engineering"
+  options:
+    invalidate_on_push: true
+    request_review:
+      enabled: true
+      mode: random-users
+      count: 8
+    methods:
+      github_review: true
 
 - name: Code change
   if:
