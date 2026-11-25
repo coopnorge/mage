@@ -22,19 +22,19 @@ func TestVersionInRange(t *testing.T) {
 		{name: "exact match", devtoolVer: "3.22.1", currentVer: "3.22.1", minorOffset: 5, wantErr: false},
 		{name: "lowest allowed minor", devtoolVer: "3.22.1", currentVer: "3.17.0", minorOffset: 5, wantErr: false},
 		{name: "newer minor in same major", devtoolVer: "3.22.1", currentVer: "3.30.0", minorOffset: 5, wantErr: false},
-		{name: "next major", devtoolVer: "3.22.1", currentVer: "4.0.0", minorOffset: 5, wantErr: false},
-		{name: "next major with v prefix", devtoolVer: "3.22.1", currentVer: "v4.3.2", minorOffset: 5, wantErr: false},
 		{name: "zero offset same minor", devtoolVer: "1.25.5", currentVer: "1.25.0", minorOffset: 0, wantErr: false},
-		{name: "zero offset next major", devtoolVer: "1.25.5", currentVer: "2.0.0", minorOffset: 0, wantErr: false},
 		{name: "major zero within range", devtoolVer: "0.7.0", currentVer: "0.6.0", minorOffset: 1, wantErr: false},
-		{name: "major zero to one", devtoolVer: "0.7.0", currentVer: "1.0.0", minorOffset: 1, wantErr: false},
 
 		// not accepted
 		{name: "below lowest allowed minor", devtoolVer: "3.22.1", currentVer: "3.16.9", minorOffset: 5, wantErr: true},
+		{name: "next major", devtoolVer: "3.22.1", currentVer: "4.0.0", minorOffset: 5, wantErr: true},
+		{name: "next major with v prefix", devtoolVer: "3.22.1", currentVer: "v4.3.2", minorOffset: 5, wantErr: true},
 		{name: "next major prerelease", devtoolVer: "3.22.1", currentVer: "4.0.0-rc.1", minorOffset: 5, wantErr: true},
 		{name: "previous major", devtoolVer: "3.22.1", currentVer: "2.99.0", minorOffset: 5, wantErr: true},
 		{name: "zero offset older minor", devtoolVer: "1.25.5", currentVer: "1.24.9", minorOffset: 0, wantErr: true},
+		{name: "zero offset next major", devtoolVer: "1.25.5", currentVer: "2.0.0", minorOffset: 0, wantErr: true},
 		{name: "major zero below range", devtoolVer: "0.7.0", currentVer: "0.5.0", minorOffset: 1, wantErr: true},
+		{name: "major zero to one", devtoolVer: "0.7.0", currentVer: "1.0.0", minorOffset: 1, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
