@@ -245,17 +245,42 @@ jobs:
         run: |
           set -euo pipefail
 
-          get_spacelift_bearer_token() {
-            local api_input=$(echo "$1" | base64 -d 2>/dev/null)
-            IFS=':' read -r _ api_id api_secret <<< "$api_input"
+          graphql_errors() {
+            jq -r '[.errors[]? | .message // "unknown error"] | join("; ")' <<<"$1"
+          }
 
-            jq -n --arg id "$api_id" --arg secret "$api_secret" \
-              '{"query":"mutation($id:ID!,$secret:String!){ apiKeyUser(id:$id, secret:$secret){ jwt } }",
-                  "variables":{"id":$id,"secret":$secret}}' \
-              | curl -s "https://$SPACELIFT_ORG.app.spacelift.io/graphql" \
-                  -H "Content-Type: application/json" \
-                  -d @- \
-              | jq -r '.data.apiKeyUser.jwt'
+          get_spacelift_bearer_token() {
+            local api_input api_id api_secret response errors
+
+            if [[ -z "$1" ]]; then
+              echo "::error::SPACELIFT_READ_TOKEN is empty" >&2
+              return 1
+            fi
+
+            api_input=$(echo "$1" | base64 -d 2>/dev/null) || true
+            IFS=':' read -r _ api_id api_secret <<< "$api_input" || true
+            if [[ -z "$api_id" || -z "$api_secret" ]]; then
+              echo "::error::SPACELIFT_READ_TOKEN is not a valid Spacelift API key" >&2
+              return 1
+            fi
+
+            response=$(
+              jq -n --arg id "$api_id" --arg secret "$api_secret" \
+                '{"query":"mutation($id:ID!,$secret:String!){ apiKeyUser(id:$id, secret:$secret){ jwt } }",
+                    "variables":{"id":$id,"secret":$secret}}' \
+                | curl -fsS "https://$SPACELIFT_ORG.app.spacelift.io/graphql" \
+                    -H "Content-Type: application/json" \
+                    -d @-
+            ) || { echo "::error::Spacelift login request failed" >&2; return 1; }
+
+            errors=$(graphql_errors "$response") || { echo "::error::Spacelift login returned invalid JSON" >&2; return 1; }
+            if [[ -n "$errors" ]]; then
+              echo "::error::Spacelift login failed: $errors" >&2
+              return 1
+            fi
+
+            jq -er '.data.apiKeyUser.jwt // empty' <<<"$response" \
+              || { echo "::error::Spacelift login returned no JWT (invalid SPACELIFT_READ_TOKEN?)" >&2; return 1; }
           }
 
           # Exit codes:
@@ -265,20 +290,27 @@ jobs:
           get_active_spacelift_runs() {
             local branch="$1"
             local stack_id="$2"
-            local token out result
-
-            token=$(get_spacelift_bearer_token "$SPACELIFT_READ_TOKEN") || return 1
+            local out errors result
 
             out=$(
               curl -fsS "https://$SPACELIFT_ORG.app.spacelift.io/graphql" \
-              -H "Authorization: Bearer $token" \
+              -H "Authorization: Bearer $SPACELIFT_JWT" \
               -H "Content-Type: application/json" \
               -d '{"query":"query($id:ID!){ stack(id:$id){ runs{ id state type createdAt branch commit{ hash } } proposedRuns{ id state type createdAt branch commit{ hash } } } }","variables":{"id":"'"$stack_id"'"}}'
               ) || return 1
 
-            # jq errors (e.g., invalid JSON)
+            errors=$(graphql_errors "$out") || return 1
+            if [[ -n "$errors" ]]; then
+              echo "::error::Spacelift query for stack $stack_id failed: $errors" >&2
+              return 1
+            fi
+            if ! jq -e '.data.stack != null' >/dev/null <<<"$out"; then
+              echo "::error::Spacelift stack $stack_id not found or not accessible" >&2
+              return 1
+            fi
+
             result=$(jq -r --arg b "$branch" '
-              (.data?.stack? // {runs: [], proposedRuns: []}) as $s
+              .data.stack as $s
                 | ($s.runs // []) + ($s.proposedRuns // [])
                 | map(select(
                 .branch == $b and
@@ -296,7 +328,7 @@ jobs:
           stop_spacelift_run() {
             local stack_id="$1"
             local run_id="$2"
-            local token=$(get_spacelift_bearer_token "$SPACELIFT_READ_TOKEN")
+            local token="$SPACELIFT_JWT"
 
             # Try to stop the run first
             local stop_json
@@ -383,14 +415,26 @@ jobs:
           stack_names=$(get_spacelift_stack_names "$GITHUB_REPOSITORY" "$GIT_REV")
           echo stack_names: $stack_names
 
+          if [[ -z "$stack_names" ]]; then
+            echo "No Spacelift stacks found for this commit. Nothing to cancel."
+            exit 0
+          fi
+
+          SPACELIFT_JWT=$(get_spacelift_bearer_token "$SPACELIFT_READ_TOKEN") || exit 1
+
           while read -r stack_name; do
+            [[ -n "$stack_name" ]] || continue
             echo "Getting stack runs for $stack_name on branch $GIT_BRANCH"
-            if stack_runs=$(get_active_spacelift_runs "$GIT_BRANCH" "$stack_name"); then
-              echo "stack_runs: $stack_runs"
-            elif [ $? -eq 2 ]; then
+            rc=0
+            stack_runs=$(get_active_spacelift_runs "$GIT_BRANCH" "$stack_name") || rc=$?
+            if [[ $rc -eq 2 ]]; then
               echo "No active runs for branch $GIT_BRANCH on stack $stack_name"
               continue
+            elif [[ $rc -ne 0 ]]; then
+              echo "::error::Failed to get active Spacelift runs for stack $stack_name"
+              exit 1
             fi
+            echo "stack_runs: $stack_runs"
 
             latest_run="$(printf '%s\n' "$stack_runs" | tail -n1)"
             echo latest_run: $latest_run
