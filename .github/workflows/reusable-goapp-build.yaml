@@ -47,7 +47,7 @@ on:
 jobs:
   go-build:
     name: Go build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       oci-images: ${{ steps.oci-images.outputs.images }}
     steps:
