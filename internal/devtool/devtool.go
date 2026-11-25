@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/coopnorge/mage/internal/core"
+	"github.com/hashicorp/go-version"
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 )
@@ -133,6 +134,20 @@ func isCommandAvailable(name string) bool {
 	// If it does not find the file, it returns an error.
 	_, err := exec.LookPath(name)
 	return err == nil
+}
+
+// versionInRange checks that current is at least devtool's minor minus
+// minorOffset.
+func versionInRange(devtool, current *version.Version, minorOffset int) error {
+	constraintString := fmt.Sprintf(">= %d.%d", devtool.Segments()[0], devtool.Segments()[1]-minorOffset)
+	constraint, err := version.NewConstraint(constraintString)
+	if err != nil {
+		return err
+	}
+	if !constraint.Check(current) {
+		return fmt.Errorf("version found %s does not match constraint %s", current.Original(), constraint.String())
+	}
+	return nil
 }
 
 type dockerDevTool struct {
