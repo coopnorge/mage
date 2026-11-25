@@ -61,8 +61,16 @@ func HasChanges() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	// always trigger on go.mod/sum and workflows because of changes in ci.
-	additionalGlobs := []string{"go.mod", "go.sum", ".github/workflows/*"}
+	// always trigger on go.mod/sum, workflows, and devtool Dockerfiles because of changes in ci.
+	additionalGlobs := []string{
+		"go.mod",
+		"go.sum",
+		".github/workflows/*",
+		"devtools/kubernetes.Dockerfile",
+		"devtools/Dockerfile",
+		"docker-compose/Dockerfile",
+		"docker-compose/kubernetes.Dockerfile",
+	}
 	return core.CompareChangesToPaths(changedFiles, palletFiles, additionalGlobs)
 }
 
