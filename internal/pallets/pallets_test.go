@@ -81,3 +81,34 @@ func TestGetPalletFilesOnlyYAML(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, []string{filepath.Join(".pallet", "config.yaml")}, files)
 }
+
+func TestHasChanges(t *testing.T) {
+	tests := []struct {
+		name         string
+		changedFiles string
+		want         bool
+	}{
+		{name: "pallet file", changedFiles: ".pallet/config.yaml", want: true},
+		{name: "devtools kubernetes dockerfile", changedFiles: "devtools/kubernetes.Dockerfile", want: true},
+		{name: "devtools dockerfile", changedFiles: "devtools/Dockerfile", want: true},
+		{name: "docker-compose dockerfile", changedFiles: "docker-compose/Dockerfile", want: true},
+		{name: "docker-compose kubernetes dockerfile", changedFiles: "docker-compose/kubernetes.Dockerfile", want: true},
+		{name: "go.mod", changedFiles: "go.mod", want: true},
+		{name: "workflow file", changedFiles: ".github/workflows/ci.yaml", want: true},
+		{name: "unrelated file", changedFiles: "README.md", want: false},
+		{name: "unrelated dockerfile", changedFiles: "Dockerfile", want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Chdir(t.TempDir())
+			require.NoError(t, os.Mkdir(".pallet", 0o700))
+			require.NoError(t, os.WriteFile(filepath.Join(".pallet", "config.yaml"), []byte("kind: RepositoryConfig\n"), 0o600))
+			t.Setenv("CHANGED_FILES", tt.changedFiles)
+
+			got, err := HasChanges()
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
